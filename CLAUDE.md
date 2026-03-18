@@ -32,10 +32,17 @@ app/
 ├── main.py              # FastAPI app entrypoint
 ├── config.py            # Pydantic settings (env vars)
 ├── api/
-│   └── routes.py        # API endpoints (/analyze, /health)
-├── core/                # Analysis engines (pure logic, no I/O)
-│   ├── landmark_detector.py   # MediaPipe FaceMesh wrapper
-│   ├── image_validator.py     # Quality checks (blur, brightness)
+│   └── routes.py        # V1 API endpoints (/analyze, /health)
+├── detection/           # V2 landmark detection (Sprint 1) ✅
+│   ├── face_landmarker.py     # Tasks API: 478 pts + blendshapes + matrix
+│   ├── landmark_index.py      # Anatomical groups + 16 zone mappings
+│   └── head_pose.py           # Yaw/pitch/roll from transform matrix
+├── pipeline/            # V2 image processing (Sprint 1) ✅
+│   ├── image_preprocessor.py  # EXIF, face-crop, decode, resize
+│   └── quality_gate.py        # Quality + pose + expression checks
+├── core/                # V1 analysis engines (legacy, still functional)
+│   ├── landmark_detector.py   # Legacy FaceMesh wrapper
+│   ├── image_validator.py     # Legacy quality checks
 │   ├── frontal_analyzer.py    # Symmetry, facial thirds, lip ratio
 │   ├── profile_analyzer.py    # E-line, nasolabial angle, chin
 │   └── oblique_analyzer.py    # Ogee curve, midface volume
@@ -46,7 +53,9 @@ app/
 │   └── n8n_service.py
 └── utils/
     └── geometry.py      # Math helpers (distance, angle, px→mm)
-tests/                   # Test suite
+models/                  # ML model files (not in git, download manually)
+  └── face_landmarker.task  # MediaPipe model (3.6MB, see Common Commands)
+tests/                   # Test suite (49 tests passing)
 docs/                    # Project documentation
   TASKS.md               # Roadmap & backlog
   FEATURES.md            # Feature catalog
@@ -157,6 +166,10 @@ Use `resolve-library-id` → `get-library-docs` for:
 ## Common Commands
 
 ```bash
+# Download ML model (required, not in git)
+curl -L -o models/face_landmarker.task \
+  "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
+
 # Local dev
 uvicorn app.main:app --reload --port 8000
 

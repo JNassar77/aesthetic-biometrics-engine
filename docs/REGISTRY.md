@@ -25,20 +25,25 @@
 
 ## Code Module Registry
 
-| Module | Path | Responsibility | Dependencies |
-|---|---|---|---|
-| App Entrypoint | `app/main.py` | FastAPI app, CORS, router mounting | config, routes |
-| Configuration | `app/config.py` | Environment variables via Pydantic Settings | — |
-| API Routes | `app/api/routes.py` | HTTP endpoints, request handling, orchestration | all core, all services, schemas |
-| Schemas | `app/models/schemas.py` | Pydantic models for all request/response types | — |
-| Landmark Detector | `app/core/landmark_detector.py` | MediaPipe FaceMesh wrapper, landmark mapping | mediapipe |
-| Image Validator | `app/core/image_validator.py` | Quality checks (blur, brightness, contrast) | opencv, schemas |
-| Frontal Analyzer | `app/core/frontal_analyzer.py` | Symmetry, facial thirds, lip ratio | landmark_detector, geometry, schemas |
-| Profile Analyzer | `app/core/profile_analyzer.py` | E-line, nasolabial angle, chin projection | landmark_detector, geometry, schemas |
-| Oblique Analyzer | `app/core/oblique_analyzer.py` | Ogee curve, midface volume | landmark_detector, geometry, schemas |
-| Geometry Utils | `app/utils/geometry.py` | Distance, angle, px→mm, point-to-line math | numpy |
-| Supabase Service | `app/services/supabase_service.py` | DB persistence, image fetch from storage | supabase, config |
-| n8n Service | `app/services/n8n_service.py` | Webhook notification to n8n | httpx, config |
+| Module | Path | Responsibility | Dependencies | Version |
+|---|---|---|---|---|
+| App Entrypoint | `app/main.py` | FastAPI app, CORS, router mounting | config, routes | V1 |
+| Configuration | `app/config.py` | Environment variables via Pydantic Settings | — | V1 |
+| API Routes | `app/api/routes.py` | HTTP endpoints, request handling, orchestration | all core, all services, schemas | V1 |
+| Schemas | `app/models/schemas.py` | Pydantic models for all request/response types | — | V1 |
+| **Face Landmarker V2** | `app/detection/face_landmarker.py` | **Tasks API: 478 landmarks + 52 blendshapes + transform matrix** | mediapipe | **V2** |
+| **Landmark Index** | `app/detection/landmark_index.py` | **478-point reference + 16 anatomical zone mappings** | — | **V2** |
+| **Head Pose** | `app/detection/head_pose.py` | **Yaw/pitch/roll from transformation matrix + view estimation** | numpy | **V2** |
+| **Image Preprocessor** | `app/pipeline/image_preprocessor.py` | **EXIF fix, face-crop (lens distortion), decode, resize** | opencv | **V2** |
+| **Quality Gate** | `app/pipeline/quality_gate.py` | **Image quality + head pose + neutral expression validation** | opencv, head_pose | **V2** |
+| Landmark Detector (legacy) | `app/core/landmark_detector.py` | Legacy FaceMesh wrapper | mediapipe | V1 |
+| Image Validator (legacy) | `app/core/image_validator.py` | Legacy quality checks | opencv | V1 |
+| Frontal Analyzer (legacy) | `app/core/frontal_analyzer.py` | Symmetry, facial thirds, lip ratio | landmark_detector, geometry | V1 |
+| Profile Analyzer (legacy) | `app/core/profile_analyzer.py` | E-line, nasolabial angle, chin projection | landmark_detector, geometry | V1 |
+| Oblique Analyzer (legacy) | `app/core/oblique_analyzer.py` | Ogee curve, midface volume | landmark_detector, geometry | V1 |
+| Geometry Utils | `app/utils/geometry.py` | Distance, angle, px→mm, point-to-line math | numpy | V1 |
+| Supabase Service | `app/services/supabase_service.py` | DB persistence, image fetch from storage | supabase, config | V1 |
+| n8n Service | `app/services/n8n_service.py` | Webhook notification to n8n | httpx, config | V1 |
 
 ---
 

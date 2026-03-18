@@ -20,17 +20,17 @@
 > **Ziel:** Neue MediaPipe Tasks API, Iris-Kalibrierung, solide Bildvorverarbeitung.
 > Das Fundament, auf dem alles aufbaut.
 
-### Sprint 1 — MediaPipe Tasks API + Preprocessing
+### Sprint 1 — MediaPipe Tasks API + Preprocessing ✅ (18.03.2026)
 
-- [ ] MediaPipe Face Landmarker `.task` Model herunterladen und einbinden
-- [ ] `detection/face_landmarker.py` — Neuer Wrapper mit Tasks API
-  - [ ] 478 Landmarks + 52 Blendshapes + Transformation Matrix
-  - [ ] Confidence-Scoring aus der neuen API
-- [ ] `detection/head_pose.py` — Yaw/Pitch/Roll aus Transformation Matrix
-- [ ] `detection/landmark_index.py` — Vollstaendige 478-Punkt-Referenz mit anatomischen Gruppierungen
-- [ ] `pipeline/image_preprocessor.py` — EXIF-Rotation, Resize, Normalisierung
-- [ ] `pipeline/quality_gate.py` — Erweiterte Qualitaetskontrolle (V1 image_validator refactored)
-- [ ] V1-Code in `app/core/` als Legacy markieren (nicht loeschen)
+- [x] MediaPipe Face Landmarker `.task` Model herunterladen und einbinden
+- [x] `detection/face_landmarker.py` — Neuer Wrapper mit Tasks API
+  - [x] 478 Landmarks + 52 Blendshapes + Transformation Matrix
+  - [x] Confidence-Scoring aus der neuen API
+- [x] `detection/head_pose.py` — Yaw/Pitch/Roll aus Transformation Matrix
+- [x] `detection/landmark_index.py` — Vollstaendige 478-Punkt-Referenz mit anatomischen Gruppierungen
+- [x] `pipeline/image_preprocessor.py` — EXIF-Rotation, Resize, Face-Crop (Lens Distortion Fix)
+- [x] `pipeline/quality_gate.py` — Erweiterte Qualitaetskontrolle + Neutral-Expression-Check
+- [ ] V1-Code in `app/core/` als Legacy markieren (nicht loeschen) → verschoben auf Sprint 2
 
 ### Sprint 2 — Iris-Kalibrierung + Geometrie-Upgrade
 

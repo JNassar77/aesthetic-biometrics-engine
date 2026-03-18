@@ -8,7 +8,7 @@
 ## Uebersicht
 
 ```
-Phase 1 ██████░░░░░░░░░░░░░░░░░░  Detection Layer     Sprint 1-2
+Phase 1 ███░░░░░░░░░░░░░░░░░░░░░  Detection Layer     Sprint 1✅ / 2
 Phase 2 ░░░░░░██████████░░░░░░░░  Zone-System          Sprint 3-5
 Phase 3 ░░░░░░░░░░░░░░░░████░░░░  Treatment Intel.     Sprint 6-7
 Phase 4 ░░░░░░░░░░░░░░░░░░░░████  API + Integration    Sprint 8-9
@@ -18,9 +18,10 @@ Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██
 
 ---
 
-## Sprint 1 — MediaPipe Tasks API + Preprocessing
+## Sprint 1 — MediaPipe Tasks API + Preprocessing ✅ DONE (18.03.2026)
 **Phase:** 1 (Detection Layer)
 **Ziel:** Neues Detection-Fundament steht
+**Ergebnis:** 5 Module, 49/49 Tests bestanden
 
 | # | Task | Datei | Abhaengigkeit |
 |---|------|-------|---------------|
@@ -34,6 +35,7 @@ Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██
 
 **Deliverable:** `face_landmarker.detect(image)` → Landmarks + Blendshapes + Pose
 **Validierung:** Unit Test mit Testbild, alle 478 Landmarks + 52 Blendshapes vorhanden
+**Status:** ✅ Abgeschlossen — 49/49 Tests gruen
 
 ---
 
