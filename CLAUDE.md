@@ -78,6 +78,38 @@ Start here depending on what you need:
 | Orchestration | n8n webhooks |
 | Deployment | Docker → Railway |
 
+## Freshness Rule — MANDATORY
+
+**Never rely on training knowledge for library APIs.** Before writing or modifying code that uses any external library, ALWAYS verify the current API first:
+
+### Context7 (primary — live docs)
+Use `resolve-library-id` → `get-library-docs` for:
+| Library | Context7 ID | Use for |
+|---|---|---|
+| FastAPI | `/fastapi/fastapi` | Routes, middleware, dependencies |
+| FastAPI (full docs) | `/websites/fastapi_tiangolo` | Advanced patterns, deployment |
+| MediaPipe | `/google-ai-edge/mediapipe` | FaceMesh API, landmark indices |
+| Supabase Python | `/websites/supabase_reference_python` | Client methods, auth, storage |
+| Supabase Platform | `/supabase/supabase` | RLS, migrations, edge functions |
+| Pydantic | resolve first | Model config, validators |
+| OpenCV | resolve first | Image processing functions |
+
+### Supabase MCP (direct access)
+- Use `search_docs` for Supabase platform features, RLS, Auth, Storage
+- Use `list_tables` / `execute_sql` to verify actual schema before writing queries
+
+### n8n MCP (direct access)
+- Use `search_nodes` / `get_node` for current node configs and versions
+- Use `tools_documentation` for webhook and workflow patterns
+
+### Vercel MCP (direct access)
+- Use `search_vercel_documentation` for deployment and platform features
+
+### Web Search (fallback)
+- For anything not in Context7 or MCP tools, use WebSearch with current year (2026)
+
+**When in doubt: look it up. A 5-second Context7 call prevents hours of debugging stale APIs.**
+
 ## Key Conventions
 
 ### Code Style
