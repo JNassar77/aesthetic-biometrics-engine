@@ -12,3 +12,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.log
+# ML models (download via curl, see CLAUDE.md)
+models/*.task
+models/*.tflite
