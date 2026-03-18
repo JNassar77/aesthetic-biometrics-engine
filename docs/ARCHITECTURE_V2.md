@@ -382,6 +382,30 @@ lip_height_mm = lip_height_px / px_per_mm
 
 **Genauigkeitsgewinn:** ca. 3-5x praeziser als die Gesichtsbreiten-Schaetzung.
 
+### Haertung: Face-Crop gegen Lens Distortion
+
+Smartphone-Weitwinkel verzerren Gesichter am Bildrand (Barrel Distortion).
+Loesung: Vor der Landmark-Extraktion das Gesicht zentral croppen.
+
+```python
+def normalize_face_crop(image: np.ndarray, face_bbox) -> np.ndarray:
+    """Crop face to center square, eliminating edge lens distortion."""
+    x, y, w, h = face_bbox
+    # Expand bbox by 30% padding, then crop square from center
+    pad = int(max(w, h) * 0.3)
+    cx, cy = x + w // 2, y + h // 2
+    half = max(w, h) // 2 + pad
+    crop = image[max(0, cy-half):cy+half, max(0, cx-half):cx+half]
+    return cv2.resize(crop, (1024, 1024))
+```
+
+### Fallback bei schlechter Iris-Erkennung
+
+Wenn Iris-Confidence zu niedrig (z.B. sehr dunkle Augen, Brille):
+1. Warnung: `IRIS_CALIBRATION_FALLBACK`
+2. Fallback auf Face-Width-Schaetzung (V1-Methode)
+3. `calibration_method` Feld im Response: `"iris"` oder `"face_width_estimate"`
+
 ---
 
 ## Blendshape-Integration fuer dynamische Analyse
@@ -399,14 +423,96 @@ Die 52 Blendshapes geben uns **Muskelspannung** — etwas das reine Landmark-Pos
 | `mouthPucker` | Orbicularis-Oris-Tonus → Lip-Flip-Botox |
 | `eyeSquintLeft/Right` | Crow's Feet Potenzial |
 
+### Kritisch: Blendshapes werden NICHT fusioniert
+
+**Problem (identifiziert via Peer Review):** Da 3 separate Fotos aufgenommen werden,
+aendert der Patient zwischen den Aufnahmen minimal die Mimik. `mouthSmile` kann frontal
+bei 0.1 und im Profil bei 0.3 liegen — eine Fusion wuerde Artefakte erzeugen.
+
+**Design-Entscheidung:**
+- Blendshapes sind **View-gebunden** — sie werden NIE ueber Views gemittelt
+- Fusion basiert ausschliesslich auf **Landmark-Geometrie** (stabil zwischen Views)
+- Jede View meldet ihre Blendshapes separat im Response
+- Blendshapes werden nur fuer die View genutzt, wo sie klinisch relevant sind:
+  - Frontal: Smile-Asymmetrie, Brow-Position
+  - Profile: Lip Projection bei Ruhetonus
+
+### Neutral-Expression Validation
+
+```python
+EXPRESSION_THRESHOLDS = {
+    "mouthSmileLeft": 0.15,
+    "mouthSmileRight": 0.15,
+    "browDownLeft": 0.2,
+    "browDownRight": 0.2,
+    "jawOpen": 0.1,
+    "mouthPucker": 0.15,
+}
+
+def validate_neutral_expression(blendshapes: dict) -> list[QualityWarning]:
+    """Warnt wenn Patient nicht in Ruheposition ist."""
+    warnings = []
+    for shape, threshold in EXPRESSION_THRESHOLDS.items():
+        if blendshapes.get(shape, 0) > threshold:
+            warnings.append(QualityWarning(
+                code="NON_NEUTRAL_EXPRESSION",
+                message=f"Detected active expression ({shape}: {blendshapes[shape]:.2f}). "
+                        "Results are most accurate with a neutral, relaxed face.",
+            ))
+            break  # Eine Warnung genuegt
+    return warnings
+```
+
+---
+
+## Multi-Tenant Architektur (SaaS-Ready)
+
+Das System ist von Anfang an multi-tenant-faehig. Jede Praxis (`organization`)
+sieht ausschliesslich ihre eigenen Daten.
+
+```
+Organization (Praxis A)
+  └── Patients
+       └── Assessments
+            └── Treatment Comparisons
+
+Organization (Praxis B)    ← komplett isoliert via RLS
+  └── Patients
+       └── Assessments
+```
+
 ---
 
 ## Supabase Schema V2
 
 ```sql
+-- Organizations (Multi-Tenant Root)
+CREATE TABLE organizations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    settings JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Patients: jetzt mit organization_id
+CREATE TABLE patients (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    external_id TEXT,
+    first_name TEXT,
+    last_name TEXT,
+    date_of_birth DATE,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(organization_id, external_id)
+);
+
 -- Assessments: ein vollstaendiger 3-View Durchlauf
 CREATE TABLE assessments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     patient_id UUID REFERENCES patients(id) ON DELETE CASCADE,
     status TEXT NOT NULL DEFAULT 'processing'
         CHECK (status IN ('processing', 'completed', 'failed', 'partial')),
@@ -421,10 +527,11 @@ CREATE TABLE assessments (
 
     -- Analyse-Ergebnisse
     global_metrics JSONB,
-    zones JSONB,              -- Array der Zone-Analysen
-    treatment_plan JSONB,     -- Generierter Behandlungsplan
-    raw_landmarks JSONB,      -- Rohe Landmark-Daten (optional, gross)
-    blendshapes JSONB,        -- 52 Blendshape-Werte
+    zones JSONB,                  -- Array der Zone-Analysen
+    treatment_plan JSONB,         -- Generierter Behandlungsplan
+    blendshapes JSONB,            -- 52 Blendshape-Werte PRO VIEW (nicht fusioniert!)
+    aesthetic_score REAL,          -- Composite Score 0-100 (gewichtete Zone-Severities)
+    calibration_method TEXT,       -- 'iris' oder 'face_width_estimate'
 
     -- Metadaten
     engine_version TEXT NOT NULL DEFAULT '2.0.0',
@@ -435,18 +542,36 @@ CREATE TABLE assessments (
 -- Behandlungs-Verlauf (Vorher/Nachher)
 CREATE TABLE treatment_comparisons (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     patient_id UUID REFERENCES patients(id) ON DELETE CASCADE,
     pre_assessment_id UUID REFERENCES assessments(id),
     post_assessment_id UUID REFERENCES assessments(id),
     treatment_date DATE NOT NULL,
     treatment_notes TEXT,
-    zone_deltas JSONB,        -- Veraenderung pro Zone
+    zone_deltas JSONB,
+    improvement_score REAL,       -- Gesamtverbesserung 0-100
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Index fuer schnelle Patienten-Historie
-CREATE INDEX idx_assessments_patient_date
-    ON assessments(patient_id, created_at DESC);
+-- Indexes
+CREATE INDEX idx_patients_org ON patients(organization_id);
+CREATE INDEX idx_assessments_org ON assessments(organization_id);
+CREATE INDEX idx_assessments_patient_date ON assessments(patient_id, created_at DESC);
+CREATE INDEX idx_comparisons_org ON treatment_comparisons(organization_id);
+
+-- Row Level Security: Praxis A sieht NIE Daten von Praxis B
+ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE patients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE assessments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE treatment_comparisons ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies (organization_id muss im JWT-Claim stehen)
+CREATE POLICY "org_isolation" ON patients
+    USING (organization_id = auth.jwt()->>'organization_id');
+CREATE POLICY "org_isolation" ON assessments
+    USING (organization_id = auth.jwt()->>'organization_id');
+CREATE POLICY "org_isolation" ON treatment_comparisons
+    USING (organization_id = auth.jwt()->>'organization_id');
 ```
 
 ---
@@ -549,6 +674,54 @@ PRODUCT_RECOMMENDATIONS = {
     },
 }
 ```
+
+---
+
+## Aesthetic Score (Composite KPI)
+
+Ein einzelner Score von 0-100 als Top-Level-Metrik neben den detaillierten Zone-Analysen.
+
+```python
+def compute_aesthetic_score(zones: list[ZoneResult]) -> float:
+    """Invertierte gewichtete Summe der Zone-Severities.
+    100 = keine Behandlung noetig, 0 = maximaler Behandlungsbedarf."""
+    if not zones:
+        return 100.0
+
+    # Gewichte: strukturelle Zonen zaehlen mehr
+    REGION_WEIGHTS = {"midface": 1.3, "lower_face": 1.1, "upper_face": 1.0, "profile": 0.9}
+
+    weighted_sum = 0.0
+    weight_total = 0.0
+    for zone in zones:
+        w = REGION_WEIGHTS.get(zone.region, 1.0)
+        weighted_sum += zone.severity * w
+        weight_total += 10.0 * w  # max severity = 10
+
+    return round(max(0, (1 - weighted_sum / weight_total) * 100), 1)
+```
+
+**Hinweis:** Kein proprietaerer Name/Branding bis klinisch validiert (Sprint 11).
+
+---
+
+## Zukuenftige Erweiterungen (Peer-Review-Erkenntnisse)
+
+### Dynamische Video-Analyse ("Botox-Modus") — Phase 2 Feature Track
+
+5-Sekunden-Video mit gesteuerter Mimik (Laecheln, Stirn runzeln, Lippen spitzen).
+Ermoeglicht Differenzierung zwischen:
+- **Statische Falten** → Filler-Indikation
+- **Dynamische Falten** → Botox-Indikation
+
+Erfordert: Video-Processing, Frame-Selection, Temporal Blendshape-Smoothing.
+**Status:** Backlog, eigener Feature-Track nach V2-Launch.
+
+### Skin Quality Analysis (Textur) — Niedrigste Prioritaet
+
+ViT-basiertes Modul fuer Pigmentierung, vaskulaere Laesionen, Porengroesse.
+Wuerde als zusaetzliche `skin_quality_score` pro Zone in den Report einfliessen.
+**Status:** Backlog, erfordert eigenes ML-Training.
 
 ---
 

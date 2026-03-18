@@ -44,13 +44,14 @@ Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██
 | # | Task | Datei | Abhaengigkeit |
 |---|------|-------|---------------|
 | 2.1 | Iris-basierte px→mm Kalibrierung | `utils/pixel_calibration.py` | Sprint 1 |
-| 2.2 | 3D-Geometrie-Operationen (z-Achse nutzen) | `utils/geometry.py` | — |
-| 2.3 | Head-Pose-Validation (Schwellenwert) | `pipeline/quality_gate.py` | 1.4 |
-| 2.4 | Unit Tests Kalibrierung | `tests/test_calibration.py` | 2.1 |
-| 2.5 | Unit Tests Geometrie | `tests/test_geometry.py` | 2.2 |
-| 2.6 | Benchmark: Iris-Kal. vs. V1-Schaetzung | `tests/` | 2.1 |
+| 2.2 | Fallback auf Face-Width wenn Iris-Confidence niedrig | `utils/pixel_calibration.py` | 2.1 |
+| 2.3 | Face-Crop Normalisierung (Lens Distortion) | `pipeline/image_preprocessor.py` | 1.6 |
+| 2.4 | 3D-Geometrie-Operationen (z-Achse nutzen) | `utils/geometry.py` | — |
+| 2.5 | Head-Pose-Validation (Schwellenwert) | `pipeline/quality_gate.py` | 1.4 |
+| 2.6 | Unit Tests Kalibrierung + Geometrie | `tests/` | 2.1-2.4 |
+| 2.7 | Benchmark: Iris-Kal. vs. V1-Schaetzung | `tests/` | 2.1 |
 
-**Deliverable:** `calibrate(landmarks) → px_per_mm` mit < 5% Fehler
+**Deliverable:** `calibrate(landmarks) → px_per_mm` mit < 5% Fehler + Lens Distortion Fix
 **Validierung:** Vergleich gegen bekannten Massstab auf Testbildern
 
 ---
@@ -100,15 +101,17 @@ Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██
 
 | # | Task | Datei | Abhaengigkeit |
 |---|------|-------|---------------|
-| 5.1 | Multi-View Fusion: Confidence-gewichtet | `analysis/multi_view_fusion.py` | Sprint 3-4 |
-| 5.2 | Fusion: Widerspruechs-Erkennung | `analysis/multi_view_fusion.py` | 5.1 |
-| 5.3 | Zone Analyzer: Orchestrierung | `analysis/zone_analyzer.py` | 5.1 |
-| 5.4 | Zone Analyzer: Findings-Textgenerierung | `analysis/zone_analyzer.py` | 5.3 |
-| 5.5 | Zone Analyzer: Severity-Ranking | `analysis/zone_analyzer.py` | 5.3 |
-| 5.6 | Integration Test: 3 Bilder → Zone Report | `tests/` | 5.1-5.5 |
+| 5.1 | Multi-View Fusion: Landmark-only (KEINE Blendshape-Fusion!) | `analysis/multi_view_fusion.py` | Sprint 3-4 |
+| 5.2 | Fusion: Widerspruechs-Erkennung zwischen Views | `analysis/multi_view_fusion.py` | 5.1 |
+| 5.3 | Neutral-Expression Validation (Blendshape-Check) | `pipeline/quality_gate.py` | Sprint 1 |
+| 5.4 | Zone Analyzer: Orchestrierung aller Engines | `analysis/zone_analyzer.py` | 5.1 |
+| 5.5 | Zone Analyzer: Findings-Textgenerierung | `analysis/zone_analyzer.py` | 5.4 |
+| 5.6 | Zone Analyzer: Severity-Ranking | `analysis/zone_analyzer.py` | 5.4 |
+| 5.7 | Aesthetic Score (Composite KPI, 0-100) | `analysis/zone_analyzer.py` | 5.6 |
+| 5.8 | Integration Test: 3 Bilder → Zone Report | `tests/` | 5.1-5.7 |
 
-**Deliverable:** `zone_analyzer.analyze(frontal, profile, oblique)` → sortierter Zone-Report
-**Validierung:** 3 Testbilder ergeben sinnvollen, klinisch plausiblen Zone-Report
+**Deliverable:** `zone_analyzer.analyze(frontal, profile, oblique)` → Zone-Report + Aesthetic Score
+**Validierung:** 3 Testbilder ergeben plausiblen Report; Blendshapes pro View separat
 
 ---
 
@@ -158,12 +161,13 @@ Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██
 | 8.2 | `POST /api/v2/assessment` Endpoint | `api/v2_routes.py` | 8.1 |
 | 8.3 | `POST /api/v2/compare` Endpoint | `api/v2_routes.py` | 7.1, 8.1 |
 | 8.4 | `GET /api/v2/patients/{id}/history` | `api/v2_routes.py` | 8.1 |
-| 8.5 | Supabase Schema Migration V2 | Migration | — |
-| 8.6 | Supabase Storage Bucket einrichten | Supabase | — |
-| 8.7 | Pipeline Orchestrator | `pipeline/orchestrator.py` | Sprint 1-6 |
+| 8.5 | Supabase Schema Migration V2 (mit organization_id!) | Migration | — |
+| 8.6 | Multi-Tenant RLS Policies (Org-Isolation) | Migration | 8.5 |
+| 8.7 | Supabase Storage Bucket einrichten | Supabase | — |
+| 8.8 | Pipeline Orchestrator | `pipeline/orchestrator.py` | Sprint 1-6 |
 
-**Deliverable:** Funktionierender V2-Endpoint: 3 Bilder rein, Behandlungsplan raus
-**Validierung:** curl/Swagger Test mit 3 echten Fotos → vollstaendiges JSON
+**Deliverable:** Funktionierender V2-Endpoint mit Multi-Tenant Isolation
+**Validierung:** curl/Swagger Test + RLS-Pruefung: Org A sieht keine Daten von Org B
 
 ---
 
