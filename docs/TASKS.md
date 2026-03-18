@@ -1,104 +1,211 @@
-# Tasks — Aesthetic Biometrics Engine
+# Tasks — Aesthetic Biometrics Engine V2
 
 > Living document. Update status as work progresses.
 > Format: `- [x] Done` / `- [ ] Open` / `- [~] In Progress`
+> Referenz-Architektur: `docs/ARCHITECTURE_V2.md`
 
 ---
 
-## Phase 1: Foundation (MVP)
+## V1 Baseline (abgeschlossen)
 
-### Core Engine
 - [x] Project scaffolding (FastAPI, directory structure)
-- [x] MediaPipe FaceMesh landmark detection (478 points)
-- [x] Frontal analyzer (symmetry, facial thirds, lip ratio)
-- [x] Profile analyzer (E-line, nasolabial angle, chin projection)
-- [x] Oblique analyzer (Ogee curve, midface volume)
-- [x] Image quality validator (blur, brightness, contrast, resolution)
-- [x] Geometry utilities (distance, angle, px→mm conversion)
-- [x] Pydantic request/response models
-
-### Infrastructure
-- [x] Supabase schema (patients, analyses, treatment_sessions)
-- [x] GitHub repo (JNassar77/aesthetic-biometrics-engine)
-- [x] Dockerfile
-- [x] .env configuration
-- [ ] docker-compose.yml for local dev
-- [ ] CI/CD pipeline (GitHub Actions)
-
-### Integration
-- [x] Supabase service (save analysis, fetch image)
-- [x] n8n webhook service (notify on completion)
-- [ ] Supabase Storage integration (image upload/retrieval)
+- [x] MediaPipe Legacy FaceMesh (478 points)
+- [x] Frontal/Profile/Oblique Einzelanalysen
+- [x] Supabase Schema V1, GitHub Repo, Dockerfile, Docs
 
 ---
 
-## Phase 2: Validation & Hardening
+## Phase 1: Detection Layer Upgrade (Sprint 1-2)
 
-### Testing
-- [ ] Unit tests for geometry utils
-- [ ] Unit tests for frontal analyzer
-- [ ] Unit tests for profile analyzer
-- [ ] Unit tests for oblique analyzer
-- [ ] Integration test: full analyze endpoint with sample images
-- [ ] Edge case tests: no face, multiple faces, partial occlusion
+> **Ziel:** Neue MediaPipe Tasks API, Iris-Kalibrierung, solide Bildvorverarbeitung.
+> Das Fundament, auf dem alles aufbaut.
 
-### Accuracy
-- [ ] Validate measurements against clinical reference data
-- [ ] Calibrate px→mm conversion with known-distance marker
-- [ ] Test with diverse patient demographics
-- [ ] Compare MediaPipe vs dlib vs InsightFace accuracy
+### Sprint 1 — MediaPipe Tasks API + Preprocessing
 
-### Error Handling
-- [ ] Graceful handling of rotated/tilted images
-- [ ] Auto-detect view angle from landmarks (instead of requiring user input)
-- [ ] Multi-face rejection with clear error message
+- [ ] MediaPipe Face Landmarker `.task` Model herunterladen und einbinden
+- [ ] `detection/face_landmarker.py` — Neuer Wrapper mit Tasks API
+  - [ ] 478 Landmarks + 52 Blendshapes + Transformation Matrix
+  - [ ] Confidence-Scoring aus der neuen API
+- [ ] `detection/head_pose.py` — Yaw/Pitch/Roll aus Transformation Matrix
+- [ ] `detection/landmark_index.py` — Vollstaendige 478-Punkt-Referenz mit anatomischen Gruppierungen
+- [ ] `pipeline/image_preprocessor.py` — EXIF-Rotation, Resize, Normalisierung
+- [ ] `pipeline/quality_gate.py` — Erweiterte Qualitaetskontrolle (V1 image_validator refactored)
+- [ ] V1-Code in `app/core/` als Legacy markieren (nicht loeschen)
 
----
+### Sprint 2 — Iris-Kalibrierung + Geometrie-Upgrade
 
-## Phase 3: Advanced Features
-
-### Analysis Enhancements
-- [ ] Brow position analysis (brow ptosis detection)
-- [ ] Jawline contour analysis (masseter, pre-jowl sulcus)
-- [ ] Periorbital analysis (tear trough, lateral canthal lines)
-- [ ] Skin texture analysis (pore size, wrinkle depth via OpenCV)
-- [ ] Golden ratio overlay (Phi mask)
-
-### Treatment Intelligence
-- [ ] Treatment recommendation engine (rule-based first)
-- [ ] Before/after comparison endpoint (delta analysis)
-- [ ] Injection point mapping (SVG overlay generation)
-- [ ] Dosage suggestion based on muscle mass estimation
-
-### Platform
-- [ ] Patient dashboard API endpoints (history, trends)
-- [ ] Batch analysis endpoint (all 3 views in one call)
-- [ ] PDF report generation
-- [ ] Real-time video analysis (WebSocket endpoint)
+- [ ] `utils/pixel_calibration.py` — Iris-basierte px→mm Kalibrierung (11.7mm Referenz)
+- [ ] `utils/geometry.py` — Erweitert um 3D-Operationen (nutzt z-Koordinaten)
+- [ ] Unit Tests fuer Kalibrierung und Geometrie
+- [ ] Benchmark: Kalibrierungs-Genauigkeit vs. V1-Schaetzung mit Testbildern
+- [ ] Head-Pose-Validation: Bild ablehnen wenn Kopf zu stark gedreht
 
 ---
 
-## Phase 4: Deployment & Scale
+## Phase 2: Zone-System + Analyse-Engines (Sprint 3-5)
 
-### DevOps
-- [ ] Railway deployment
-- [ ] Health monitoring & alerting
-- [ ] Rate limiting & API key auth
-- [ ] Logging & observability (structured JSON logs)
+> **Ziel:** Das medizinische Herzstaeck — 16 Behandlungszonen mit Severity-Scoring.
 
-### Performance
-- [ ] Response time benchmarking (<500ms target)
-- [ ] Image preprocessing pipeline (resize, normalize)
-- [ ] Caching layer for repeated analyses
-- [ ] GPU acceleration evaluation (ONNX Runtime)
+### Sprint 3 — Zone-Definitionen + Symmetrie/Proportionen
+
+- [ ] `treatment/zone_definitions.py` — 16 Zonen mit:
+  - [ ] Landmark-Zuordnungen (welche Landmarks gehoeren zu welcher Zone)
+  - [ ] Referenzwerte (Ideal-Ranges pro Messung)
+  - [ ] View-Prioritaeten (welche View ist primaer fuer welche Zone)
+- [ ] `analysis/symmetry_engine.py` — Neu:
+  - [ ] 6 Symmetrie-Achsen (nicht nur Mittellinie)
+  - [ ] Pro-Zone Asymmetrie-Score
+  - [ ] Blendshape-basierte dynamische Asymmetrie
+- [ ] `analysis/proportion_engine.py` — Neu:
+  - [ ] Gesichtsdrittel (mit mm statt px)
+  - [ ] Fifths-Analyse (horizontale Fuenftel)
+  - [ ] Golden Ratio Deviation
+  - [ ] Lip Ratio mit Cupid's-Bow-Analyse
+
+### Sprint 4 — Profil-, Volumen- und Aging-Engines
+
+- [ ] `analysis/profile_engine.py` — Erweitert:
+  - [ ] Ricketts E-Line (jetzt in echten mm via Iris-Kalibrierung)
+  - [ ] Nasolabial-Winkel
+  - [ ] Chin Projection
+  - [ ] **Neu:** Nasal dorsum analysis (Hump/Saddle)
+  - [ ] **Neu:** Lip projection relative to Steiner line
+  - [ ] **Neu:** Chin-neck angle (cervicomental)
+- [ ] `analysis/volume_engine.py` — Neu:
+  - [ ] Ogee Curve (verbessert mit 3D-Depth-Daten)
+  - [ ] Temporal Hollowing Detection
+  - [ ] Tear Trough Depth Estimation
+  - [ ] Pre-jowl Sulcus Detection
+  - [ ] Buccal Corridor Analysis
+- [ ] `analysis/aging_engine.py` — Neu:
+  - [ ] Blendshape-Muster → Muskeltonus-Profil
+  - [ ] Gravitationelle Veraenderungen (Landmark-Drift nach unten)
+  - [ ] Periorbitale Analyse (Crow's feet, unter-Lid Laxitaet)
+
+### Sprint 5 — Multi-View Fusion + Zone Analyzer
+
+- [ ] `analysis/multi_view_fusion.py` — Das Kernmodul:
+  - [ ] Confidence-gewichtete Fusion wenn Zone in mehreren Views sichtbar
+  - [ ] Widerspruechs-Erkennung zwischen Views
+  - [ ] Finale Severity-Berechnung pro Zone
+- [ ] `analysis/zone_analyzer.py` — Orchestriert alle Engines:
+  - [ ] Mappt Engine-Ergebnisse auf Zonen
+  - [ ] Erzeugt Zone-Reports mit Findings-Texten
+  - [ ] Sortiert nach Severity
+- [ ] Integration Tests: 3 Testbilder → vollstaendiger Zone-Report
 
 ---
 
-## Backlog / Ideas
+## Phase 3: Treatment Intelligence (Sprint 6-7)
 
-- [ ] 3D face reconstruction from multi-view images
-- [ ] Aging simulation (predict treatment longevity)
-- [ ] AR overlay for treatment visualization
-- [ ] DICOM integration for clinical workflows
-- [ ] Multi-language report output (DE/EN/AR)
-- [ ] HIPAA/DSGVO compliance audit
+> **Ziel:** Aus Analyse wird Behandlungsplan. Das Alleinstellungsmerkmal.
+
+### Sprint 6 — Behandlungsplan-Generator
+
+- [ ] `treatment/product_database.py` — Filler/Botox Wissensbasis:
+  - [ ] Produkt-Eigenschaften (G', Viskositaet, Haltbarkeit)
+  - [ ] Zone-zu-Produkt Mapping
+  - [ ] Technik-Empfehlungen pro Zone
+  - [ ] Volumen-Schaetzungen
+- [ ] `treatment/plan_generator.py` — Kernlogik:
+  - [ ] Severity-basierte Priorisierung
+  - [ ] Klinische Reihenfolge-Logik (Struktur → Detail)
+  - [ ] Sitzungs-Planung (was in Session 1 vs. 2)
+  - [ ] Gesamtvolumen-Schaetzung
+- [ ] `treatment/contraindication_check.py` — Sicherheit:
+  - [ ] Gefaessrisiko-Zonen markieren
+  - [ ] Warnungen bei extremen Asymmetrien (moegliche Pathologie)
+
+### Sprint 7 — Vergleichs-Engine (Before/After)
+
+- [ ] `POST /api/v2/compare` Endpoint
+- [ ] Delta-Berechnung pro Zone (pre vs. post Assessment)
+- [ ] Verbesserungs-Score pro Zone
+- [ ] Visualisierungsdaten fuer Frontend (Zone-Heatmap-Daten)
+
+---
+
+## Phase 4: API + Integration (Sprint 8-9)
+
+> **Ziel:** Alles zusammenfuegen, neue Endpoints, Supabase V2.
+
+### Sprint 8 — V2 API + Supabase Schema
+
+- [ ] `api/v2_routes.py` — Neue Endpoints:
+  - [ ] `POST /api/v2/assessment` (3 Bilder, 1 Response)
+  - [ ] `POST /api/v2/compare` (Before/After)
+  - [ ] `GET /api/v2/patients/{id}/history`
+- [ ] Supabase Schema Migration V2:
+  - [ ] `assessments` Tabelle (JSONB fuer Zonen + Plan)
+  - [ ] `treatment_comparisons` Tabelle
+  - [ ] Supabase Storage Bucket `patient-images` einrichten
+- [ ] Pydantic V2 Schemas komplett neu (`models/schemas.py`, `models/zone_models.py`)
+- [ ] `pipeline/orchestrator.py` — Verbindet alles:
+  - [ ] 3 Bilder empfangen → Preprocessing → Detection → Analysis → Plan → Response
+
+### Sprint 9 — n8n + Background Processing
+
+- [ ] n8n Webhook Payload an V2-Schema anpassen
+- [ ] FastAPI BackgroundTasks fuer Supabase-Speicherung
+- [ ] Bilder in Supabase Storage hochladen (async, non-blocking)
+- [ ] Error-Recovery: Teilanalyse zurueckgeben wenn 1 View fehlschlaegt
+- [ ] Structured Logging (JSON) fuer alle Pipeline-Schritte
+- [ ] `api/v1_routes.py` — Legacy-Endpoints beibehalten (backward compat)
+
+---
+
+## Phase 5: Validation + Hardening (Sprint 10-11)
+
+> **Ziel:** Vertrauen in die Ergebnisse. Genauigkeit validieren.
+
+### Sprint 10 — Test-Suite
+
+- [ ] Unit Tests: Alle Analyse-Engines mit synthetischen Landmark-Daten
+- [ ] Unit Tests: Zone-Definitionen (vollstaendige Abdeckung aller 16 Zonen)
+- [ ] Unit Tests: Treatment Plan Generator (Priorisierung, Produkt-Matching)
+- [ ] Integration Tests: Voller Pipeline-Durchlauf mit echten Testbildern
+- [ ] Edge Cases: kein Gesicht, mehrere Gesichter, Teilverdeckung, Brille, Bart
+- [ ] Blendshape-Tests: Ruhezustand vs. Ausdruck
+
+### Sprint 11 — Klinische Validierung + Feintuning
+
+- [ ] Messungen gegen klinische Referenzdaten validieren
+- [ ] Iris-Kalibrierung mit physischem Referenzmassstab verifizieren
+- [ ] Test mit diversen Demographien (Alter, Geschlecht, Ethnie)
+- [ ] Behandlungsplan-Review durch klinischen Berater
+- [ ] Severity-Schwellenwerte kalibrieren
+- [ ] Performance-Benchmark: Ziel < 3s fuer 3-Bild-Assessment
+
+---
+
+## Phase 6: Deployment + Production (Sprint 12)
+
+> **Ziel:** Live gehen.
+
+### Sprint 12 — Production-Ready
+
+- [ ] Docker Image optimieren (Multi-stage Build, < 1.5GB)
+- [ ] Railway Deployment konfigurieren
+- [ ] Health Monitoring (Healthcheck-Endpoint + Alerts)
+- [ ] Rate Limiting + API Key Authentication
+- [ ] CI/CD Pipeline (GitHub Actions: Test → Build → Deploy)
+- [ ] `.env.production` Konfiguration
+- [ ] Swagger/OpenAPI Docs finalisieren
+- [ ] DSGVO-Checkliste (Patientendaten, Bildloeschung)
+
+---
+
+## Backlog / Future
+
+- [ ] PDF/DOCX Report-Generation pro Assessment
+- [ ] Injection-Point SVG Overlay fuer Frontend
+- [ ] Real-time Video-Analyse (WebSocket)
+- [ ] 3D Face Reconstruction aus Multi-View
+- [ ] Aging Simulation (Behandlungshaltbarkeit)
+- [ ] AR Overlay fuer Behandlungsvisualisierung
+- [ ] Multi-Language Reports (DE/EN/AR)
+- [ ] DICOM-Integration
+- [ ] HIPAA/DSGVO Compliance Audit
+- [ ] GPU-Beschleunigung (ONNX Runtime)
+- [ ] Auto-View-Angle Detection
+- [ ] Patient Self-Service Upload Portal

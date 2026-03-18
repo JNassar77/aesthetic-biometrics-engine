@@ -18,6 +18,8 @@
 | Contributing | `docs/CONTRIBUTING.md` | Dev setup, branch strategy, code standards, test guide | Updated per process change |
 | Registry | `docs/REGISTRY.md` | This file — master index of all artifacts | Always current |
 | Definition of Done | `docs/DOD.md` | Quality gates for features, fixes, and releases | Baseline, rarely changes |
+| Architecture V2 | `docs/ARCHITECTURE_V2.md` | Complete V2 system redesign with zones and treatment plans | Reference for all V2 work |
+| Sprint Plan | `docs/SPRINTS.md` | 12 Sprints, 6 Phasen, Abhaengigkeiten, Meilensteine | Updated per sprint |
 
 ---
 
