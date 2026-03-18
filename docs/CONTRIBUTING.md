@@ -134,9 +134,11 @@ test: add edge case tests for symmetry with tilted face
 
 | File | Purpose | When to read |
 |---|---|---|
-| `CLAUDE.md` | Project context for AI assistants | Start of every session |
-| `TASKS.md` | Roadmap and current work | Before starting new work |
-| `FEATURES.md` | Feature catalog with workflows | When implementing features |
-| `CONTRACTS.md` | API schemas and data contracts | When changing interfaces |
-| `GRAPH.md` | Visual system architecture | When understanding data flow |
-| `ARCHITECTURE.md` | Technical design and math | When modifying analysis logic |
+| `CLAUDE.md` (root) | Project context for AI assistants | Start of every session |
+| `docs/TASKS.md` | Roadmap and current work | Before starting new work |
+| `docs/FEATURES.md` | Feature catalog with workflows | When implementing features |
+| `docs/CONTRACTS.md` | API schemas and data contracts | When changing interfaces |
+| `docs/GRAPH.md` | Visual system architecture | When understanding data flow |
+| `docs/ARCHITECTURE.md` | Technical design and math | When modifying analysis logic |
+| `docs/REGISTRY.md` | Master index of all artifacts | When looking for anything |
+| `docs/DOD.md` | Quality gates | Before marking work as done |

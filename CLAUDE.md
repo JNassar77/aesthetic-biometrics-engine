@@ -47,7 +47,24 @@ app/
 └── utils/
     └── geometry.py      # Math helpers (distance, angle, px→mm)
 tests/                   # Test suite
+docs/                    # Project documentation
+  TASKS.md               # Roadmap & backlog
+  FEATURES.md            # Feature catalog
+  CONTRACTS.md           # API & data contracts
+  ARCHITECTURE.md        # Design & math
+  GRAPH.md               # Mermaid diagrams
+  REGISTRY.md            # Master artifact index
+  DOD.md                 # Definition of Done
+  CONTRIBUTING.md        # Dev guide
 ```
+
+## Documentation
+
+Start here depending on what you need:
+- **Building a feature?** → `docs/FEATURES.md` → `docs/CONTRACTS.md` → `docs/DOD.md`
+- **Understanding the system?** → `docs/ARCHITECTURE.md` → `docs/GRAPH.md`
+- **Looking for something?** → `docs/REGISTRY.md`
+- **What's next?** → `docs/TASKS.md`
 
 ## Tech Stack
 

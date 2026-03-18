@@ -8,15 +8,16 @@
 
 | Document | Path | Purpose | Owner |
 |---|---|---|---|
-| Project Context | `CLAUDE.md` | AI assistant context, conventions, architecture overview | Maintained every session |
-| Tasks & Roadmap | `TASKS.md` | Sprint planning, backlog, phase tracking | Updated per feature |
-| Features | `FEATURES.md` | Complete feature catalog with workflows and clinical relevance | Updated per feature |
-| API Contracts | `CONTRACTS.md` | Request/response schemas, error codes, webhook payloads | Updated per API change |
-| Architecture | `ARCHITECTURE.md` | System design, math foundations, security considerations | Updated per structural change |
-| System Graphs | `GRAPH.md` | Mermaid diagrams: system overview, sequence, ER, module deps | Updated per structural change |
-| Contributing | `CONTRIBUTING.md` | Dev setup, branch strategy, code standards, test guide | Updated per process change |
-| Registry | `REGISTRY.md` | This file — master index of all artifacts | Always current |
-| Definition of Done | `DOD.md` | Quality gates for features, fixes, and releases | Baseline, rarely changes |
+| Project Context | `CLAUDE.md` (root) | AI assistant context, conventions, architecture overview | Maintained every session |
+| README | `README.md` (root) | GitHub landing page, quick start | Updated per release |
+| Tasks & Roadmap | `docs/TASKS.md` | Sprint planning, backlog, phase tracking | Updated per feature |
+| Features | `docs/FEATURES.md` | Complete feature catalog with workflows and clinical relevance | Updated per feature |
+| API Contracts | `docs/CONTRACTS.md` | Request/response schemas, error codes, webhook payloads | Updated per API change |
+| Architecture | `docs/ARCHITECTURE.md` | System design, math foundations, security considerations | Updated per structural change |
+| System Graphs | `docs/GRAPH.md` | Mermaid diagrams: system overview, sequence, ER, module deps | Updated per structural change |
+| Contributing | `docs/CONTRIBUTING.md` | Dev setup, branch strategy, code standards, test guide | Updated per process change |
+| Registry | `docs/REGISTRY.md` | This file — master index of all artifacts | Always current |
+| Definition of Done | `docs/DOD.md` | Quality gates for features, fixes, and releases | Baseline, rarely changes |
 
 ---
 
