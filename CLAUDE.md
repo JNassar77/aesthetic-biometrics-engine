@@ -1,0 +1,138 @@
+# Aesthetic Biometrics Engine
+
+## Project Overview
+
+Medical AI backend that extracts biometric facial measurements from standardized photographs (frontal 0°, oblique 45°, profile 90°) for aesthetic surgery and dermatology. Serves as an **Agent-as-a-Service** — receives images via API, returns structured JSON for downstream AI agents and n8n workflows.
+
+**Domain:** Aesthetic medicine (Botulinum toxin, dermal fillers)
+**Owner:** Jihad Nassar / Praxis Nassar
+
+## Architecture
+
+```
+Client/n8n ──POST /api/v1/analyze──▶ FastAPI
+                                        │
+                              ┌─────────┼─────────┐
+                              ▼         ▼         ▼
+                          Frontal   Profile   Oblique
+                          Analyzer  Analyzer  Analyzer
+                              │         │         │
+                              └────┬────┘─────────┘
+                                   ▼
+                            JSON Response
+                              │         │
+                              ▼         ▼
+                          Supabase    n8n Webhook
+```
+
+### Directory Structure
+
+```
+app/
+├── main.py              # FastAPI app entrypoint
+├── config.py            # Pydantic settings (env vars)
+├── api/
+│   └── routes.py        # API endpoints (/analyze, /health)
+├── core/                # Analysis engines (pure logic, no I/O)
+│   ├── landmark_detector.py   # MediaPipe FaceMesh wrapper
+│   ├── image_validator.py     # Quality checks (blur, brightness)
+│   ├── frontal_analyzer.py    # Symmetry, facial thirds, lip ratio
+│   ├── profile_analyzer.py    # E-line, nasolabial angle, chin
+│   └── oblique_analyzer.py    # Ogee curve, midface volume
+├── models/
+│   └── schemas.py       # Pydantic request/response models
+├── services/            # External integrations (Supabase, n8n)
+│   ├── supabase_service.py
+│   └── n8n_service.py
+└── utils/
+    └── geometry.py      # Math helpers (distance, angle, px→mm)
+tests/                   # Test suite
+```
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | FastAPI 0.115 |
+| Face Detection | MediaPipe FaceMesh (478 landmarks) |
+| Image Processing | OpenCV (headless) |
+| Math | NumPy, SciPy |
+| Database | Supabase (AestheticBiometricsDB) |
+| Orchestration | n8n webhooks |
+| Deployment | Docker → Railway |
+
+## Key Conventions
+
+### Code Style
+- Python 3.11+, type hints everywhere
+- Pydantic models for all API input/output
+- Core analyzers are **pure functions** — they take `FaceLandmarks` and return Pydantic models, no side effects
+- Services handle I/O (database, HTTP)
+- All measurements in mm where possible (estimated via face-width heuristic)
+
+### Naming
+- Files: `snake_case.py`
+- Classes: `PascalCase`
+- Functions/variables: `snake_case`
+- API routes: `/api/v1/...` (versioned)
+- Supabase tables: `snake_case`
+
+### Error Handling
+- `QualityWarning` list in every response — never silently degrade
+- HTTP 422 if no face detected
+- HTTP 400 for bad input (missing file, corrupt image)
+- HTTP 413 for oversized images
+- Supabase/n8n failures are non-blocking (warning appended, analysis still returned)
+
+### Testing
+- Tests go in `tests/` mirroring `app/` structure
+- Test files: `test_<module>.py`
+- Use pytest; mock external services, never mock core analyzers
+
+## External Services
+
+### Supabase (AestheticBiometricsDB)
+- **Project ID:** `mbwteypkehrmeqzdzdph`
+- **Region:** eu-west-1
+- **Tables:** `patients`, `biometric_analyses`, `treatment_sessions`
+- **DO NOT** use NovaCoreDB (`ywdwvjriklaevktswnwe`) — that is a separate project
+
+### n8n
+- Webhook URL configured via `N8N_WEBHOOK_URL` env var
+- Payload: flat JSON (full `AnalysisResponse` model)
+
+### GitHub
+- Repo: `JNassar77/aesthetic-biometrics-engine`
+- Branch strategy: `main` (stable) → feature branches → PR
+
+## Common Commands
+
+```bash
+# Local dev
+uvicorn app.main:app --reload --port 8000
+
+# Docker
+docker build -t aesthetic-biometrics .
+docker run -p 8000:8000 --env-file .env aesthetic-biometrics
+
+# Test
+pytest tests/ -v
+
+# API docs
+# → http://localhost:8000/docs (Swagger UI)
+```
+
+## Medical Analysis Reference
+
+### Frontal (0°)
+- **Symmetry:** Paired landmark deviations from median sagittal line
+- **Facial thirds:** Trichion→Glabella / Glabella→Subnasale / Subnasale→Mentum (ideal 1:1:1)
+- **Lip ratio:** Upper:Lower vermilion height (ideal 1:1.6)
+
+### Profile (90°)
+- **Ricketts E-line:** Nose tip to chin line; lips should sit behind it
+- **Nasolabial angle:** Columella↔Subnasale↔Upper lip (ideal 90–105°)
+- **Chin projection:** Pogonion position vs. subnasale vertical
+
+### Oblique (45°)
+- **Ogee curve:** S-curve from forehead through malar to buccal region; flattening = volume loss
