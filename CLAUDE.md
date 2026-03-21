@@ -47,7 +47,8 @@ app/
 │   ├── volume_engine.py       # Ogee curve, temporal, tear trough, jowl (3D)
 │   ├── aging_engine.py        # Muscle tonus, gravitational drift, periorbital
 │   ├── multi_view_fusion.py   # Confidence-weighted landmark fusion (Sprint 5)
-│   └── zone_analyzer.py       # Orchestrates all engines → Zone Report (Sprint 5)
+│   ├── zone_analyzer.py       # Orchestrates all engines → Zone Report (Sprint 5)
+│   └── comparison_engine.py   # Before/After: deltas, improvement score, heatmap (Sprint 7)
 ├── treatment/           # V2 treatment intelligence (Sprint 3+6) ✅
 │   ├── zone_definitions.py    # 19 zones with landmarks, reference ranges
 │   ├── product_database.py    # 14 products, zone→product mapping, vascular risk
@@ -70,7 +71,7 @@ app/
     └── pixel_calibration.py  # Iris-based px→mm calibration + face-width fallback
 models/                  # ML model files (not in git, download manually)
   └── face_landmarker.task  # MediaPipe model (3.6MB, see Common Commands)
-tests/                   # Test suite (300 tests passing)
+tests/                   # Test suite (334 tests passing)
 docs/                    # Project documentation
   TASKS.md               # Roadmap & backlog
   FEATURES.md            # Feature catalog

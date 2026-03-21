@@ -10,7 +10,7 @@
 ```
 Phase 1 ██████████████░░░░░░░░░░  Detection Layer     Sprint 1✅ / 2✅
 Phase 2 ░░░░░░██████████████░░░░  Zone-System          Sprint 3✅ / 4✅ / 5✅
-Phase 3 ░░░░░░░░░░░░████████░░░░  Treatment Intel.     Sprint 6✅ / 7
+Phase 3 ░░░░░░░░░░░░████████████  Treatment Intel.     Sprint 6✅ / 7✅
 Phase 4 ░░░░░░░░░░░░░░░░░░░░████  API + Integration    Sprint 8-9
 Phase 5 ░░░░░░░░░░░░░░░░░░░░████  Validation           Sprint 10-11
 Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██  Deployment           Sprint 12
@@ -146,20 +146,22 @@ Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██
 
 ---
 
-## Sprint 7 — Before/After Vergleich
+## Sprint 7 — Before/After Vergleich ✅ DONE (21.03.2026)
 **Phase:** 3 (Treatment Intelligence)
 **Ziel:** Behandlungserfolg messbar machen
+**Ergebnis:** 1 Modul, 334 Tests bestanden (34 neue)
 
 | # | Task | Datei | Abhaengigkeit |
 |---|------|-------|---------------|
 | 7.1 | Delta-Berechnung pro Zone | `analysis/comparison_engine.py` | Sprint 5 |
 | 7.2 | Verbesserungs-Score | `analysis/comparison_engine.py` | 7.1 |
 | 7.3 | Heatmap-Daten fuer Frontend | `analysis/comparison_engine.py` | 7.1 |
-| 7.4 | Supabase: treatment_comparisons Tabelle | Migration | — |
+| 7.4 | Supabase: treatment_comparisons Tabelle | Migration | → Sprint 8 |
 | 7.5 | Unit Tests Comparison | `tests/` | 7.1-7.3 |
 
 **Deliverable:** `compare(pre, post)` → Delta pro Zone + Gesamtverbesserung
 **Validierung:** Bekannter Vorher/Nachher Fall → positive Deltas in behandelten Zonen
+**Status:** ✅ Abgeschlossen — 334 Tests gruen (34 neue). Migration verschoben auf Sprint 8.
 
 ---
 
@@ -297,7 +299,7 @@ graph LR
 |---|---|---|
 | **M1: Detection Ready** ✅ | Sprint 2 | Neue API, Iris-Kal., Head Pose |
 | **M2: Zone Analysis** ✅ | Sprint 5 | 19 Zonen mit Severity aus 3 Views |
-| **M3: Treatment Plan** | Sprint 7 | Vollstaendiger Behandlungsplan |
+| **M3: Treatment Plan** ✅ | Sprint 7 | Vollstaendiger Behandlungsplan + Before/After |
 | **M4: API Complete** | Sprint 9 | V2 Endpoints, Supabase, n8n |
 | **M5: Validated** | Sprint 11 | Klinisch validiert, getestet |
 | **M6: Production** | Sprint 12 | Live auf Railway |

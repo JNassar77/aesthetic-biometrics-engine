@@ -55,6 +55,7 @@
 | **Product Database** | `app/treatment/product_database.py` | **14 products (HA/CaHA/PLLA/BoNT-A/boosters), zone→product mapping, vascular risk, structural priority** | — | **V2** |
 | **Plan Generator** | `app/treatment/plan_generator.py` | **Zone→treatment plan: severity prioritization, clinical ordering, session planning, volume estimation** | product_database, contraindication_check, zone_definitions | **V2** |
 | **Contraindication Check** | `app/treatment/contraindication_check.py` | **Safety: extreme asymmetry, vascular risk, tear trough, overtreatment, glabella/forehead dependency** | product_database | **V2** |
+| **Comparison Engine** | `app/analysis/comparison_engine.py` | **Before/After: per-zone deltas, improvement score, measurement deltas, heatmap visualization** | zone_analyzer | **V2** |
 | Supabase Service | `app/services/supabase_service.py` | DB persistence, image fetch from storage | supabase, config | V1 |
 | n8n Service | `app/services/n8n_service.py` | Webhook notification to n8n | httpx, config | V1 |
 

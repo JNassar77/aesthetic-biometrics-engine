@@ -126,12 +126,17 @@
   - [x] Ueberbehandlungs-Risiko
   - [x] Glabella/Forehead-Abhaengigkeit
 
-### Sprint 7 — Vergleichs-Engine (Before/After)
+### Sprint 7 — Vergleichs-Engine (Before/After) ✅ (21.03.2026)
 
-- [ ] `POST /api/v2/compare` Endpoint
-- [ ] Delta-Berechnung pro Zone (pre vs. post Assessment)
-- [ ] Verbesserungs-Score pro Zone
-- [ ] Visualisierungsdaten fuer Frontend (Zone-Heatmap-Daten)
+- [x] `analysis/comparison_engine.py` — Kernmodul:
+  - [x] Delta-Berechnung pro Zone (pre vs. post Assessment)
+  - [x] Verbesserungs-Score pro Zone (0-100, gewichtet nach Region)
+  - [x] Measurement-level Deltas mit Ideal-Range-Vergleich
+  - [x] Visualisierungsdaten fuer Frontend (Zone-Heatmap-Daten mit Farb-Codes)
+  - [x] Status-Klassifikation (improved/worsened/unchanged/resolved/new)
+  - [x] Summary-Textgenerierung
+- [ ] `POST /api/v2/compare` Endpoint → Sprint 8
+- [ ] Supabase `treatment_comparisons` Migration → Sprint 8
 
 ---
 
