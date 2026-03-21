@@ -39,10 +39,19 @@ EXPRESSION_THRESHOLDS: dict[str, float] = {
 }
 
 # --- Head pose tolerances per expected view ---
+# "soft" limits produce warnings; "hard" limits reject the image entirely
 VIEW_POSE_TOLERANCES: dict[str, dict[str, float]] = {
     "frontal": {"max_yaw": 12.0, "max_pitch": 10.0, "max_roll": 8.0},
     "oblique": {"max_yaw": 60.0, "max_pitch": 10.0, "max_roll": 8.0},
     "profile": {"max_yaw": 100.0, "max_pitch": 10.0, "max_roll": 8.0},
+}
+
+# Hard rejection thresholds — beyond these, landmarks are too unreliable
+# for any clinical measurement (Sprint 2 addition)
+HARD_REJECTION_THRESHOLDS: dict[str, dict[str, float]] = {
+    "frontal": {"max_yaw": 25.0, "max_pitch": 20.0, "max_roll": 15.0},
+    "oblique": {"max_yaw": 75.0, "max_pitch": 20.0, "max_roll": 15.0},
+    "profile": {"max_yaw": 110.0, "max_pitch": 20.0, "max_roll": 15.0},
 }
 
 
@@ -152,6 +161,75 @@ def check_head_pose(
     return warnings
 
 
+def check_hard_pose_rejection(
+    pose: HeadPose | None,
+    expected_view: str,
+) -> QualityWarning | None:
+    """Check if head pose exceeds hard rejection thresholds.
+
+    Returns a single high-severity warning if image should be rejected,
+    or None if pose is acceptable (may still produce soft warnings).
+    """
+    if pose is None:
+        return None
+
+    limits = HARD_REJECTION_THRESHOLDS.get(expected_view, HARD_REJECTION_THRESHOLDS["frontal"])
+
+    if expected_view == "frontal" and abs(pose.yaw) > limits["max_yaw"]:
+        return QualityWarning(
+            code="POSE_REJECTED",
+            message=(
+                f"Head rotation {pose.yaw:.1f}° exceeds maximum "
+                f"{limits['max_yaw']}° for frontal view. Image rejected."
+            ),
+            severity="critical",
+        )
+
+    if expected_view == "oblique":
+        abs_yaw = abs(pose.yaw)
+        if abs_yaw < 15 or abs_yaw > limits["max_yaw"]:
+            return QualityWarning(
+                code="POSE_REJECTED",
+                message=(
+                    f"Head yaw {pose.yaw:.1f}° is outside acceptable oblique range "
+                    f"(15°–{limits['max_yaw']}°). Image rejected."
+                ),
+                severity="critical",
+            )
+
+    if expected_view == "profile" and abs(pose.yaw) < 55:
+        return QualityWarning(
+            code="POSE_REJECTED",
+            message=(
+                f"Head yaw {pose.yaw:.1f}° is insufficient for profile view "
+                "(need at least 55°). Image rejected."
+            ),
+            severity="critical",
+        )
+
+    if abs(pose.pitch) > limits["max_pitch"]:
+        return QualityWarning(
+            code="POSE_REJECTED",
+            message=(
+                f"Head pitch {abs(pose.pitch):.1f}° exceeds maximum "
+                f"{limits['max_pitch']}°. Image rejected."
+            ),
+            severity="critical",
+        )
+
+    if abs(pose.roll) > limits["max_roll"]:
+        return QualityWarning(
+            code="POSE_REJECTED",
+            message=(
+                f"Head roll {abs(pose.roll):.1f}° exceeds maximum "
+                f"{limits['max_roll']}°. Image rejected."
+            ),
+            severity="critical",
+        )
+
+    return None
+
+
 def check_neutral_expression(blendshapes: dict[str, float]) -> list[QualityWarning]:
     """Warn if patient is not in neutral/relaxed expression."""
     warnings: list[QualityWarning] = []
@@ -203,6 +281,13 @@ def run_quality_gate(
         ))
         return warnings
 
+    # Hard rejection — if pose is too extreme, flag as critical
+    rejection = check_hard_pose_rejection(head_pose, expected_view)
+    if rejection is not None:
+        warnings.append(rejection)
+        return warnings  # Skip further checks — image is rejected
+
+    # Soft warnings for suboptimal but usable pose
     warnings.extend(check_head_pose(head_pose, expected_view))
     warnings.extend(check_neutral_expression(detection_result.blendshapes))
 

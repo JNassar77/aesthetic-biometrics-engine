@@ -122,6 +122,10 @@ def normalize_face_crop(
 ) -> np.ndarray:
     """Crop image to center square around face, eliminating edge lens distortion.
 
+    Smartphone wide-angle lenses cause barrel distortion at image edges.
+    By cropping tightly around the detected face, we ensure landmarks are
+    extracted from the least-distorted central region.
+
     If face_center/face_size are not provided, crops to center of image.
 
     Args:
@@ -158,6 +162,41 @@ def normalize_face_crop(
         return cv2.resize(image, (TARGET_SIZE, TARGET_SIZE))
 
     return cv2.resize(crop, (TARGET_SIZE, TARGET_SIZE))
+
+
+def reprocess_with_face_center(
+    image: np.ndarray,
+    landmarks: "np.ndarray",
+    image_width: int,
+    image_height: int,
+) -> np.ndarray:
+    """Re-crop image using detected face center for better lens distortion removal.
+
+    Called after initial detection to refine the crop around the actual face,
+    not just the image center. This is the Sprint 2 lens-distortion refinement.
+
+    Args:
+        image: Original (non-cropped) BGR image
+        landmarks: (478, 3) normalized landmarks from first detection pass
+        image_width: Width of the image the landmarks were detected on
+        image_height: Height of the image the landmarks were detected on
+
+    Returns:
+        Re-cropped and resized image centered on the detected face.
+    """
+    # Compute face center from nose tip (landmark 4) — most stable point
+    nose = landmarks[4]
+    cx = nose[0] * image_width
+    cy = nose[1] * image_height
+
+    # Estimate face size from bounding box of key landmarks
+    xs = landmarks[:468, 0] * image_width
+    ys = landmarks[:468, 1] * image_height
+    face_w = float(xs.max() - xs.min())
+    face_h = float(ys.max() - ys.min())
+    face_size = max(face_w, face_h)
+
+    return normalize_face_crop(image, face_center=(cx, cy), face_size=face_size)
 
 
 def preprocess(

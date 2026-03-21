@@ -8,8 +8,8 @@
 ## Uebersicht
 
 ```
-Phase 1 ███░░░░░░░░░░░░░░░░░░░░░  Detection Layer     Sprint 1✅ / 2
-Phase 2 ░░░░░░██████████░░░░░░░░  Zone-System          Sprint 3-5
+Phase 1 ██████████████░░░░░░░░░░  Detection Layer     Sprint 1✅ / 2✅
+Phase 2 ░░░░░░██████████░░░░░░░░  Zone-System          Sprint 3✅ / 4✅ / 5
 Phase 3 ░░░░░░░░░░░░░░░░████░░░░  Treatment Intel.     Sprint 6-7
 Phase 4 ░░░░░░░░░░░░░░░░░░░░████  API + Integration    Sprint 8-9
 Phase 5 ░░░░░░░░░░░░░░░░░░░░████  Validation           Sprint 10-11
@@ -39,9 +39,10 @@ Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██
 
 ---
 
-## Sprint 2 — Iris-Kalibrierung + Geometrie
+## Sprint 2 — Iris-Kalibrierung + Geometrie ✅ DONE (21.03.2026)
 **Phase:** 1 (Detection Layer)
 **Ziel:** Alle Messungen in echten Millimetern
+**Ergebnis:** 3 Module, 109 Tests bestanden
 
 | # | Task | Datei | Abhaengigkeit |
 |---|------|-------|---------------|
@@ -55,16 +56,18 @@ Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██
 
 **Deliverable:** `calibrate(landmarks) → px_per_mm` mit < 5% Fehler + Lens Distortion Fix
 **Validierung:** Vergleich gegen bekannten Massstab auf Testbildern
+**Status:** ✅ Abgeschlossen — 109 Tests gruen (60 neue)
 
 ---
 
-## Sprint 3 — Zone-Definitionen + Symmetrie + Proportionen
+## Sprint 3 — Zone-Definitionen + Symmetrie + Proportionen ✅ DONE (21.03.2026)
 **Phase:** 2 (Zone-System)
-**Ziel:** Die 16 Zonen sind definiert, Symmetrie und Proportionen messen in mm
+**Ziel:** Die 19 Zonen sind definiert, Symmetrie und Proportionen messen in mm
+**Ergebnis:** 4 Module, 152 Tests bestanden
 
 | # | Task | Datei | Abhaengigkeit |
 |---|------|-------|---------------|
-| 3.1 | 16 Zone-Definitionen mit Landmark-Mapping | `treatment/zone_definitions.py` | 1.5 |
+| 3.1 | 19 Zone-Definitionen mit Landmark-Mapping | `treatment/zone_definitions.py` | 1.5 |
 | 3.2 | Zone Pydantic Models | `models/zone_models.py` | 3.1 |
 | 3.3 | Symmetrie-Engine (6 Achsen, pro-Zone) | `analysis/symmetry_engine.py` | Sprint 2 |
 | 3.4 | Dynamische Asymmetrie (Blendshapes) | `analysis/symmetry_engine.py` | 1.3 |
@@ -74,12 +77,14 @@ Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██
 
 **Deliverable:** `symmetry_engine.analyze()` + `proportion_engine.analyze()` → Zone-Scores
 **Validierung:** Symmetrisches Gesicht → Score > 95; bewusst asymmetrisch → Score < 70
+**Status:** ✅ Abgeschlossen — 152 Tests gruen (43 neue)
 
 ---
 
-## Sprint 4 — Profil, Volumen, Aging Engines
+## Sprint 4 — Profil, Volumen, Aging Engines ✅ DONE (21.03.2026)
 **Phase:** 2 (Zone-System)
 **Ziel:** Alle medizinischen Messungen implementiert
+**Ergebnis:** 3 Engines, 170 Tests bestanden
 
 | # | Task | Datei | Abhaengigkeit |
 |---|------|-------|---------------|
@@ -94,6 +99,7 @@ Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██
 
 **Deliverable:** 3 neue Engines die Zone-spezifische Findings produzieren
 **Validierung:** Bekannte klinische Faelle korrekt erkannt
+**Status:** ✅ Abgeschlossen — 170 Tests gruen (18 neue)
 
 ---
 

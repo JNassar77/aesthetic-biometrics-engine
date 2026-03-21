@@ -35,11 +35,19 @@ app/
 │   └── routes.py        # V1 API endpoints (/analyze, /health)
 ├── detection/           # V2 landmark detection (Sprint 1) ✅
 │   ├── face_landmarker.py     # Tasks API: 478 pts + blendshapes + matrix
-│   ├── landmark_index.py      # Anatomical groups + 16 zone mappings
+│   ├── landmark_index.py      # Anatomical groups + 19 zone mappings
 │   └── head_pose.py           # Yaw/pitch/roll from transform matrix
-├── pipeline/            # V2 image processing (Sprint 1) ✅
-│   ├── image_preprocessor.py  # EXIF, face-crop, decode, resize
-│   └── quality_gate.py        # Quality + pose + expression checks
+├── pipeline/            # V2 image processing (Sprint 1-2) ✅
+│   ├── image_preprocessor.py  # EXIF, face-crop, decode, resize, reprocess
+│   └── quality_gate.py        # Quality + pose + expression + hard rejection
+├── analysis/            # V2 analysis engines (Sprint 3-4) ✅
+│   ├── symmetry_engine.py     # 6-axis bilateral symmetry + dynamic asymmetry
+│   ├── proportion_engine.py   # Thirds, fifths, golden ratio, lip ratio
+│   ├── profile_engine.py      # E-line, NLA, chin, nasal dorsum, Steiner
+│   ├── volume_engine.py       # Ogee curve, temporal, tear trough, jowl (3D)
+│   └── aging_engine.py        # Muscle tonus, gravitational drift, periorbital
+├── treatment/           # V2 treatment zone system (Sprint 3) ✅
+│   └── zone_definitions.py    # 19 zones with landmarks, reference ranges
 ├── core/                # V1 analysis engines (legacy, still functional)
 │   ├── landmark_detector.py   # Legacy FaceMesh wrapper
 │   ├── image_validator.py     # Legacy quality checks
@@ -47,15 +55,17 @@ app/
 │   ├── profile_analyzer.py    # E-line, nasolabial angle, chin
 │   └── oblique_analyzer.py    # Ogee curve, midface volume
 ├── models/
-│   └── schemas.py       # Pydantic request/response models
+│   ├── schemas.py       # Pydantic request/response models (V1)
+│   └── zone_models.py  # Zone Pydantic models (V2)
 ├── services/            # External integrations (Supabase, n8n)
 │   ├── supabase_service.py
 │   └── n8n_service.py
 └── utils/
-    └── geometry.py      # Math helpers (distance, angle, px→mm)
+    ├── geometry.py      # 2D + 3D math (distance, angle, plane projection)
+    └── pixel_calibration.py  # Iris-based px→mm calibration + face-width fallback
 models/                  # ML model files (not in git, download manually)
   └── face_landmarker.task  # MediaPipe model (3.6MB, see Common Commands)
-tests/                   # Test suite (49 tests passing)
+tests/                   # Test suite (170 tests passing)
 docs/                    # Project documentation
   TASKS.md               # Roadmap & backlog
   FEATURES.md            # Feature catalog

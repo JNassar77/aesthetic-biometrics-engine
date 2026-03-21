@@ -32,13 +32,13 @@
 - [x] `pipeline/quality_gate.py` — Erweiterte Qualitaetskontrolle + Neutral-Expression-Check
 - [ ] V1-Code in `app/core/` als Legacy markieren (nicht loeschen) → verschoben auf Sprint 2
 
-### Sprint 2 — Iris-Kalibrierung + Geometrie-Upgrade
+### Sprint 2 — Iris-Kalibrierung + Geometrie-Upgrade ✅ (21.03.2026)
 
-- [ ] `utils/pixel_calibration.py` — Iris-basierte px→mm Kalibrierung (11.7mm Referenz)
-- [ ] `utils/geometry.py` — Erweitert um 3D-Operationen (nutzt z-Koordinaten)
-- [ ] Unit Tests fuer Kalibrierung und Geometrie
-- [ ] Benchmark: Kalibrierungs-Genauigkeit vs. V1-Schaetzung mit Testbildern
-- [ ] Head-Pose-Validation: Bild ablehnen wenn Kopf zu stark gedreht
+- [x] `utils/pixel_calibration.py` — Iris-basierte px→mm Kalibrierung (11.7mm Referenz)
+- [x] `utils/geometry.py` — Erweitert um 3D-Operationen (nutzt z-Koordinaten)
+- [x] Unit Tests fuer Kalibrierung und Geometrie
+- [x] Benchmark: Kalibrierungs-Genauigkeit vs. V1-Schaetzung mit Testbildern
+- [x] Head-Pose-Validation: Bild ablehnen wenn Kopf zu stark gedreht
 
 ---
 
@@ -46,41 +46,42 @@
 
 > **Ziel:** Das medizinische Herzstaeck — 16 Behandlungszonen mit Severity-Scoring.
 
-### Sprint 3 — Zone-Definitionen + Symmetrie/Proportionen
+### Sprint 3 — Zone-Definitionen + Symmetrie/Proportionen ✅ (21.03.2026)
 
-- [ ] `treatment/zone_definitions.py` — 16 Zonen mit:
-  - [ ] Landmark-Zuordnungen (welche Landmarks gehoeren zu welcher Zone)
-  - [ ] Referenzwerte (Ideal-Ranges pro Messung)
-  - [ ] View-Prioritaeten (welche View ist primaer fuer welche Zone)
-- [ ] `analysis/symmetry_engine.py` — Neu:
-  - [ ] 6 Symmetrie-Achsen (nicht nur Mittellinie)
-  - [ ] Pro-Zone Asymmetrie-Score
-  - [ ] Blendshape-basierte dynamische Asymmetrie
-- [ ] `analysis/proportion_engine.py` — Neu:
-  - [ ] Gesichtsdrittel (mit mm statt px)
-  - [ ] Fifths-Analyse (horizontale Fuenftel)
-  - [ ] Golden Ratio Deviation
-  - [ ] Lip Ratio mit Cupid's-Bow-Analyse
+- [x] `treatment/zone_definitions.py` — 19 Zonen mit:
+  - [x] Landmark-Zuordnungen (welche Landmarks gehoeren zu welcher Zone)
+  - [x] Referenzwerte (Ideal-Ranges pro Messung)
+  - [x] View-Prioritaeten (welche View ist primaer fuer welche Zone)
+- [x] `models/zone_models.py` — Zone Pydantic Models
+- [x] `analysis/symmetry_engine.py` — Neu:
+  - [x] 6 Symmetrie-Achsen (nicht nur Mittellinie)
+  - [x] Pro-Zone Asymmetrie-Score
+  - [x] Blendshape-basierte dynamische Asymmetrie
+- [x] `analysis/proportion_engine.py` — Neu:
+  - [x] Gesichtsdrittel (mit mm statt px)
+  - [x] Fifths-Analyse (horizontale Fuenftel)
+  - [x] Golden Ratio Deviation
+  - [x] Lip Ratio mit Cupid's-Bow-Analyse
 
-### Sprint 4 — Profil-, Volumen- und Aging-Engines
+### Sprint 4 — Profil-, Volumen- und Aging-Engines ✅ (21.03.2026)
 
-- [ ] `analysis/profile_engine.py` — Erweitert:
-  - [ ] Ricketts E-Line (jetzt in echten mm via Iris-Kalibrierung)
-  - [ ] Nasolabial-Winkel
-  - [ ] Chin Projection
-  - [ ] **Neu:** Nasal dorsum analysis (Hump/Saddle)
-  - [ ] **Neu:** Lip projection relative to Steiner line
-  - [ ] **Neu:** Chin-neck angle (cervicomental)
-- [ ] `analysis/volume_engine.py` — Neu:
-  - [ ] Ogee Curve (verbessert mit 3D-Depth-Daten)
-  - [ ] Temporal Hollowing Detection
-  - [ ] Tear Trough Depth Estimation
-  - [ ] Pre-jowl Sulcus Detection
-  - [ ] Buccal Corridor Analysis
-- [ ] `analysis/aging_engine.py` — Neu:
-  - [ ] Blendshape-Muster → Muskeltonus-Profil
-  - [ ] Gravitationelle Veraenderungen (Landmark-Drift nach unten)
-  - [ ] Periorbitale Analyse (Crow's feet, unter-Lid Laxitaet)
+- [x] `analysis/profile_engine.py` — Erweitert:
+  - [x] Ricketts E-Line (jetzt in echten mm via Iris-Kalibrierung)
+  - [x] Nasolabial-Winkel
+  - [x] Chin Projection
+  - [x] **Neu:** Nasal dorsum analysis (Hump/Saddle)
+  - [x] **Neu:** Lip projection relative to Steiner line
+  - [x] **Neu:** Chin-neck angle (cervicomental)
+- [x] `analysis/volume_engine.py` — Neu:
+  - [x] Ogee Curve (verbessert mit 3D-Depth-Daten)
+  - [x] Temporal Hollowing Detection
+  - [x] Tear Trough Depth Estimation
+  - [x] Pre-jowl Sulcus Detection
+  - [ ] Buccal Corridor Analysis → verschoben auf Sprint 5 (abhaengig von Multi-View)
+- [x] `analysis/aging_engine.py` — Neu:
+  - [x] Blendshape-Muster → Muskeltonus-Profil
+  - [x] Gravitationelle Veraenderungen (Landmark-Drift nach unten)
+  - [x] Periorbitale Analyse (Crow's feet, unter-Lid Laxitaet)
 
 ### Sprint 5 — Multi-View Fusion + Zone Analyzer
 

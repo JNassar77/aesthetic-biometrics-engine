@@ -41,7 +41,15 @@
 | Frontal Analyzer (legacy) | `app/core/frontal_analyzer.py` | Symmetry, facial thirds, lip ratio | landmark_detector, geometry | V1 |
 | Profile Analyzer (legacy) | `app/core/profile_analyzer.py` | E-line, nasolabial angle, chin projection | landmark_detector, geometry | V1 |
 | Oblique Analyzer (legacy) | `app/core/oblique_analyzer.py` | Ogee curve, midface volume | landmark_detector, geometry | V1 |
-| Geometry Utils | `app/utils/geometry.py` | Distance, angle, px→mm, point-to-line math | numpy | V1 |
+| **Pixel Calibration** | `app/utils/pixel_calibration.py` | **Iris-based px→mm calibration + face-width fallback** | numpy | **V2** |
+| **Geometry Utils** | `app/utils/geometry.py` | **2D + 3D distance, angle, plane projection, sagittal plane** | numpy | **V2** |
+| **Zone Definitions** | `app/treatment/zone_definitions.py` | **19 treatment zones with landmarks, reference ranges, view priorities** | landmark_index | **V2** |
+| **Zone Models** | `app/models/zone_models.py` | **Pydantic models for zone results, symmetry, proportions** | pydantic | **V2** |
+| **Symmetry Engine** | `app/analysis/symmetry_engine.py` | **6-axis bilateral symmetry + blendshape dynamic asymmetry** | face_landmarker, pixel_calibration | **V2** |
+| **Proportion Engine** | `app/analysis/proportion_engine.py` | **Facial thirds, fifths, golden ratio, lip ratio + Cupid's bow** | face_landmarker, pixel_calibration | **V2** |
+| **Profile Engine** | `app/analysis/profile_engine.py` | **E-line, nasolabial angle, chin projection, nasal dorsum, Steiner, cervicomental** | face_landmarker, pixel_calibration, geometry | **V2** |
+| **Volume Engine** | `app/analysis/volume_engine.py` | **Ogee curve, temporal hollowing, tear trough, jowl assessment (3D depth)** | face_landmarker, pixel_calibration, geometry | **V2** |
+| **Aging Engine** | `app/analysis/aging_engine.py` | **Muscle tonus from blendshapes, gravitational drift, periorbital aging** | face_landmarker, pixel_calibration | **V2** |
 | Supabase Service | `app/services/supabase_service.py` | DB persistence, image fetch from storage | supabase, config | V1 |
 | n8n Service | `app/services/n8n_service.py` | Webhook notification to n8n | httpx, config | V1 |
 
