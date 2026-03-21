@@ -83,17 +83,19 @@
   - [x] Gravitationelle Veraenderungen (Landmark-Drift nach unten)
   - [x] Periorbitale Analyse (Crow's feet, unter-Lid Laxitaet)
 
-### Sprint 5 — Multi-View Fusion + Zone Analyzer
+### Sprint 5 — Multi-View Fusion + Zone Analyzer ✅ (21.03.2026)
 
-- [ ] `analysis/multi_view_fusion.py` — Das Kernmodul:
-  - [ ] Confidence-gewichtete Fusion wenn Zone in mehreren Views sichtbar
-  - [ ] Widerspruechs-Erkennung zwischen Views
-  - [ ] Finale Severity-Berechnung pro Zone
-- [ ] `analysis/zone_analyzer.py` — Orchestriert alle Engines:
-  - [ ] Mappt Engine-Ergebnisse auf Zonen
-  - [ ] Erzeugt Zone-Reports mit Findings-Texten
-  - [ ] Sortiert nach Severity
-- [ ] Integration Tests: 3 Testbilder → vollstaendiger Zone-Report
+- [x] `analysis/multi_view_fusion.py` — Das Kernmodul:
+  - [x] Confidence-gewichtete Fusion wenn Zone in mehreren Views sichtbar
+  - [x] Widerspruechs-Erkennung zwischen Views
+  - [x] Finale Severity-Berechnung pro Zone
+- [x] `analysis/zone_analyzer.py` — Orchestriert alle Engines:
+  - [x] Mappt Engine-Ergebnisse auf Zonen
+  - [x] Erzeugt Zone-Reports mit Findings-Texten
+  - [x] Sortiert nach Severity
+  - [x] Aesthetic Score (Composite KPI, 0-100)
+- [x] `pipeline/quality_gate.py` — Neutral-Expression Deviation Score hinzugefuegt
+- [x] Integration Tests: 54 neue Tests (224 total), alle gruen
 
 ---
 

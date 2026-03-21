@@ -9,7 +9,7 @@
 
 ```
 Phase 1 ██████████████░░░░░░░░░░  Detection Layer     Sprint 1✅ / 2✅
-Phase 2 ░░░░░░██████████░░░░░░░░  Zone-System          Sprint 3✅ / 4✅ / 5
+Phase 2 ░░░░░░██████████████░░░░  Zone-System          Sprint 3✅ / 4✅ / 5✅
 Phase 3 ░░░░░░░░░░░░░░░░████░░░░  Treatment Intel.     Sprint 6-7
 Phase 4 ░░░░░░░░░░░░░░░░░░░░████  API + Integration    Sprint 8-9
 Phase 5 ░░░░░░░░░░░░░░░░░░░░████  Validation           Sprint 10-11
@@ -103,9 +103,10 @@ Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██
 
 ---
 
-## Sprint 5 — Multi-View Fusion + Zone Analyzer
+## Sprint 5 — Multi-View Fusion + Zone Analyzer ✅ DONE (21.03.2026)
 **Phase:** 2 (Zone-System)
 **Ziel:** 3 Views → 1 fusioniertes Zone-Profil
+**Ergebnis:** 2 Module (+ 1 erweitert), 224 Tests bestanden
 
 | # | Task | Datei | Abhaengigkeit |
 |---|------|-------|---------------|
@@ -120,6 +121,7 @@ Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██
 
 **Deliverable:** `zone_analyzer.analyze(frontal, profile, oblique)` → Zone-Report + Aesthetic Score
 **Validierung:** 3 Testbilder ergeben plausiblen Report; Blendshapes pro View separat
+**Status:** ✅ Abgeschlossen — 224 Tests gruen (54 neue)
 
 ---
 
@@ -291,8 +293,8 @@ graph LR
 
 | Meilenstein | Nach Sprint | Was steht |
 |---|---|---|
-| **M1: Detection Ready** | Sprint 2 | Neue API, Iris-Kal., Head Pose |
-| **M2: Zone Analysis** | Sprint 5 | 16 Zonen mit Severity aus 3 Views |
+| **M1: Detection Ready** ✅ | Sprint 2 | Neue API, Iris-Kal., Head Pose |
+| **M2: Zone Analysis** ✅ | Sprint 5 | 19 Zonen mit Severity aus 3 Views |
 | **M3: Treatment Plan** | Sprint 7 | Vollstaendiger Behandlungsplan |
 | **M4: API Complete** | Sprint 9 | V2 Endpoints, Supabase, n8n |
 | **M5: Validated** | Sprint 11 | Klinisch validiert, getestet |

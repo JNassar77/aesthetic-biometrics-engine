@@ -50,6 +50,8 @@
 | **Profile Engine** | `app/analysis/profile_engine.py` | **E-line, nasolabial angle, chin projection, nasal dorsum, Steiner, cervicomental** | face_landmarker, pixel_calibration, geometry | **V2** |
 | **Volume Engine** | `app/analysis/volume_engine.py` | **Ogee curve, temporal hollowing, tear trough, jowl assessment (3D depth)** | face_landmarker, pixel_calibration, geometry | **V2** |
 | **Aging Engine** | `app/analysis/aging_engine.py` | **Muscle tonus from blendshapes, gravitational drift, periorbital aging** | face_landmarker, pixel_calibration | **V2** |
+| **Multi-View Fusion** | `app/analysis/multi_view_fusion.py` | **Confidence-weighted landmark fusion across views + contradiction detection** | zone_definitions | **V2** |
+| **Zone Analyzer** | `app/analysis/zone_analyzer.py` | **Orchestrates all engines → Zone Report + Aesthetic Score** | all engines, multi_view_fusion, zone_definitions | **V2** |
 | Supabase Service | `app/services/supabase_service.py` | DB persistence, image fetch from storage | supabase, config | V1 |
 | n8n Service | `app/services/n8n_service.py` | Webhook notification to n8n | httpx, config | V1 |
 

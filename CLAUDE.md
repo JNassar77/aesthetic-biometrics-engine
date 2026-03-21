@@ -40,12 +40,14 @@ app/
 ├── pipeline/            # V2 image processing (Sprint 1-2) ✅
 │   ├── image_preprocessor.py  # EXIF, face-crop, decode, resize, reprocess
 │   └── quality_gate.py        # Quality + pose + expression + hard rejection
-├── analysis/            # V2 analysis engines (Sprint 3-4) ✅
+├── analysis/            # V2 analysis engines (Sprint 3-5) ✅
 │   ├── symmetry_engine.py     # 6-axis bilateral symmetry + dynamic asymmetry
 │   ├── proportion_engine.py   # Thirds, fifths, golden ratio, lip ratio
 │   ├── profile_engine.py      # E-line, NLA, chin, nasal dorsum, Steiner
 │   ├── volume_engine.py       # Ogee curve, temporal, tear trough, jowl (3D)
-│   └── aging_engine.py        # Muscle tonus, gravitational drift, periorbital
+│   ├── aging_engine.py        # Muscle tonus, gravitational drift, periorbital
+│   ├── multi_view_fusion.py   # Confidence-weighted landmark fusion (Sprint 5)
+│   └── zone_analyzer.py       # Orchestrates all engines → Zone Report (Sprint 5)
 ├── treatment/           # V2 treatment zone system (Sprint 3) ✅
 │   └── zone_definitions.py    # 19 zones with landmarks, reference ranges
 ├── core/                # V1 analysis engines (legacy, still functional)
@@ -65,7 +67,7 @@ app/
     └── pixel_calibration.py  # Iris-based px→mm calibration + face-width fallback
 models/                  # ML model files (not in git, download manually)
   └── face_landmarker.task  # MediaPipe model (3.6MB, see Common Commands)
-tests/                   # Test suite (170 tests passing)
+tests/                   # Test suite (224 tests passing)
 docs/                    # Project documentation
   TASKS.md               # Roadmap & backlog
   FEATURES.md            # Feature catalog

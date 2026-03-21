@@ -254,6 +254,30 @@ def check_neutral_expression(blendshapes: dict[str, float]) -> list[QualityWarni
     return warnings
 
 
+def compute_expression_deviation(blendshapes: dict[str, float]) -> float:
+    """Compute how far from neutral the expression is (0.0 = neutral, 1.0 = extreme).
+
+    Used by the zone analyzer to weight blendshape-based findings.
+    Higher deviation means blendshape-based measurements (muscle tonus,
+    dynamic asymmetry) are less reliable for clinical interpretation.
+    """
+    if not blendshapes:
+        return 0.0
+
+    deviations = []
+    for shape_name, threshold in EXPRESSION_THRESHOLDS.items():
+        value = blendshapes.get(shape_name, 0.0)
+        if value > threshold:
+            # How much over the threshold, normalized
+            excess = (value - threshold) / max(1.0 - threshold, 0.01)
+            deviations.append(min(1.0, excess))
+
+    if not deviations:
+        return 0.0
+
+    return min(1.0, sum(deviations) / len(deviations))
+
+
 def run_quality_gate(
     image: np.ndarray,
     detection_result,
