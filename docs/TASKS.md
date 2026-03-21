@@ -103,21 +103,28 @@
 
 > **Ziel:** Aus Analyse wird Behandlungsplan. Das Alleinstellungsmerkmal.
 
-### Sprint 6 — Behandlungsplan-Generator
+### Sprint 6 — Behandlungsplan-Generator ✅ (21.03.2026)
 
-- [ ] `treatment/product_database.py` — Filler/Botox Wissensbasis:
-  - [ ] Produkt-Eigenschaften (G', Viskositaet, Haltbarkeit)
-  - [ ] Zone-zu-Produkt Mapping
-  - [ ] Technik-Empfehlungen pro Zone
-  - [ ] Volumen-Schaetzungen
-- [ ] `treatment/plan_generator.py` — Kernlogik:
-  - [ ] Severity-basierte Priorisierung
-  - [ ] Klinische Reihenfolge-Logik (Struktur → Detail)
-  - [ ] Sitzungs-Planung (was in Session 1 vs. 2)
-  - [ ] Gesamtvolumen-Schaetzung
-- [ ] `treatment/contraindication_check.py` — Sicherheit:
-  - [ ] Gefaessrisiko-Zonen markieren
-  - [ ] Warnungen bei extremen Asymmetrien (moegliche Pathologie)
+- [x] `treatment/product_database.py` — Filler/Botox Wissensbasis:
+  - [x] Produkt-Eigenschaften (G', Viskositaet, Haltbarkeit) — 14 Produkte
+  - [x] Zone-zu-Produkt Mapping — 17 Zonen mit Empfehlungen
+  - [x] Technik-Empfehlungen pro Zone
+  - [x] Volumen-Schaetzungen
+  - [x] Neurotoxin-Indikationen (3 Zonen)
+  - [x] Vaskulaere Risiko-Zonen (8 Zonen)
+  - [x] Strukturelle Priorisierung (alle 19 Zonen)
+- [x] `treatment/plan_generator.py` — Kernlogik:
+  - [x] Severity-basierte Priorisierung
+  - [x] Klinische Reihenfolge-Logik (Struktur → Detail)
+  - [x] Sitzungs-Planung (was in Session 1 vs. 2)
+  - [x] Gesamtvolumen-Schaetzung
+  - [x] Composite Priority Score (severity × 2 + structural weight)
+- [x] `treatment/contraindication_check.py` — Sicherheit:
+  - [x] Gefaessrisiko-Zonen markieren
+  - [x] Warnungen bei extremen Asymmetrien (moegliche Pathologie)
+  - [x] Tear-Trough-Spezialwarnung
+  - [x] Ueberbehandlungs-Risiko
+  - [x] Glabella/Forehead-Abhaengigkeit
 
 ### Sprint 7 — Vergleichs-Engine (Before/After)
 

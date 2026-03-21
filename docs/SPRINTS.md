@@ -10,7 +10,7 @@
 ```
 Phase 1 ██████████████░░░░░░░░░░  Detection Layer     Sprint 1✅ / 2✅
 Phase 2 ░░░░░░██████████████░░░░  Zone-System          Sprint 3✅ / 4✅ / 5✅
-Phase 3 ░░░░░░░░░░░░░░░░████░░░░  Treatment Intel.     Sprint 6-7
+Phase 3 ░░░░░░░░░░░░████████░░░░  Treatment Intel.     Sprint 6✅ / 7
 Phase 4 ░░░░░░░░░░░░░░░░░░░░████  API + Integration    Sprint 8-9
 Phase 5 ░░░░░░░░░░░░░░░░░░░░████  Validation           Sprint 10-11
 Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██  Deployment           Sprint 12
@@ -125,9 +125,10 @@ Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██
 
 ---
 
-## Sprint 6 — Behandlungsplan-Generator
+## Sprint 6 — Behandlungsplan-Generator ✅ DONE (21.03.2026)
 **Phase:** 3 (Treatment Intelligence)
 **Ziel:** Zone-Report → konkreter Behandlungsplan
+**Ergebnis:** 3 Module, 300 Tests bestanden (76 neue)
 
 | # | Task | Datei | Abhaengigkeit |
 |---|------|-------|---------------|
@@ -141,6 +142,7 @@ Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██
 
 **Deliverable:** `plan_generator.generate(zones)` → priorisierter Behandlungsplan
 **Validierung:** Midface-Volume-Loss → Voluma empfohlen, korrekte Reihenfolge
+**Status:** ✅ Abgeschlossen — 300 Tests gruen (76 neue)
 
 ---
 

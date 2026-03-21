@@ -52,6 +52,9 @@
 | **Aging Engine** | `app/analysis/aging_engine.py` | **Muscle tonus from blendshapes, gravitational drift, periorbital aging** | face_landmarker, pixel_calibration | **V2** |
 | **Multi-View Fusion** | `app/analysis/multi_view_fusion.py` | **Confidence-weighted landmark fusion across views + contradiction detection** | zone_definitions | **V2** |
 | **Zone Analyzer** | `app/analysis/zone_analyzer.py` | **Orchestrates all engines → Zone Report + Aesthetic Score** | all engines, multi_view_fusion, zone_definitions | **V2** |
+| **Product Database** | `app/treatment/product_database.py` | **14 products (HA/CaHA/PLLA/BoNT-A/boosters), zone→product mapping, vascular risk, structural priority** | — | **V2** |
+| **Plan Generator** | `app/treatment/plan_generator.py` | **Zone→treatment plan: severity prioritization, clinical ordering, session planning, volume estimation** | product_database, contraindication_check, zone_definitions | **V2** |
+| **Contraindication Check** | `app/treatment/contraindication_check.py` | **Safety: extreme asymmetry, vascular risk, tear trough, overtreatment, glabella/forehead dependency** | product_database | **V2** |
 | Supabase Service | `app/services/supabase_service.py` | DB persistence, image fetch from storage | supabase, config | V1 |
 | n8n Service | `app/services/n8n_service.py` | Webhook notification to n8n | httpx, config | V1 |
 
