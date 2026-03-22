@@ -10,14 +10,17 @@ Endpoints:
 
 from __future__ import annotations
 
-from uuid import UUID
+import logging
+from datetime import datetime, timezone
+from uuid import UUID, uuid4
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
 
 from app.config import settings
 from app.pipeline.orchestrator import run_pipeline, PipelineResult
 from app.models.schemas_v2 import (
     AssessmentResponse,
+    AssessmentSummary,
     CalibrationResponse,
     CompareRequest,
     ComparisonResponse,
@@ -41,6 +44,8 @@ from app.models.schemas_v2 import (
     ZoneMeasurementResponse,
     ZoneResultResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -243,6 +248,81 @@ def _build_assessment_response(
     )
 
 
+# ──────────────────────── Background Persistence ────────────────────────
+
+async def _persist_assessment(
+    response: AssessmentResponse,
+    frontal_bytes: bytes | None,
+    profile_bytes: bytes | None,
+    oblique_bytes: bytes | None,
+    organization_id: UUID,
+) -> None:
+    """Persist assessment to Supabase (runs as BackgroundTask)."""
+    from app.services.supabase_service import save_assessment, upload_image
+    from app.services.n8n_service import notify_n8n_v2
+
+    assessment_id = response.assessment_id
+    patient_id = response.patient_id
+
+    # Upload images to storage
+    frontal_path = profile_path = oblique_path = None
+    bucket = "patient-images"
+    base_path = f"{organization_id}/{assessment_id}"
+
+    try:
+        if frontal_bytes:
+            frontal_path = await upload_image(
+                bucket, f"{base_path}/frontal.jpg", frontal_bytes
+            )
+        if profile_bytes:
+            profile_path = await upload_image(
+                bucket, f"{base_path}/profile.jpg", profile_bytes
+            )
+        if oblique_bytes:
+            oblique_path = await upload_image(
+                bucket, f"{base_path}/oblique.jpg", oblique_bytes
+            )
+    except Exception as exc:
+        logger.warning("Image upload failed: %s", exc)
+
+    # Save assessment record
+    try:
+        response_dict = response.model_dump(mode="json")
+        await save_assessment(
+            assessment_id=assessment_id,
+            organization_id=organization_id,
+            patient_id=patient_id,
+            status="completed" if response.zones else "partial",
+            image_quality=response_dict.get("image_quality"),
+            global_metrics=response_dict.get("global_metrics"),
+            zones=response_dict.get("zones"),
+            treatment_plan=response_dict.get("treatment_plan"),
+            aesthetic_score=response.aesthetic_score,
+            calibration_method=response.calibration.method,
+            engine_version=response.engine_version,
+            processing_time_ms=response.processing_time_ms,
+            frontal_image_path=frontal_path,
+            profile_image_path=profile_path,
+            oblique_image_path=oblique_path,
+        )
+        logger.info("Assessment %s persisted to Supabase", assessment_id)
+    except Exception as exc:
+        logger.error("Assessment persistence failed: %s", exc)
+
+    # Notify n8n
+    try:
+        await notify_n8n_v2(
+            assessment_id=str(assessment_id),
+            patient_id=str(patient_id) if patient_id else None,
+            aesthetic_score=response.aesthetic_score,
+            zones_count=len(response.zones),
+            views_analyzed=response.views_analyzed,
+            payload=response_dict,
+        )
+    except Exception as exc:
+        logger.warning("n8n notification failed: %s", exc)
+
+
 # ──────────────────────── Endpoints ────────────────────────
 
 @router.post(
@@ -255,10 +335,12 @@ def _build_assessment_response(
     ),
 )
 async def create_assessment(
+    background_tasks: BackgroundTasks,
     frontal: UploadFile | None = File(None, description="Frontal (0°) face image"),
     profile: UploadFile | None = File(None, description="Profile (90°) face image"),
     oblique: UploadFile | None = File(None, description="Oblique (45°) face image"),
     patient_id: str | None = Form(None, description="Patient UUID (optional)"),
+    organization_id: str | None = Form(None, description="Organization UUID (for Supabase persistence)"),
 ):
     """POST /api/v2/assessment — 3 images → full analysis + treatment plan."""
 
@@ -287,6 +369,14 @@ async def create_assessment(
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid patient_id format. Must be a UUID.")
 
+    # Parse organization_id
+    parsed_org_id: UUID | None = None
+    if organization_id:
+        try:
+            parsed_org_id = UUID(organization_id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid organization_id format. Must be a UUID.")
+
     # Run pipeline
     result = run_pipeline(
         frontal_bytes=frontal_bytes,
@@ -310,7 +400,20 @@ async def create_assessment(
             )
         raise HTTPException(status_code=422, detail=error_msg)
 
-    return _build_assessment_response(result, parsed_patient_id)
+    response = _build_assessment_response(result, parsed_patient_id)
+
+    # Schedule async persistence (non-blocking)
+    if parsed_org_id and settings.supabase_url:
+        background_tasks.add_task(
+            _persist_assessment,
+            response,
+            frontal_bytes,
+            profile_bytes,
+            oblique_bytes,
+            parsed_org_id,
+        )
+
+    return response
 
 
 @router.post(
@@ -320,19 +423,146 @@ async def create_assessment(
     description="Computes zone-by-zone deltas and improvement score between two assessments.",
 )
 async def compare_assessments(request: CompareRequest):
-    """POST /api/v2/compare — before/after comparison.
+    """POST /api/v2/compare — before/after comparison."""
+    from app.services.supabase_service import get_assessment
+    from app.analysis.comparison_engine import compare, ComparisonResult
+    from app.models.zone_models import ZoneResult, ZoneFinding, ZoneMeasurement
+    from app.analysis.zone_analyzer import ZoneReport, GlobalMetrics
+    from app.models.zone_models import CalibrationInfo
 
-    NOTE: This endpoint requires Supabase to be configured to fetch stored
-    assessments. Currently returns a placeholder until Sprint 9 integration.
-    """
-    # TODO (Sprint 9): Fetch pre/post ZoneReports from Supabase
-    # For now, return 501 until Supabase integration is complete
-    raise HTTPException(
-        status_code=501,
-        detail=(
-            "Comparison endpoint requires Supabase integration (Sprint 9). "
-            "Use the comparison_engine.compare() function directly for now."
-        ),
+    if not settings.supabase_url:
+        raise HTTPException(
+            status_code=503,
+            detail="Supabase is not configured. Cannot fetch stored assessments.",
+        )
+
+    # Fetch both assessments
+    pre_data = await get_assessment(request.pre_assessment_id)
+    post_data = await get_assessment(request.post_assessment_id)
+
+    if pre_data is None:
+        raise HTTPException(status_code=404, detail=f"Pre-assessment {request.pre_assessment_id} not found.")
+    if post_data is None:
+        raise HTTPException(status_code=404, detail=f"Post-assessment {request.post_assessment_id} not found.")
+
+    # Reconstruct ZoneReports from stored JSONB
+    def _reconstruct_zone_report(data: dict) -> ZoneReport:
+        zones_raw = data.get("zones") or []
+        zones = []
+        for z in zones_raw:
+            zones.append(ZoneResult(
+                zone_id=z["zone_id"],
+                zone_name=z["zone_name"],
+                region=z["region"],
+                severity=z["severity"],
+                findings=[
+                    ZoneFinding(
+                        description=f["description"],
+                        severity_contribution=f["severity_contribution"],
+                        source_view=f["source_view"],
+                    )
+                    for f in z.get("findings", [])
+                ],
+                measurements=[
+                    ZoneMeasurement(
+                        name=m["name"],
+                        value=m["value"],
+                        unit=m.get("unit", "mm"),
+                        ideal_min=m.get("ideal_min"),
+                        ideal_max=m.get("ideal_max"),
+                        deviation_pct=m.get("deviation_pct"),
+                    )
+                    for m in z.get("measurements", [])
+                ],
+                primary_view=z.get("primary_view", "frontal"),
+                confirmed_by=z.get("confirmed_by", []),
+                calibration_method=z.get("calibration_method", "iris"),
+            ))
+
+        gm_raw = data.get("global_metrics") or {}
+        thirds = gm_raw.get("facial_thirds", {})
+        global_metrics = GlobalMetrics(
+            symmetry_index=gm_raw.get("symmetry_index", 0.0),
+            facial_thirds={
+                "upper": thirds.get("upper", 0.33),
+                "middle": thirds.get("middle", 0.33),
+                "lower": thirds.get("lower", 0.34),
+            },
+            golden_ratio_deviation=gm_raw.get("golden_ratio_deviation", 0.0),
+            lip_ratio=gm_raw.get("lip_ratio"),
+        )
+
+        calibration = CalibrationInfo(
+            method=data.get("calibration_method", "unknown"),
+            px_per_mm=0.0,
+            confidence=0.0,
+        )
+
+        return ZoneReport(
+            zones=zones,
+            global_metrics=global_metrics,
+            calibration=calibration,
+            aesthetic_score=data.get("aesthetic_score", 0.0),
+            expression_deviation=0.0,
+        )
+
+    pre_report = _reconstruct_zone_report(pre_data)
+    post_report = _reconstruct_zone_report(post_data)
+
+    # Run comparison
+    comp_result: ComparisonResult = compare(pre_report, post_report)
+
+    # Convert to API response
+    return ComparisonResponse(
+        pre_assessment_id=request.pre_assessment_id,
+        post_assessment_id=request.post_assessment_id,
+        zone_deltas=[
+            ZoneDeltaResponse(
+                zone_id=zd.zone_id,
+                zone_name=zd.zone_name,
+                region=zd.region,
+                pre_severity=zd.pre_severity,
+                post_severity=zd.post_severity,
+                severity_delta=zd.severity_delta,
+                severity_improvement_pct=zd.severity_improvement_pct,
+                measurement_deltas=[
+                    MeasurementDeltaResponse(
+                        name=md.name,
+                        pre_value=md.pre_value,
+                        post_value=md.post_value,
+                        delta=md.delta,
+                        delta_pct=md.delta_pct,
+                        unit=md.unit,
+                        improved=md.improved,
+                    )
+                    for md in zd.measurement_deltas
+                ],
+                status=zd.status,
+            )
+            for zd in comp_result.zone_deltas
+        ],
+        improvement_score=comp_result.improvement_score,
+        aesthetic_score_pre=comp_result.aesthetic_score_pre,
+        aesthetic_score_post=comp_result.aesthetic_score_post,
+        aesthetic_score_delta=comp_result.aesthetic_score_delta,
+        zones_improved=comp_result.zones_improved,
+        zones_worsened=comp_result.zones_worsened,
+        zones_unchanged=comp_result.zones_unchanged,
+        zones_resolved=comp_result.zones_resolved,
+        zones_new=comp_result.zones_new,
+        heatmap=[
+            HeatmapEntryResponse(
+                zone_id=h.zone_id,
+                zone_name=h.zone_name,
+                region=h.region,
+                pre_intensity=h.pre_intensity,
+                post_intensity=h.post_intensity,
+                delta_intensity=h.delta_intensity,
+                color_code=h.color_code,
+            )
+            for h in comp_result.heatmap
+        ],
+        summary=comp_result.summary,
     )
 
 
@@ -343,17 +573,41 @@ async def compare_assessments(request: CompareRequest):
     description="Returns all assessments for a patient, ordered by date.",
 )
 async def get_patient_history(patient_id: UUID):
-    """GET /api/v2/patients/{id}/history — assessment timeline.
+    """GET /api/v2/patients/{id}/history — assessment timeline."""
+    from app.services.supabase_service import get_patient_history as fetch_history
 
-    NOTE: Requires Supabase integration. Placeholder until Sprint 9.
-    """
-    # TODO (Sprint 9): Query Supabase for patient's assessments
-    raise HTTPException(
-        status_code=501,
-        detail=(
-            "Patient history endpoint requires Supabase integration (Sprint 9). "
-            "Assessments will be queryable once persistence is configured."
-        ),
+    if not settings.supabase_url:
+        raise HTTPException(
+            status_code=503,
+            detail="Supabase is not configured. Cannot query patient history.",
+        )
+
+    rows = await fetch_history(patient_id)
+
+    assessments = []
+    for row in rows:
+        zones = row.get("zones") or []
+        primary_concern = None
+        if zones:
+            # Pick highest severity zone as primary concern
+            sorted_zones = sorted(zones, key=lambda z: z.get("severity", 0), reverse=True)
+            if sorted_zones:
+                primary_concern = sorted_zones[0].get("zone_name")
+
+        assessments.append(AssessmentSummary(
+            assessment_id=UUID(row["id"]),
+            timestamp=row.get("created_at", datetime.now(timezone.utc).isoformat()),
+            aesthetic_score=row.get("aesthetic_score", 0.0) or 0.0,
+            zones_count=len(zones),
+            primary_concern=primary_concern,
+            views_analyzed=[],
+            engine_version=row.get("engine_version", "2.0.0"),
+        ))
+
+    return PatientHistoryResponse(
+        patient_id=patient_id,
+        assessments=assessments,
+        total_count=len(assessments),
     )
 
 

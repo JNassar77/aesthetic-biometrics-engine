@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import router as v1_router
+from app.api.v1_routes import router as v1_router
 from app.api.v2_routes import router as v2_router
 from app.config import settings
+from app.utils.logging import setup_logging
+
+setup_logging()
 
 app = FastAPI(
     title="Aesthetic Biometrics Engine",

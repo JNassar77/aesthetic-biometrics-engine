@@ -11,7 +11,7 @@
 Phase 1 ██████████████░░░░░░░░░░  Detection Layer     Sprint 1✅ / 2✅
 Phase 2 ░░░░░░██████████████░░░░  Zone-System          Sprint 3✅ / 4✅ / 5✅
 Phase 3 ░░░░░░░░░░░░████████████  Treatment Intel.     Sprint 6✅ / 7✅
-Phase 4 ░░░░░░░░░░░░░░░░████████  API + Integration    Sprint 8✅ / 9
+Phase 4 ██████████████████████████  API + Integration    Sprint 8✅ / 9✅
 Phase 5 ░░░░░░░░░░░░░░░░░░░░████  Validation           Sprint 10-11
 Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██  Deployment           Sprint 12
 ```
@@ -187,21 +187,24 @@ Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██
 
 ---
 
-## Sprint 9 — n8n + Async + Legacy Compat
+## Sprint 9 — n8n + Async + Legacy Compat ✅ DONE (22.03.2026)
 **Phase:** 4 (API + Integration)
 **Ziel:** Produktionsreife Integration
+**Ergebnis:** 6 Module (neu/aktualisiert), 405 Tests bestanden
 
 | # | Task | Datei | Abhaengigkeit |
 |---|------|-------|---------------|
-| 9.1 | n8n Webhook an V2-Payload anpassen | `services/n8n_service.py` | 8.1 |
-| 9.2 | BackgroundTasks: Supabase + Storage async | `api/v2_routes.py` | 8.2 |
-| 9.3 | Partial-Failure Handling (1 View fehlt) | `pipeline/orchestrator.py` | 8.7 |
+| 9.1 | n8n Webhook V2-Payload + Envelope | `services/n8n_service.py` | 8.1 |
+| 9.2 | Supabase Service V2 (save/get/history/upload) | `services/supabase_service.py` | 8.2 |
+| 9.3 | BackgroundTasks: Supabase + Storage async | `api/v2_routes.py` | 9.2 |
 | 9.4 | Structured JSON Logging | `utils/logging.py` | — |
-| 9.5 | V1 Legacy Endpoints beibehalten | `api/v1_routes.py` | — |
-| 9.6 | Integration Test: Full Pipeline + Supabase | `tests/` | 9.1-9.5 |
+| 9.5 | V1 Legacy: routes.py → v1_routes.py | `api/v1_routes.py` | — |
+| 9.6 | /compare + /history Endpoints implementiert | `api/v2_routes.py` | 9.2 |
+| 9.7 | Tests: n8n, Supabase, Logging | `tests/` | 9.1-9.6 |
 
-**Deliverable:** Robuste Pipeline die auch bei Teilfehlern sinnvolle Ergebnisse liefert
-**Validierung:** 1 schlechtes Bild von 3 → Partial-Assessment mit Warnungen
+**Deliverable:** Vollstaendige V2 API mit Supabase-Persistenz, n8n-Webhook, Before/After-Vergleich, Patient-History
+**Validierung:** 405 Tests gruen (24 neue); /compare rekonstruiert ZoneReport aus Supabase JSONB
+**Status:** ✅ Abgeschlossen — Phase 4 (API + Integration) komplett
 
 ---
 

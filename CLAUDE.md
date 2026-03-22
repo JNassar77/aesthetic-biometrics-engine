@@ -32,7 +32,7 @@ app/
 ├── main.py              # FastAPI app entrypoint
 ├── config.py            # Pydantic settings (env vars)
 ├── api/
-│   ├── routes.py        # V1 API endpoints (/analyze, /health)
+│   ├── v1_routes.py     # V1 API endpoints (/analyze, /health) — renamed Sprint 9
 │   └── v2_routes.py     # V2 API: /assessment, /compare, /history, /health
 ├── detection/           # V2 landmark detection (Sprint 1) ✅
 │   ├── face_landmarker.py     # Tasks API: 478 pts + blendshapes + matrix
@@ -67,14 +67,15 @@ app/
 │   ├── schemas_v2.py   # V2 API schemas: Assessment, Comparison, Plan (Sprint 8)
 │   └── zone_models.py  # Zone Pydantic models (V2)
 ├── services/            # External integrations (Supabase, n8n)
-│   ├── supabase_service.py
-│   └── n8n_service.py
+│   ├── supabase_service.py  # V1+V2: save_assessment, get, history, upload (Sprint 9)
+│   └── n8n_service.py       # V1+V2: webhook with envelope (Sprint 9)
 └── utils/
-    ├── geometry.py      # 2D + 3D math (distance, angle, plane projection)
-    └── pixel_calibration.py  # Iris-based px→mm calibration + face-width fallback
+    ├── geometry.py          # 2D + 3D math (distance, angle, plane projection)
+    ├── pixel_calibration.py # Iris-based px→mm calibration + face-width fallback
+    └── logging.py           # Structured JSON logging + log_step (Sprint 9)
 models/                  # ML model files (not in git, download manually)
   └── face_landmarker.task  # MediaPipe model (3.6MB, see Common Commands)
-tests/                   # Test suite (381 tests passing)
+tests/                   # Test suite (405 tests passing)
 docs/                    # Project documentation
   TASKS.md               # Roadmap & backlog
   FEATURES.md            # Feature catalog

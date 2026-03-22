@@ -979,6 +979,424 @@ function kapitel14() {
   return content;
 }
 
+// ─── Kapitel 4: Symmetrieanalyse (FULL) ───
+
+function kapitel4() {
+  const content = [];
+  content.push(h1("Kapitel 4: Symmetrieanalyse"));
+  content.push(p("Die bilaterale Gesichtssymmetrie ist einer der fundamentalsten Parameter der aesthetischen Gesichtsanalyse. Kein menschliches Gesicht ist perfekt symmetrisch \u2014 physiologische Asymmetrien von 2\u20133 % gelten als normal und tragen zur individuellen Attraktivitaet bei. Klinisch relevant werden Asymmetrien erst ab definierten Schwellenwerten, die auf die Wahrnehmungsforschung und klinische Erfahrungswerte zurueckgehen."));
+  content.push(p("Die Symmetrieanalyse des Aesthetic Biometrics Engine misst die bilaterale Symmetrie entlang sechs anatomischer Achsen und ergaenzt diese durch eine dynamische Asymmetrieanalyse auf Basis von Blendshape-Koeffizienten. Alle Messungen werden in kalibrierten Millimetern (via Iris-Kalibrierung, vgl. Kapitel 3) durchgefuehrt, um klinisch verwertbare Aussagen zu ermoeglichen."));
+
+  // 4.1
+  content.push(h2("4.1 Median-Sagittallinie und Symmetrieachsen"));
+  content.push(p("Die Median-Sagittallinie ist die vertikale Referenzlinie, die das Gesicht in eine rechte und linke Haelfte teilt. Sie verlaeuft durch die Midline-Landmarks: Trichion (Haaransatz-Approximation, Landmark 10), Glabella (Landmark 9), Pronasale (Nasenspitze, Landmark 4), Subnasale (Landmark 2), Stomion (Mundspalte, Landmark 13) und Gnathion (Kinnpunkt, Landmark 152)."));
+  content.push(p("Gegen diese Referenzlinie werden sechs Symmetrieachsen gemessen, die jeweils bilateral gepaarte Strukturen vergleichen:"));
+
+  const axHeaders = ["Nr.", "Achse", "Linker Landmark", "Rechter Landmark", "Referenz", "Beschreibung"];
+  const axWidths = [400, 1600, 1600, 1600, 1400, 2760];
+  const axRows = [
+    ["1", "brow_height", "282 (Brauenpeak L)", "52 (Brauenpeak R)", "Glabella (9)", "Brauenhoehe relativ zur Glabella"],
+    ["2", "eye_width", "263/466 (Augeninnen/aussen L)", "33/246 (Augeninnen/aussen R)", "\u2014", "Lidspaltenbreite (Fissura palpebralis)"],
+    ["3", "cheekbone_height", "330 (Jochbein L)", "101 (Jochbein R)", "Pronasale (4)", "Jochbeinhoehe relativ zur Nasenspitze"],
+    ["4", "nasolabial_region", "Alar/Mundwinkel L", "Alar/Mundwinkel R", "\u2014", "Alar-Mundwinkel-Distanz (Nasolabialregion)"],
+    ["5", "mouth_corner_height", "291 (Mundwinkel L)", "61 (Mundwinkel R)", "Stomion (13)", "Vertikale Mundwinkelposition"],
+    ["6", "gonion_height", "Gonion L", "Gonion R", "Gnathion (152)", "Kieferwinkelhoehe relativ zum Kinn"],
+  ];
+  content.push(p("Tabelle 4.1: Die sechs Symmetrieachsen", { bold: true }));
+  content.push(makeTable(axHeaders, axRows, axWidths));
+
+  content.push(p("Fuer jede Achse werden zwei Messtypen verwendet:"));
+  content.push(p("\u2022 Hoehenbasierte Messung: Vertikale Distanz eines bilateralen Landmarks zum Midline-Referenzpunkt (Achsen 1, 3, 5, 6). Berechnung: |y_Landmark \u2212 y_Referenz| in Pixel, konvertiert ueber Kalibrierung zu mm.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Distanzbasierte Messung: Euklidische 2D-Distanz zwischen zwei Landmarks einer Seite (Achsen 2, 4). Berechnung: \u221a((x\u2082\u2212x\u2081)\u00b2 + (y\u2082\u2212y\u2081)\u00b2) in Pixel, konvertiert zu mm.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("Die Differenz wird sowohl absolut (in mm) als auch relativ (in Prozent des Mittelwerts beider Seiten) angegeben: diff_pct = (diff_mm / avg_mm) \u00d7 100."));
+
+  // 4.2
+  content.push(h2("4.2 Bilaterale Symmetrie: klinische Schwellenwerte"));
+  content.push(p("Die klinische Signifikanz einer Asymmetrie wird durch zwei unabhaengige Schwellenwerte definiert:"));
+
+  const thHeaders = ["Parameter", "Schwellenwert", "Bedeutung"];
+  const thWidths = [3200, 2300, 3860];
+  const thRows = [
+    ["SIGNIFICANCE_THRESHOLD_MM", "> 2,0 mm", "Absolute Differenz, die vom menschlichen Auge als Asymmetrie wahrgenommen wird"],
+    ["SIGNIFICANCE_THRESHOLD_PCT", "> 8,0 %", "Relative Differenz bezogen auf den Mittelwert beider Seiten"],
+  ];
+  content.push(p("Tabelle 4.2: Schwellenwerte fuer klinische Signifikanz", { bold: true }));
+  content.push(makeTable(thHeaders, thRows, thWidths));
+
+  content.push(p("Eine Messung wird als klinisch signifikant markiert (is_clinically_significant = true), wenn EINER der beiden Schwellenwerte ueberschritten wird. Dieses ODER-Kriterium stellt sicher, dass sowohl kleine Gesichter (wo 2 mm relativ viel sind) als auch grosse Gesichter (wo 8 % absolut mehr als 2 mm sein koennen) korrekt erfasst werden."));
+  content.push(p("Klinische Einordnung der Asymmetrie:", { bold: true }));
+  content.push(p("\u2022 < 3 % Differenz: Physiologische Asymmetrie \u2014 keine Behandlungsindikation", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 3\u20135 % Differenz: Subklinische Asymmetrie \u2014 bei Patientenwunsch behandelbar", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 5\u20138 % Differenz: Moderate Asymmetrie \u2014 behandlungsrelevant", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 > 8 % Differenz: Ausgepraegt \u2014 Abklaerung zugrunde liegender Pathologien empfohlen (vgl. Kapitel 14, Extreme Asymmetrie)", { paragraphOpts: { indent: { left: 360 } } }));
+
+  content.push(h3("4.2.1 Globaler Symmetrie-Index"));
+  content.push(p("Der globale Symmetrie-Index fasst alle sechs Achsen zu einem Score von 0 bis 100 zusammen (100 = perfekte Symmetrie). Die Berechnung erfolgt gewichtet, da nicht alle Achsen die gleiche klinische Bedeutung haben:"));
+
+  const wHeaders = ["Achse", "Gewicht", "Begruendung"];
+  const wWidths = [2800, 1000, 5560];
+  const wRows = [
+    ["brow_height", "1,0", "Baseline-Gewicht; moderate visuelle Auswirkung"],
+    ["eye_width", "1,2", "Hoeher gewichtet: Augenregion ist zentraler Blickfang"],
+    ["cheekbone_height", "1,3", "Hoechste Gewichtung: Mittelgesichtssymmetrie dominiert den Gesamteindruck"],
+    ["nasolabial_region", "1,1", "Nasolabial-Asymmetrie faellt auf, besonders beim Laecheln"],
+    ["mouth_corner_height", "1,0", "Baseline; Mundwinkel-Downturn separat in Zone Lp3 erfasst"],
+    ["gonion_height", "0,8", "Niedrigste Gewichtung: Kieferkontur weniger sichtbar als Mittelgesicht"],
+  ];
+  content.push(p("Tabelle 4.3: Achsengewichte fuer den globalen Symmetrie-Index", { bold: true }));
+  content.push(makeTable(wHeaders, wRows, wWidths));
+
+  content.push(p("Berechnung: Fuer jede Achse wird die prozentuale Abweichung auf einen Maximalwert von 15 % normalisiert (Abweichungen > 15 % erhalten die maximale Bestrafung). Der gewichtete Durchschnitt aller normalisierten Abweichungen wird von 1,0 subtrahiert und mit 100 multipliziert:"));
+  content.push(p("Symmetrie-Index = max(0, (1 \u2212 gewichteter_Durchschnitt) \u00d7 100)", { bold: true }));
+  content.push(p("Interpretation: Ein Score von 95\u2013100 zeigt exzellente Symmetrie. Werte zwischen 85 und 94 sind im Normalbereich. Unter 85 sollte eine gezielte Analyse der betroffenen Achsen erfolgen. Werte unter 70 deuten auf pathologische Asymmetrien hin (vgl. Kapitel 14.3)."));
+
+  content.push(h3("4.2.2 Pro-Zone Asymmetrie-Scores"));
+  content.push(p("Neben dem globalen Index liefert das System zonenspezifische Asymmetrie-Scores. Jede der 19 Behandlungszonen (vgl. Kapitel 9) erhaelt einen eigenen Severity-Beitrag durch die Asymmetrie der zugehoerigen Achse. Beispiele:"));
+  content.push(p("\u2022 Zone Bw1 (Laterale Braue): Asymmetrie ueber die brow_height-Achse → Severity-Gewicht 0,4", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Zonen Ck1/Ck2/Ck3 (Wangenregion): Asymmetrie ueber die cheekbone_height-Achse → Severity-Gewicht 0,2\u20130,3", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Zone T1 (Temporal): Asymmetrie der Temporaltiefe links vs. rechts (volume_engine) → Severity-Gewicht 0,2", { paragraphOpts: { indent: { left: 360 } } }));
+
+  // 4.3
+  content.push(h2("4.3 Dynamische Asymmetrie"));
+  content.push(p("Die statische Symmetrieanalyse erfasst nur die geometrische Position der Landmarks in Ruhe. Die dynamische Asymmetrie nutzt die 52 Blendshape-Koeffizienten (vgl. Kapitel 3) um Unterschiede in der Muskelaktivierung zwischen linker und rechter Gesichtshaelfte zu quantifizieren."));
+  content.push(p("WICHTIG: Blendshapes werden NIEMALS ueber Views fusioniert. Die dynamische Asymmetrie wird ausschliesslich auf Basis der Blendshapes einer einzelnen Aufnahme berechnet \u2014 typischerweise der Frontalansicht. Dies verhindert Artefakte durch unterschiedliche Perspektiven.", { bold: true }));
+  content.push(p("Das System analysiert acht bilateral gepaarte Blendshapes:"));
+
+  const bsHeaders = ["Blendshape-Paar", "Anatomische Struktur", "Klinische Bedeutung bei Asymmetrie"];
+  const bsWidths = [2800, 2800, 3760];
+  const bsRows = [
+    ["browDownLeft / browDownRight", "M. corrugator supercilii", "Einseitige Glabellafalten, Corrugator-Hyperaktivitaet"],
+    ["browOuterUpLeft / browOuterUpRight", "M. frontalis (lateral)", "Einseitige Brauenhebung, kompensatorische Frontalis-Aktivitaet"],
+    ["cheekSquintLeft / cheekSquintRight", "M. zygomaticus", "Asymmetrisches Laecheln, unterschiedliche Wangenhebung"],
+    ["eyeBlinkLeft / eyeBlinkRight", "M. orbicularis oculi", "Lidschluss-Asymmetrie, moeglicher Hinweis auf Parese"],
+    ["eyeSquintLeft / eyeSquintRight", "M. orbicularis oculi (inferior)", "Einseitige Crow\u2019s Feet, periortbitale Aktivitaet"],
+    ["mouthSmileLeft / mouthSmileRight", "M. zygomaticus major", "Asymmetrisches Laecheln \u2014 haeufigster dynamischer Befund"],
+    ["mouthFrownLeft / mouthFrownRight", "M. depressor anguli oris", "Einseitiger Mundwinkel-Downturn"],
+    ["noseSneerLeft / noseSneerRight", "M. levator labii sup. alaeque nasi", "Einseitiges Nasenruempfen, Bunny Lines"],
+  ];
+  content.push(p("Tabelle 4.4: Blendshape-Paare fuer dynamische Asymmetrie", { bold: true }));
+  content.push(makeTable(bsHeaders, bsRows, bsWidths));
+
+  content.push(h3("4.3.1 Schwellenwert und Berechnung"));
+  content.push(p("Der Schwellenwert fuer die dynamische Asymmetrie liegt bei einer Differenz von 0,10 (10 % der maximalen Aktivierung). Nur Paare mit einer Differenz > 0,10 werden reportet. Berechnung: diff = |left_value \u2212 right_value|."));
+  content.push(p("Ein Blendshape-Koeffizient von 0,0 bedeutet keine Aktivierung, 1,0 maximale Aktivierung. Im Ruhezustand (Neutralexpression) sollten alle Werte nahe 0 liegen. Erhoehte Ruhewerte deuten auf chronische Muskelaktivitaetsmuster hin, die mit Alterung und Faltenbildung korrelieren (vgl. Kapitel 8, Muskeltonus)."));
+
+  content.push(h3("4.3.2 Klinische Relevanz der dynamischen Asymmetrie"));
+  content.push(p("Die dynamische Asymmetrie ergaenzt die statische Analyse um zwei wesentliche Dimensionen:"));
+  content.push(p("1. Differenzialdiagnose: Eine ausgepraete mouthSmileLeft/Right-Differenz in Ruhe kann auf eine periphere Fazialisparese hinweisen und sollte neurologisch abgeklaert werden (vgl. Kapitel 14.3, Extreme Asymmetrie als Pathologie-Indikator)."));
+  content.push(p("2. Behandlungsplanung: Einseitige Muskelueberaktivitaet kann mit gezieltem Neurotoxin behandelt werden. Beispiel: Eine browDownLeft-Aktivierung von 0,35 bei browDownRight von 0,08 deutet auf eine einseitige Corrugator-Hyperaktivitaet hin. Die Neurotoxin-Dosis fuer die Glabella (Zone Bw2) sollte asymmetrisch angepasst werden."));
+  content.push(p("Die Ergebnisse der dynamischen Asymmetrieanalyse fliessen in den Severity-Score der jeweiligen Zone ein \u2014 mit einem Gewichtungsfaktor, der sicherstellt, dass dynamische Befunde die statischen nicht ueberlagern, sondern ergaenzen."));
+
+  return content;
+}
+
+// ─── Kapitel 5: Gesichtsproportionen (FULL) ───
+
+function kapitel5() {
+  const content = [];
+  content.push(h1("Kapitel 5: Gesichtsproportionen"));
+  content.push(p("Die proportionale Analyse des Gesichts basiert auf dem Konzept idealer Verhaeltnisse, die in der klassischen Aesthetik und modernen Forschung als Grundlage fuer die Beurteilung fazialer Harmonie dienen. Abweichungen von diesen Idealverhaeltnissen koennen \u2014 muessen aber nicht \u2014 einen Behandlungsbedarf begrdnden. Ziel der Proportionsanalyse ist es, dem Behandler eine objektive Grundlage fuer die Planung volumengebender Massnahmen zu liefern."));
+  content.push(p("Die proportion_engine des Aesthetic Biometrics Engine berechnet vier Proportionssysteme: vertikale Drittel, horizontale Fuenftel, Golden Ratio und Lip Ratio mit Cupid\u2019s Bow-Analyse. Alle Messungen werden in kalibrierten Millimetern durchgefuehrt und primaer aus der Frontalansicht gewonnen."));
+
+  // 5.1
+  content.push(h2("5.1 Vertikale Drittel"));
+  content.push(p("Die vertikalen Gesichtsdrittel teilen das Gesicht in drei annaehernd gleich grosse Segmente:"));
+  content.push(p("\u2022 Oberes Drittel: Trichion (Haaransatz, Landmark 10) → Glabella (Landmark 9)", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Mittleres Drittel: Glabella → Subnasale (Landmark 2)", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Unteres Drittel: Subnasale → Menton/Gnathion (Landmark 152)", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("Idealverhaeltnis: 1:1:1 (jedes Drittel = 33,3 % der Gesamthoehe)", { bold: true }));
+  content.push(p("Die Messung erfolgt als vertikale Pixeldistanz (nur y-Komponente) zwischen den Landmarks, konvertiert zu Millimetern ueber die Iris-Kalibrierung. Die Deviation vom Idealverhaeltnis wird als mittlere absolute Abweichung der drei Anteile von 0,333 berechnet:"));
+  content.push(p("deviation = (|upper_ratio \u2212 0,333| + |middle_ratio \u2212 0,333| + |lower_ratio \u2212 0,333|) / 3 \u00d7 100", { bold: true }));
+
+  const thHeaders = ["Parameter", "Idealwert", "Klinische Bedeutung bei Abweichung"];
+  const thWidths = [2200, 1600, 5560];
+  const thRows = [
+    ["Oberes Drittel < 30 %", "33,3 %", "Niedrige Stirn; Trichion-Landmark-Limitation bei Haarausfall beachten"],
+    ["Oberes Drittel > 36 %", "33,3 %", "Hohe Stirn; Hairline-Eingriffe erwaegen (ausserhalb Filler-Indikation)"],
+    ["Mittleres Drittel < 30 %", "33,3 %", "Verkuerzte Mittelgesichtshoehe; selten isoliert behandelbar"],
+    ["Unteres Drittel > 36 %", "33,3 %", "Verlaengertes unteres Drittel; Kinn-Reduktion in Betracht ziehen"],
+    ["Unteres Drittel < 30 %", "33,3 %", "Verkuerztes unteres Drittel; Kinn-Augmentation (Zone Ch1) erwaegen"],
+  ];
+  content.push(p("Tabelle 5.1: Vertikale Drittel \u2014 Referenzwerte und klinische Interpretation", { bold: true }));
+  content.push(makeTable(thHeaders, thRows, thWidths));
+
+  content.push(p("Hinweis: Das Trichion (Haaransatz) ist fuer MediaPipe nicht direkt detektierbar. Landmark 10 dient als Approximation des hoechsten zuverlaessig erkennbaren Stirnpunkts. Bei Patienten mit Geheimratsecken oder hohem Haaransatz kann das obere Drittel systematisch unterschaetzt werden."));
+
+  // 5.2
+  content.push(h2("5.2 Horizontale Fuenftel"));
+  content.push(p("Die horizontalen Fuenftel teilen die Gesichtsbreite in fuenf annaehernd gleich breite Segmente. Die Messung erfolgt ueber die x-Koordinaten (horizontale Pixeldistanz) der folgenden Landmarks:"));
+  content.push(p("1. Segment: Rechtes Praeauriculare → Rechter Augenaussenwinkel"));
+  content.push(p("2. Segment: Rechter Augenaussenwinkel → Rechter Augeninnenwinkel"));
+  content.push(p("3. Segment: Rechter Augeninnenwinkel → Linker Augeninnenwinkel (Interkanthaldistanz)"));
+  content.push(p("4. Segment: Linker Augeninnenwinkel → Linker Augenaussenwinkel"));
+  content.push(p("5. Segment: Linker Augenaussenwinkel → Linkes Praeauriculare"));
+  content.push(p("Idealverhaeltnis: 1:1:1:1:1 (jedes Segment = 20 % der Gesamtbreite)", { bold: true }));
+  content.push(p("Die Deviation berechnet sich analog zu den Dritteln: deviation = \u03a3|ratio_i \u2212 0,20| / 5 \u00d7 100."));
+  content.push(p("Klinisch relevant ist insbesondere das dritte Segment (Interkanthaldistanz). Eine erhoehte Interkanthaldistanz (> 24 % der Gesamtbreite) wird als Hypertelorismus bezeichnet und kann auf ein Syndrom hinweisen. Eine verringerte Distanz (< 16 %) ist als Hypotelorismus bekannt. Beide Befunde liegen ausserhalb der aesthetischen Behandlungsindikation und sollten dokumentiert, aber nicht behandelt werden."));
+
+  // 5.3
+  content.push(h2("5.3 Golden Ratio"));
+  content.push(p("Das Verhaeltnis von Gesichtshoehe zu Gesichtsbreite wird gegen den Goldenen Schnitt (Phi, \u03c6 = 1,618) verglichen. Die Messung erfolgt:"));
+  content.push(p("\u2022 Gesichtshoehe: Trichion (Landmark 10) → Gnathion (Landmark 152), vertikale Pixeldistanz", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Gesichtsbreite: Bizygomatische Breite (Jochbein links, Landmark 330 → Jochbein rechts, Landmark 101), horizontale Pixeldistanz", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("Berechnung: ratio = face_height_mm / face_width_mm", { bold: true }));
+  content.push(p("Deviation: deviation_pct = |ratio \u2212 1,618| / 1,618 \u00d7 100", { bold: true }));
+
+  const grHeaders = ["Parameter", "Idealwert", "Typischer Bereich", "Deviation bei Behandlungsbedarf"];
+  const grWidths = [2200, 1400, 1800, 3960];
+  const grRows = [
+    ["Gesichtshoehe/Breite", "1,618 (\u03c6)", "1,4\u20131,8", "> 10 % Abweichung von \u03c6"],
+    ["Deviation < 5 %", "\u2014", "\u2014", "Exzellente Proportion"],
+    ["Deviation 5\u201310 %", "\u2014", "\u2014", "Leichte Abweichung, klinisch meist irrelevant"],
+    ["Deviation > 10 %", "\u2014", "\u2014", "Signifikante Abweichung; Ursachenanalyse empfohlen"],
+  ];
+  content.push(p("Tabelle 5.2: Golden Ratio \u2014 Referenzwerte", { bold: true }));
+  content.push(makeTable(grHeaders, grRows, grWidths));
+
+  content.push(p("Klinische Einordnung: Der Goldene Schnitt ist ein aesthetisches Ideal, kein medizinischer Standard. Ethnische und individuelle Variationen sind zu beruecksichtigen. Das System verwendet die Golden Ratio Deviation als einen von mehreren Inputs fuer den globalen Aesthetik-Score, nicht als alleinigen Indikator."));
+
+  // 5.4
+  content.push(h2("5.4 Lip Ratio und Cupid\u2019s Bow"));
+  content.push(p("Die Lippenanalyse ist fuer die Zonen Lp1 (Oberlippe) und Lp2 (Unterlippe) des Zonensystems (Kapitel 9) massgeblich. Sie umfasst drei Aspekte: Lip Ratio, Cupid\u2019s Bow-Tiefe und Cupid\u2019s Bow-Asymmetrie."));
+
+  content.push(h3("5.4.1 Lip Ratio"));
+  content.push(p("Das Lip Ratio beschreibt das Verhaeltnis der Oberlippenhoehe zur Unterlippenhoehe:"));
+  content.push(p("\u2022 Oberlippenhoehe: Labrale superius (Landmark am oberen Vermilionrand) → Stomion (Mundspalte, Landmark 13), vertikale Distanz", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Unterlippenhoehe: Stomion → Labrale inferius (Landmark am unteren Vermilionrand), vertikale Distanz", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("Idealverhaeltnis: Upper:Lower = 1:1,6 (Lip Ratio = 0,625)", { bold: true }));
+  content.push(p("Deviation: deviation_pct = |lip_ratio \u2212 0,625| / 0,625 \u00d7 100"));
+
+  const lipHeaders = ["Parameter", "Idealwert", "Referenzbereich", "Klinische Bedeutung"];
+  const lipWidths = [2600, 1200, 1600, 3960];
+  const lipRows = [
+    ["Oberlippenhoehe (mm)", "6\u20139", "5\u201311", "< 5 mm: Lippenaugmentation erwaegen"],
+    ["Unterlippenhoehe (mm)", "9\u201314", "8\u201316", "Selten behandlungsbeduerftig"],
+    ["Lip Ratio", "0,625", "0,5\u20130,7", "< 0,5: Oberlippe deutlich zu duenn"],
+    ["Lippenbreite (mm)", "45\u201355", "40\u201360", "Mundwinkel-zu-Mundwinkel-Distanz"],
+  ];
+  content.push(p("Tabelle 5.3: Lip Ratio \u2014 Referenzwerte", { bold: true }));
+  content.push(makeTable(lipHeaders, lipRows, lipWidths));
+
+  content.push(h3("5.4.2 Cupid\u2019s Bow-Analyse"));
+  content.push(p("Der Cupid\u2019s Bow (Amorbogen) ist die M-foermige Kontur der oberen Vermilionlinie. Die Analyse misst:"));
+  content.push(p("\u2022 Bogentiefe (cupid_bow_depth_mm): Vertikaler Abstand zwischen den Philtralsaeulen-Peaks (Landmarks 267 links, 37 rechts) und dem Mittelpunkt der Oberlippe (Landmark 0). Berechnung: avg(mid_y \u2212 left_peak_y, mid_y \u2212 right_peak_y), konvertiert zu mm.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Bogenasymmetrie (cupid_bow_asymmetry_pct): Differenz der Peakhoehen links vs. rechts, normalisiert auf die durchschnittliche Peakhoehe. Berechnung: |left_peak_y \u2212 right_peak_y| / avg_peak_height \u00d7 100.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("Interpretation: Eine Cupid\u2019s Bow-Tiefe von 0 mm deutet auf einen flachen, undefineten Lippensaum hin. Asymmetrien > 15 % koennen auf vorangegangene Injektionen, Narben oder kongenitale Variationen hinweisen."));
+
+  return content;
+}
+
+// ─── Kapitel 7: Volumenanalyse (FULL) ───
+
+function kapitel7() {
+  const content = [];
+  content.push(h1("Kapitel 7: Volumenanalyse"));
+  content.push(p("Der altersbedingte Volumenverlust ist einer der Hauptmechanismen der Gesichtsalterung. Im Gegensatz zur Symmetrie- und Proportionsanalyse, die primaer zweidimensionale Messungen verwenden, nutzt die Volumenanalyse die z-Koordinaten der 478 3D-Landmarks, um Tiefenverhaeltnisse im Gesicht zu quantifizieren. Damit lassen sich Volumendefizite identifizieren, die in der reinen Frontalansicht nicht sichtbar sind."));
+  content.push(p("Die volume_engine des Aesthetic Biometrics Engine analysiert vier klinisch relevante Volumenkomponenten: Ogee Curve (Mittelgesichts-S-Kurve), Temporal Hollowing (Schlaefeneintiefung), Tear Trough (Traenental) und Pre-Jowl Sulcus (Haengewange). Die besten Ergebnisse werden aus der Obliqueansicht (45\u00b0) gewonnen, da hier die Tiefenunterschiede am deutlichsten sichtbar sind."));
+
+  // 7.1
+  content.push(h2("7.1 Ogee Curve (Mittelgesichts-S-Kurve)"));
+  content.push(p("Die Ogee-Kurve (auch als S-Kurve des Mittelgesichts bezeichnet) ist die fliessende Konturlinie, die von der lateralen Stirn ueber die Wangenhoehe in die Wangenvertiefung verlaeuft. Eine gut definierte Ogee-Kurve ist ein Kennzeichen eines jugendlichen Gesichts. Ihre Abflachung ist eines der fruehesten und klinisch auffaelligsten Zeichen des Mittelgesichtsvolumenverlusts."));
+
+  content.push(h3("7.1.1 Messpunkte und Tiefentransitionen"));
+  content.push(p("Die Ogee-Kurve wird ueber vier Tiefenpunkte entlang der malaren Region charakterisiert:"));
+  content.push(p("\u2022 Infraorbital (Landmarks 253/23): Punkt unterhalb des Orbitarands \u2014 sollte leicht zurueckliegen", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Malar High (Landmarks 329/100): Hoechster Punkt der Wangenprominenz \u2014 sollte nach vorn projizieren", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Malar Low (Landmarks 425/205): Tieferer Wangenbereich \u2014 Uebergang zur Bukkalregion", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Cheekbone (Landmarks 330/101): Jochbein \u2014 knoecherne Referenz", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("Die z-Tiefendifferenz (in mm) zwischen Malar High und Infraorbital repraesentiert die Malarprominenz. Die Differenz zwischen Cheekbone und Malar Low repraesentiert den Bukkal-Uebergang."));
+
+  content.push(h3("7.1.2 Score-Berechnung"));
+  content.push(p("Der Ogee-Score (0\u2013100) quantifiziert die Fliessendheit der S-Kurve:"));
+  content.push(p("raw_score = |malar_depth| \u00d7 10 + |buccal_transition| \u00d7 8", { bold: true }));
+  content.push(p("score = clamp(raw_score, 0, 100)", { bold: true }));
+
+  const ogHeaders = ["Score-Bereich", "Interpretation", "Klinische Empfehlung"];
+  const ogWidths = [1600, 3200, 4560];
+  const ogRows = [
+    ["70\u2013100", "Fliessende S-Kurve; jugendlich", "Kein Behandlungsbedarf"],
+    ["50\u201370", "Leichte Abflachung; fruehe Zeichen", "Monitoring oder Biostimulation"],
+    ["30\u201350", "Deutliche Abflachung", "HA Deep (Voluma) oder CaHA (Radiesse) in Zone Ck2"],
+    ["< 30", "Skelettiertes Erscheinungsbild", "Strukturelle Filler-Augmentation in Ck1 und Ck2"],
+  ];
+  content.push(p("Tabelle 7.1: Ogee-Score-Interpretation", { bold: true }));
+  content.push(makeTable(ogHeaders, ogRows, ogWidths));
+  content.push(p("Ein Score < 60 setzt das Flag is_flattened = true, was im Zonensystem (Kapitel 9) den Severity-Score fuer Zone Ck2 direkt beeinflusst."));
+
+  // 7.2
+  content.push(h2("7.2 Temporal Hollowing (Schlaefeneintiefung)"));
+  content.push(p("Temporal Hollowing bezeichnet die Eintiefung der Fossa temporalis, die durch Volumenverlust des M. temporalis, des temporalen Fettpolsters und der Fascia temporalis entsteht. Es ist einer der fruehesten Alterungsindikatoren und betrifft Zone T1 des Zonensystems."));
+
+  content.push(h3("7.2.1 Messmethode"));
+  content.push(p("Die Temporaltiefe wird als z-Differenz (in mm) zwischen dem temporalen Landmark und dem lateralen Brauenlandmark gemessen:"));
+  content.push(p("temporal_depth = z(temporal) \u2212 z(brow_outer) \u2014 separat fuer links und rechts", { bold: true }));
+  content.push(p("Asymmetrie: asymmetry_mm = |left_depth \u2212 right_depth|"));
+
+  const tempHeaders = ["Parameter", "Schwellenwert", "Interpretation"];
+  const tempWidths = [3200, 1800, 4360];
+  const tempRows = [
+    ["temporal_depth (links oder rechts)", "> 3,0 mm", "Hollowing detektiert (is_hollowed = true)"],
+    ["asymmetry_mm", "> 2,0 mm", "Asymmetrische Eintiefung \u2014 Pathologie ausschliessen"],
+    ["Idealer Bereich", "-2,0 bis 2,0 mm", "Zone T1 Referenzwerte (Kapitel 9)"],
+  ];
+  content.push(p("Tabelle 7.2: Temporal Hollowing \u2014 Schwellenwerte", { bold: true }));
+  content.push(makeTable(tempHeaders, tempRows, tempWidths));
+
+  content.push(p("Behandlung: Biostimulantien (Sculptra, Radiesse) in der tiefen subkutanen Ebene. Die A. temporalis superficialis verlaeuft in dieser Region und muss geschont werden (vgl. Kapitel 14, Vaskulaere Risikozonen)."));
+
+  // 7.3
+  content.push(h2("7.3 Tear Trough Assessment (Traenentalanalyse)"));
+  content.push(p("Das Traenental (Sulcus palpebromalaris) ist die Vertiefung zwischen Unterlid und Wange. Es betrifft Zone Tt1, eine der technisch anspruchsvollsten und vaskulaer riskantesten Behandlungszonen (vgl. Kapitel 14.5)."));
+
+  content.push(h3("7.3.1 Tiefenmessung"));
+  content.push(p("Die Traenentaltiefe wird als z-Differenz zwischen dem infraorbitalen Landmark und dem Jochbein gemessen:"));
+  content.push(p("tear_trough_depth = z(infraorbital) \u2212 z(cheekbone) \u2014 separat links/rechts", { bold: true }));
+  content.push(p("Der Severity-Score fuer das Traenental berechnet sich aus der mittleren Tiefe:"));
+  content.push(p("severity = min(10, avg_depth \u00d7 2,5)", { bold: true }));
+
+  const ttHeaders = ["Severity-Score", "Tiefe (mm)", "Klinische Einschaetzung", "Empfehlung"];
+  const ttWidths = [1400, 1200, 3200, 3560];
+  const ttRows = [
+    ["0\u20132", "0\u20130,8", "Kein oder minimales Traenental", "Keine Behandlung noetig"],
+    ["2\u20134", "0,8\u20131,6", "Leichtes Traenental", "Midface-First-Strategie (Ck2/Ck3) pruefen"],
+    ["4\u20136", "1,6\u20132,4", "Moderates Traenental", "Ck2 zuerst, dann Reevaluation"],
+    ["6\u20138", "2,4\u20133,2", "Tiefes Traenental", "CAUTION: Konservativ, max 0,1\u20130,2 ml/Seite"],
+    ["8\u201310", "> 3,2", "Schwere Deformitaet", "REFERRAL: Facharzt-Abklaerung erwaegen"],
+  ];
+  content.push(p("Tabelle 7.3: Tear Trough Severity-Einstufung", { bold: true }));
+  content.push(makeTable(ttHeaders, ttRows, ttWidths));
+
+  content.push(p("Die Midface-First-Strategie (vgl. Kapitel 14.5) ist bei Zone Tt1 besonders wichtig: In vielen Faellen reduziert eine Volumenauffuellung in den Zonen Ck2 und Ck3 die Traenentaltiefe sekundaer um 30\u201350 %, wodurch eine direkte Behandlung des Traenentals entweder unnoetig wird oder nur mit minimalen Volumina erfolgen muss."));
+
+  // 7.4
+  content.push(h2("7.4 Pre-Jowl Sulcus (Haengewange)"));
+  content.push(p("Der Pre-Jowl Sulcus ist die Einbuchtung lateral des Kinns, die durch Volumenatrophie und Gewebeabsenkung entsteht. Er betrifft Zone Jw1 und korreliert eng mit der Kieferlinien-Kontinuitaet (Zone Jl1)."));
+
+  content.push(h3("7.4.1 Messmethode"));
+  content.push(p("Die Jowl-Tiefe wird als z-Differenz zwischen dem Gonion (Kieferwinkel) und dem Pogonion (Kinnspitze) gemessen:"));
+  content.push(p("jowl_depth = z(gonion) \u2212 z(pogonion) \u2014 separat links/rechts", { bold: true }));
+
+  const jwHeaders = ["Parameter", "Schwellenwert", "Interpretation"];
+  const jwWidths = [3200, 1800, 4360];
+  const jwRows = [
+    ["jowl_depth (links oder rechts)", "> 2,0 mm", "Jawline Break detektiert (jawline_break_detected = true)"],
+    ["Asymmetrie", "> 1,5 mm", "Einseitige Jowl-Bildung \u2014 ggf. asymmetrische Behandlung"],
+    ["Beide Seiten > 2 mm", "\u2014", "Strukturelle Filler-Augmentation in Jw1 + Jl1 empfohlen"],
+  ];
+  content.push(p("Tabelle 7.4: Pre-Jowl Sulcus \u2014 Schwellenwerte", { bold: true }));
+  content.push(makeTable(jwHeaders, jwRows, jwWidths));
+
+  content.push(p("Die Behandlung des Pre-Jowl Sulcus sollte immer im Kontext der gesamten unteren Gesichtskontur betrachtet werden. Haeufig ist eine Kombination aus Kinn-Augmentation (Zone Ch1, supraperiostaler Bolus) und Jawline-Definition (Zone Jl1) effektiver als eine isolierte Jowl-Behandlung. Das Priorisierungssystem (vgl. Kapitel 13) ordnet Ch1 und Jl1 in die strukturelle Prioritaetsstufe P2 ein, waehrend Jw1 als Volumendefizit in P3 klassifiziert ist."));
+
+  return content;
+}
+
+// ─── Kapitel 8: Altersbedingte Veraenderungen (FULL) ───
+
+function kapitel8() {
+  const content = [];
+  content.push(h1("Kapitel 8: Altersbedingte Ver\u00e4nderungen"));
+  content.push(p("Die Gesichtsalterung ist ein multifaktorieller Prozess, der knoecherne Resorption, Fettkompartiment-Verschiebung, Muskeltonusveraenderungen und Hauterschlaffung umfasst. Die aging_engine des Aesthetic Biometrics Engine quantifiziert drei Aspekte der Alterung, die aus den 478 Landmark-Koordinaten und den 52 Blendshape-Koeffizienten abgeleitet werden koennen: Muskeltonus-Veraenderungen, gravitationelle Drift und periorbitale Alterung."));
+  content.push(p("WICHTIG: Blendshapes sind viewgebunden und werden NICHT ueber verschiedene Aufnahmen fusioniert. Die Aging-Analyse wird typischerweise auf der Frontalansicht durchgefuehrt.", { bold: true }));
+
+  // 8.1
+  content.push(h2("8.1 Muskeltonus-Ver\u00e4nderungen"));
+  content.push(p("Die mimische Muskulatur veraendert sich im Laufe des Lebens: Bestimmte Muskeln werden hyperaktiv (chronische Kontraktion fuehrt zu Faltenbildung), waehrend andere an Tonus verlieren (Erschlaffung fuehrt zu Ptosis und Konturverlust). Die Blendshape-Analyse ermoeglicht eine nicht-invasive Abschaetzung dieser Veraenderungen."));
+
+  content.push(h3("8.1.1 Blendshape-zu-Muskel-Mapping"));
+  content.push(p("Das System gruppiert die 52 Blendshape-Koeffizienten in vier klinisch relevante Muskelgruppen:"));
+
+  const musHeaders = ["Muskelgruppe", "Blendshapes", "Klinische Bedeutung bei erhoehter Ruheaktivierung"];
+  const musWidths = [2000, 3800, 3560];
+  const musRows = [
+    ["Frontalis (Stirnheber)", "browInnerUp, browOuterUpLeft, browOuterUpRight", "Kompensatorische Hyperaktivitaet bei Brauenptosis; horizontale Stirnfalten"],
+    ["Corrugator (Brauensenker)", "browDownLeft, browDownRight", "Glabella-\u201e11-Linien\u201c; chronische Muskelspannung"],
+    ["Orbicularis (perioral)", "mouthPucker, mouthFunnel, mouthPressLeft, mouthPressRight", "Niedriger Tonus deutet auf periorale Alterung hin"],
+    ["Masseter (Kiefer)", "jawOpen, jawForward, jawLeft, jawRight", "Erhoehte Aktivitaet bei Bruxismus/Kieferpressen"],
+  ];
+  content.push(p("Tabelle 8.1: Blendshape-Gruppen und ihre klinische Interpretation", { bold: true }));
+  content.push(makeTable(musHeaders, musRows, musWidths));
+
+  content.push(h3("8.1.2 Severity-Berechnung"));
+  content.push(p("Der overall_muscle_age_indicator (0\u201310) berechnet sich aus den gemittelten Blendshape-Werten der vier Gruppen:"));
+  content.push(p("severity = frontalis \u00d7 3,0 + corrugator \u00d7 3,0 + (1 \u2212 orbicularis) \u00d7 2,0 + masseter \u00d7 2,0", { bold: true }));
+  content.push(p("Hierbei wird die Orbicularis-Aktivierung invertiert: Ein niedriger Orbicularis-Tonus (Wert nahe 0) erhoet den Severity-Score, da dies auf periorale Erschlaffung hindeutet. Frontalis und Corrugator erhalten die hoechste Gewichtung (je 3,0), da ihre Hyperaktivitaet die haeufigste Neurotoxin-Indikation darstellt (vgl. Kapitel 11, Tabelle 11.2)."));
+
+  content.push(p("Interpretation der Muskeltonus-Werte:", { bold: true }));
+  content.push(p("\u2022 frontalis_compensation > 0,15: Kompensatorische Brauenhebung \u2014 Vorsicht bei isolierter Frontalis-Behandlung (Ptosis-Risiko, vgl. Kapitel 14.4)", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 corrugator_activity > 0,20: Erhoehte Glabella-Spannung in Ruhe \u2014 Neurotoxin-Indikation fuer Zone Bw2", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 orbicularis_tone < 0,05: Periorale Hypotonie \u2014 Lip Flip oder periorale Behandlung in Betracht ziehen", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 masseter_activity > 0,15: Moeglicher Bruxismus \u2014 Masseter-Hypertrophie-Behandlung mit Neurotoxin erwaegen", { paragraphOpts: { indent: { left: 360 } } }));
+
+  // 8.2
+  content.push(h2("8.2 Gravitationelle Drift"));
+  content.push(p("Mit zunehmendem Alter sinken die Weichgewebe des Gesichts unter dem Einfluss der Schwerkraft nach inferior ab. Dieser als gravitationelle Drift bezeichnete Prozess betrifft alle Gesichtsschichten: Haut, SMAS, Fettkompartimente und Retaining Ligaments. Die Analyse misst die vertikale Verschiebung von Landmarks relativ zu idealen (jugendlichen) Positionen."));
+
+  content.push(h3("8.2.1 Drei Driftindikatoren"));
+
+  const driftHeaders = ["Indikator", "Messung", "Ideale Distanz (Pixel)", "Betroffene Zonen"];
+  const driftWidths = [2000, 3000, 1800, 2560];
+  const driftRows = [
+    ["Brauendeszensus", "Vertikaler Abstand Brauenpeak \u2192 Augenaussenwinkel", "\u2265 40 px", "Bw1, Fo1"],
+    ["Malardeszensus", "Vertikale Position Jochbein relativ zu Augenlinie", "\u2264 50 px unter Augenlinie", "Ck2, Ck3, Ns1"],
+    ["Jowl-Deszensus", "Vertikaler Abstand Mundwinkel \u2192 Gonion", "\u2265 80 px", "Jw1, Jl1, Mn1"],
+  ];
+  content.push(p("Tabelle 8.2: Gravitationelle Driftindikatoren", { bold: true }));
+  content.push(makeTable(driftHeaders, driftRows, driftWidths));
+
+  content.push(p("Die Berechnung in Millimetern: Fuer jeden Indikator wird die Differenz zwischen der gemessenen und der idealen Distanz berechnet, konvertiert in mm ueber die Kalibrierung. Ein positiver Wert (in mm) repraesentiert den Grad der Absenkung."));
+  content.push(p("Der overall_drift_score (0\u201310) ist der Mittelwert der drei Driftindikatoren in mm:"));
+  content.push(p("drift_score = min(10, (brow_descent_mm + malar_descent_mm + jowl_descent_mm) / 3)", { bold: true }));
+
+  content.push(h3("8.2.2 Klinische Einordnung"));
+  content.push(p("\u2022 Drift-Score < 2,0: Minimale Absenkung; typisch fuer Patienten unter 35 Jahren", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Drift-Score 2,0\u20134,0: Moderate Absenkung; Volumenrestauration kann die Ptosis teilweise korrigieren", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Drift-Score 4,0\u20136,0: Fortgeschrittene Absenkung; kombinierte Behandlung (Filler + Neurotoxin) empfohlen", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Drift-Score > 6,0: Ausgepragte Ptosis; chirurgische Optionen (Facelift) in Betracht ziehen", { paragraphOpts: { indent: { left: 360 } } }));
+
+  // 8.3
+  content.push(h2("8.3 Periorbitale Alterung"));
+  content.push(p("Die periorbitale Region (Augenumgebung) altert aufgrund der extrem duennen Haut und der oberflaechen Gefaessstruktur besonders frueh und sichtbar. Die Analyse erfasst drei Indikatoren:"));
+
+  content.push(h3("8.3.1 Crow\u2019s Feet Potential"));
+  content.push(p("Die Kraehenfuesse (laterale Periorbitalfalten) korrelieren mit der Aktivitaet des M. orbicularis oculi. Der crow_feet_potential-Wert (0\u20131) wird aus den eyeSquint-Blendshapes abgeleitet:"));
+  content.push(p("crow_feet_potential = avg(eyeSquintLeft, eyeSquintRight)", { bold: true }));
+  content.push(p("Ein Wert > 0,3 in Ruhe deutet auf eine erhoehte Tendenz zur Kraehenfuessbildung hin und ist eine Neurotoxin-Indikation fuer den lateralen Orbicularis oculi."));
+
+  content.push(h3("8.3.2 Unterlidlaxitaet"));
+  content.push(p("Die Unterlidlaxitaet wird aus der vertikalen Distanz zwischen dem infraorbitalen Landmark und der Augenmitte geschaetzt:"));
+  content.push(p("lid_gap_mm = Kalibrierung(|infraorbital_y \u2212 eye_center_y|)"));
+  content.push(p("lid_laxity = min(1,0, lid_gap_mm / 15,0)", { bold: true }));
+  content.push(p("Werte > 0,5 deuten auf eine signifikante Unterliderschlaffung hin, die die Traenental-Behandlung (Zone Tt1) erschweren kann. In solchen Faellen ist besondere Vorsicht geboten, da der Filler unter dem erschlafften Lid sichtbar werden kann (Tyndall-Effekt, vgl. Kapitel 14.5)."));
+
+  content.push(h3("8.3.3 Orbitale Einsenkung"));
+  content.push(p("Die orbitale Einsenkung (Orbital Hollowing) wird aus der z-Tiefendifferenz zwischen dem infraorbitalen und dem Jochbein-Landmark abgeleitet:"));
+  content.push(p("hollowing = min(1,0, Kalibrierung(|z_infraorbital \u2212 z_cheekbone|) / 5,0)", { bold: true }));
+  content.push(p("Dieser Indikator erfasst den skelettalen Anteil der periorbitalen Alterung, der durch Volumenverlust des infraorbitalen Fettpolsters und knoecherne Resorption des Orbitarands entsteht."));
+
+  content.push(h3("8.3.4 Composite Aging Severity"));
+  content.push(p("Der overall_aging_severity-Score (0\u201310) kombiniert alle drei Alterungskomponenten in einem gewichteten Composite:"));
+  content.push(p("severity = muscle_severity \u00d7 0,3 + drift_score \u00d7 0,5 + (crow_feet + lid_laxity) \u00d7 5 \u00d7 0,2", { bold: true }));
+  content.push(p("Die Gewichtung priorisiert die gravitationelle Drift (50 %) als dominanten Alterungsindikator, gefolgt von Muskeltonus-Veraenderungen (30 %) und periorbitalen Befunden (20 %)."));
+
+  const ageHeaders = ["Severity-Score", "Geschaetztes biologisches Alter", "Typische Befunde"];
+  const ageWidths = [1400, 2600, 5360];
+  const ageRows = [
+    ["< 1,5", "25\u201330 Jahre", "Minimale Veraenderungen; guter Muskeltonus"],
+    ["1,5\u20133,0", "30\u201335 Jahre", "Beginnende Frontalis-Kompensation; leichtes Temporal Hollowing"],
+    ["3,0\u20134,5", "35\u201340 Jahre", "Moderate Drift; Nasolabialfalte sichtbar; erste Kraehenfuesse"],
+    ["4,5\u20136,0", "40\u201345 Jahre", "Deutliche Midface-Ptosis; Ogee-Abflachung; Jowl-Ansaetze"],
+    ["6,0\u20137,5", "45\u201355 Jahre", "Fortgeschrittene Alterung; ausgepraete Jowls; tiefes Traenental"],
+    ["> 7,5", "55+ Jahre", "Schwere Gesamtalterung; chirurgische Evaluation erwaegen"],
+  ];
+  content.push(p("Tabelle 8.3: Biologische Altersschaetzung aus Aging Severity", { bold: true }));
+  content.push(makeTable(ageHeaders, ageRows, ageWidths));
+
+  content.push(p("WICHTIG: Die biologische Altersschaetzung ist eine Approximation und kann erheblich vom chronologischen Alter abweichen. Faktoren wie Sonnenschutz, Genetik, Rauchen und vorangegangene Behandlungen beeinflussen das biologische Alter erheblich. Der Score dient als klinische Orientierung, nicht als diagnostisches Instrument.", { bold: true }));
+
+  return content;
+}
+
 // ─── Placeholder chapters ───
 
 function placeholderChapter(title) {
@@ -1072,29 +1490,15 @@ async function main() {
           pb(),
           // TEIL II
           h1("Teil II \u2014 Analysemethoden"),
-          ...placeholderChapter("Kapitel 4: Symmetrieanalyse"),
-          ...placeholderSection("4.1 Median-Sagittallinie und Symmetrieachsen"),
-          ...placeholderSection("4.2 Bilaterale Symmetrie: klinische Schwellenwerte"),
-          ...placeholderSection("4.3 Dynamische Asymmetrie"),
+          ...kapitel4(),
           pb(),
-          ...placeholderChapter("Kapitel 5: Gesichtsproportionen"),
-          ...placeholderSection("5.1 Vertikale Drittel"),
-          ...placeholderSection("5.2 Horizontale F\u00fcnftel"),
-          ...placeholderSection("5.3 Golden Ratio"),
-          ...placeholderSection("5.4 Lip Ratio und Cupid\u2019s Bow"),
+          ...kapitel5(),
           pb(),
           ...kapitel6(),
           pb(),
-          ...placeholderChapter("Kapitel 7: Volumenanalyse"),
-          ...placeholderSection("7.1 Ogee Curve"),
-          ...placeholderSection("7.2 Temporal Hollowing"),
-          ...placeholderSection("7.3 Tear Trough Assessment"),
-          ...placeholderSection("7.4 Pre-Jowl Sulcus"),
+          ...kapitel7(),
           pb(),
-          ...placeholderChapter("Kapitel 8: Altersbedingte Ver\u00e4nderungen"),
-          ...placeholderSection("8.1 Muskeltonus-Ver\u00e4nderungen"),
-          ...placeholderSection("8.2 Gravitationelle Drift"),
-          ...placeholderSection("8.3 Periorbitale Alterung"),
+          ...kapitel8(),
           pb(),
           // TEIL III
           h1("Teil III \u2014 Das Zonen-System"),

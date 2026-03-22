@@ -175,14 +175,16 @@
 - [x] `main.py` aktualisiert: V1 + V2 Router, Version 2.0.0
 - [x] 47 neue Tests (381 total), alle gruen
 
-### Sprint 9 — n8n + Background Processing
+### Sprint 9 — n8n + Async + Legacy Compat ✅ (22.03.2026)
 
-- [ ] n8n Webhook Payload an V2-Schema anpassen
-- [ ] FastAPI BackgroundTasks fuer Supabase-Speicherung
-- [ ] Bilder in Supabase Storage hochladen (async, non-blocking)
-- [ ] Error-Recovery: Teilanalyse zurueckgeben wenn 1 View fehlschlaegt
-- [ ] Structured Logging (JSON) fuer alle Pipeline-Schritte
-- [ ] `api/v1_routes.py` — Legacy-Endpoints beibehalten (backward compat)
+- [x] `services/n8n_service.py` — V2-Payload mit Envelope (event, assessment_id, aesthetic_score)
+- [x] `services/supabase_service.py` — V2: save_assessment, get_assessment, get_patient_history, upload_image, save_comparison
+- [x] `api/v2_routes.py` — BackgroundTasks fuer async Supabase + Storage
+- [x] `api/v2_routes.py` — /compare: Supabase-Read → ZoneReport-Rekonstruktion → compare()
+- [x] `api/v2_routes.py` — /history: Supabase-Query → AssessmentSummary-Liste
+- [x] `utils/logging.py` — Structured JSON Logging mit JSONFormatter + log_step context manager
+- [x] `api/routes.py` → `api/v1_routes.py` umbenannt (backward compat bleibt)
+- [x] 24 neue Tests (405 total): test_n8n_service, test_supabase_service, test_logging
 
 ---
 

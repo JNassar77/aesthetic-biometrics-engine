@@ -29,7 +29,7 @@
 |---|---|---|---|---|
 | App Entrypoint | `app/main.py` | FastAPI app, CORS, V1+V2 routers | config, routes, v2_routes | **V2** |
 | Configuration | `app/config.py` | Environment variables via Pydantic Settings | — | V1 |
-| API Routes V1 | `app/api/routes.py` | Legacy V1 endpoints (/analyze, /health) | core, services, schemas | V1 |
+| API Routes V1 | `app/api/v1_routes.py` | Legacy V1 endpoints (/analyze, /health) | core, services, schemas | V1 |
 | **API Routes V2** | `app/api/v2_routes.py` | **V2 endpoints: /assessment, /compare, /history, /health** | orchestrator, schemas_v2 | **V2** |
 | Schemas V1 | `app/models/schemas.py` | Pydantic models for V1 request/response | — | V1 |
 | **Schemas V2** | `app/models/schemas_v2.py` | **V2 API schemas: Assessment, Comparison, Treatment, History** | pydantic | **V2** |
@@ -59,8 +59,9 @@
 | **Plan Generator** | `app/treatment/plan_generator.py` | **Zone→treatment plan: severity prioritization, clinical ordering, session planning, volume estimation** | product_database, contraindication_check, zone_definitions | **V2** |
 | **Contraindication Check** | `app/treatment/contraindication_check.py` | **Safety: extreme asymmetry, vascular risk, tear trough, overtreatment, glabella/forehead dependency** | product_database | **V2** |
 | **Comparison Engine** | `app/analysis/comparison_engine.py` | **Before/After: per-zone deltas, improvement score, measurement deltas, heatmap visualization** | zone_analyzer | **V2** |
-| Supabase Service | `app/services/supabase_service.py` | DB persistence, image fetch from storage | supabase, config | V1 |
-| n8n Service | `app/services/n8n_service.py` | Webhook notification to n8n | httpx, config | V1 |
+| **Supabase Service** | `app/services/supabase_service.py` | **V1+V2: save_assessment, get_assessment, get_patient_history, upload_image, save_comparison** | supabase, config | **V2** |
+| **n8n Service** | `app/services/n8n_service.py` | **V1+V2: webhook with V2 envelope (event, assessment_id, aesthetic_score)** | httpx, config | **V2** |
+| **Structured Logging** | `app/utils/logging.py` | **JSON formatter, log_step context manager for pipeline instrumentation** | — | **V2** |
 
 ---
 
