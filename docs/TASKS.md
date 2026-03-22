@@ -144,19 +144,36 @@
 
 > **Ziel:** Alles zusammenfuegen, neue Endpoints, Supabase V2.
 
-### Sprint 8 — V2 API + Supabase Schema
+### Sprint 8 — V2 API + Supabase Schema ✅ (22.03.2026)
 
-- [ ] `api/v2_routes.py` — Neue Endpoints:
-  - [ ] `POST /api/v2/assessment` (3 Bilder, 1 Response)
-  - [ ] `POST /api/v2/compare` (Before/After)
-  - [ ] `GET /api/v2/patients/{id}/history`
-- [ ] Supabase Schema Migration V2:
-  - [ ] `assessments` Tabelle (JSONB fuer Zonen + Plan)
-  - [ ] `treatment_comparisons` Tabelle
-  - [ ] Supabase Storage Bucket `patient-images` einrichten
-- [ ] Pydantic V2 Schemas komplett neu (`models/schemas.py`, `models/zone_models.py`)
-- [ ] `pipeline/orchestrator.py` — Verbindet alles:
-  - [ ] 3 Bilder empfangen → Preprocessing → Detection → Analysis → Plan → Response
+- [x] `models/schemas_v2.py` — Pydantic V2 Schemas komplett neu:
+  - [x] AssessmentResponse, ComparisonResponse, TreatmentPlanResponse
+  - [x] Zone/Finding/Measurement response models
+  - [x] PatientHistoryResponse, HealthResponse
+- [x] `api/v2_routes.py` — Neue Endpoints:
+  - [x] `POST /api/v2/assessment` (3 Bilder, 1 Response)
+  - [x] `POST /api/v2/compare` (Before/After, Supabase-Integration Sprint 9)
+  - [x] `GET /api/v2/patients/{id}/history` (Supabase-Integration Sprint 9)
+  - [x] `GET /api/v2/health`
+- [x] `pipeline/orchestrator.py` — Verbindet alles:
+  - [x] 3 Bilder empfangen → Preprocessing → Detection → Analysis → Plan → Response
+  - [x] Partial-Failure Handling (nur akzeptierte Views werden analysiert)
+  - [x] Treatment plan failure non-blocking (Zone Report bleibt verfuegbar)
+- [x] Supabase Schema Migration V2:
+  - [x] `organizations` Tabelle (Multi-Tenant Root)
+  - [x] `assessments` Tabelle (JSONB fuer Zonen + Plan)
+  - [x] `treatment_comparisons` Tabelle
+  - [x] `patients.organization_id` Spalte hinzugefuegt
+  - [x] Indexes fuer org, patient, date
+- [x] Multi-Tenant RLS Policies:
+  - [x] Org-Isolation auf allen V2-Tabellen
+  - [x] Service-Role Bypass fuer API-Backend
+  - [x] V1 Legacy-Policies gefixt (kein USING(true) mehr)
+- [x] Supabase Storage Bucket `patient-images` eingerichtet:
+  - [x] 10MB Limit, JPEG/PNG/WebP
+  - [x] Org-scoped RLS auf Storage-Objects
+- [x] `main.py` aktualisiert: V1 + V2 Router, Version 2.0.0
+- [x] 47 neue Tests (381 total), alle gruen
 
 ### Sprint 9 — n8n + Background Processing
 

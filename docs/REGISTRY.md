@@ -27,10 +27,13 @@
 
 | Module | Path | Responsibility | Dependencies | Version |
 |---|---|---|---|---|
-| App Entrypoint | `app/main.py` | FastAPI app, CORS, router mounting | config, routes | V1 |
+| App Entrypoint | `app/main.py` | FastAPI app, CORS, V1+V2 routers | config, routes, v2_routes | **V2** |
 | Configuration | `app/config.py` | Environment variables via Pydantic Settings | — | V1 |
-| API Routes | `app/api/routes.py` | HTTP endpoints, request handling, orchestration | all core, all services, schemas | V1 |
-| Schemas | `app/models/schemas.py` | Pydantic models for all request/response types | — | V1 |
+| API Routes V1 | `app/api/routes.py` | Legacy V1 endpoints (/analyze, /health) | core, services, schemas | V1 |
+| **API Routes V2** | `app/api/v2_routes.py` | **V2 endpoints: /assessment, /compare, /history, /health** | orchestrator, schemas_v2 | **V2** |
+| Schemas V1 | `app/models/schemas.py` | Pydantic models for V1 request/response | — | V1 |
+| **Schemas V2** | `app/models/schemas_v2.py` | **V2 API schemas: Assessment, Comparison, Treatment, History** | pydantic | **V2** |
+| **Pipeline Orchestrator** | `app/pipeline/orchestrator.py` | **3 images → preprocess → detect → analyze → plan → response** | all pipeline, all analysis, plan_generator | **V2** |
 | **Face Landmarker V2** | `app/detection/face_landmarker.py` | **Tasks API: 478 landmarks + 52 blendshapes + transform matrix** | mediapipe | **V2** |
 | **Landmark Index** | `app/detection/landmark_index.py` | **478-point reference + 16 anatomical zone mappings** | — | **V2** |
 | **Head Pose** | `app/detection/head_pose.py` | **Yaw/pitch/roll from transformation matrix + view estimation** | numpy | **V2** |
@@ -77,11 +80,20 @@
 
 ## Database Table Registry
 
-| Table | Purpose | Key Columns | Indexes |
+| Table | Purpose | Key Columns | Indexes | Version |
+|---|---|---|---|---|
+| `organizations` | Multi-tenant root | id, name, slug, settings | PK on id, UNIQUE on slug | **V2** |
+| `patients` | Patient demographics | id, **organization_id**, external_id, name, DOB | PK, org_id, UNIQUE(org_id, external_id) | **V2** |
+| `assessments` | 3-view zone analysis | id, org_id, patient_id, zones (JSONB), treatment_plan (JSONB), aesthetic_score | org_id, patient_date | **V2** |
+| `treatment_comparisons` | Before/After deltas | id, org_id, patient_id, pre/post_assessment_id, zone_deltas, improvement_score | org_id, patient_id | **V2** |
+| `biometric_analyses` | Individual view results (V1 legacy) | id, patient_id, view_angle, result_json | patient_id | V1 |
+| `treatment_sessions` | Pre/post grouping (V1 legacy) | id, patient_id, treatment_type | patient_id | V1 |
+
+### Storage Buckets
+
+| Bucket | Purpose | Access | Limits |
 |---|---|---|---|
-| `patients` | Patient demographics | id, external_id, name, DOB | PK on id, UNIQUE on external_id |
-| `biometric_analyses` | Individual view analysis results | id, patient_id, view_angle, result_json | patient_id, view_angle, created_at DESC |
-| `treatment_sessions` | Pre/post treatment grouping | id, patient_id, treatment_type, pre/post IDs | patient_id |
+| `patient-images` | Assessment images (frontal, profile, oblique) | Org-scoped RLS | 10MB, JPEG/PNG/WebP |
 
 ---
 
@@ -89,8 +101,12 @@
 
 | Method | Path | Purpose | Auth | Status |
 |---|---|---|---|---|
-| POST | `/api/v1/analyze` | Run facial analysis on image | None (planned) | Active |
-| GET | `/api/v1/health` | Health check | None | Active |
+| POST | `/api/v2/assessment` | **3-view zone analysis + treatment plan** | None (planned) | **Active** |
+| POST | `/api/v2/compare` | **Before/After assessment comparison** | None (planned) | Stub (Sprint 9) |
+| GET | `/api/v2/patients/{id}/history` | **Patient assessment history** | None (planned) | Stub (Sprint 9) |
+| GET | `/api/v2/health` | **V2 health check** | None | **Active** |
+| POST | `/api/v1/analyze` | Legacy single-image analysis | None (planned) | Active (legacy) |
+| GET | `/api/v1/health` | Legacy health check | None | Active (legacy) |
 | GET | `/` | Service info & discovery | None | Active |
 | GET | `/docs` | Swagger UI (auto-generated) | None | Active |
 

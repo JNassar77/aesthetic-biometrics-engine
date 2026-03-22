@@ -32,14 +32,16 @@ app/
 ├── main.py              # FastAPI app entrypoint
 ├── config.py            # Pydantic settings (env vars)
 ├── api/
-│   └── routes.py        # V1 API endpoints (/analyze, /health)
+│   ├── routes.py        # V1 API endpoints (/analyze, /health)
+│   └── v2_routes.py     # V2 API: /assessment, /compare, /history, /health
 ├── detection/           # V2 landmark detection (Sprint 1) ✅
 │   ├── face_landmarker.py     # Tasks API: 478 pts + blendshapes + matrix
 │   ├── landmark_index.py      # Anatomical groups + 19 zone mappings
 │   └── head_pose.py           # Yaw/pitch/roll from transform matrix
-├── pipeline/            # V2 image processing (Sprint 1-2) ✅
+├── pipeline/            # V2 image processing (Sprint 1-2, 8) ✅
 │   ├── image_preprocessor.py  # EXIF, face-crop, decode, resize, reprocess
-│   └── quality_gate.py        # Quality + pose + expression + hard rejection
+│   ├── quality_gate.py        # Quality + pose + expression + hard rejection
+│   └── orchestrator.py        # 3 images → preprocess → detect → analyze → plan (Sprint 8)
 ├── analysis/            # V2 analysis engines (Sprint 3-5) ✅
 │   ├── symmetry_engine.py     # 6-axis bilateral symmetry + dynamic asymmetry
 │   ├── proportion_engine.py   # Thirds, fifths, golden ratio, lip ratio
@@ -62,6 +64,7 @@ app/
 │   └── oblique_analyzer.py    # Ogee curve, midface volume
 ├── models/
 │   ├── schemas.py       # Pydantic request/response models (V1)
+│   ├── schemas_v2.py   # V2 API schemas: Assessment, Comparison, Plan (Sprint 8)
 │   └── zone_models.py  # Zone Pydantic models (V2)
 ├── services/            # External integrations (Supabase, n8n)
 │   ├── supabase_service.py
@@ -71,7 +74,7 @@ app/
     └── pixel_calibration.py  # Iris-based px→mm calibration + face-width fallback
 models/                  # ML model files (not in git, download manually)
   └── face_landmarker.task  # MediaPipe model (3.6MB, see Common Commands)
-tests/                   # Test suite (334 tests passing)
+tests/                   # Test suite (381 tests passing)
 docs/                    # Project documentation
   TASKS.md               # Roadmap & backlog
   FEATURES.md            # Feature catalog

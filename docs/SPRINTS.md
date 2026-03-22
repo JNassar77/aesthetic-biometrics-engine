@@ -11,7 +11,7 @@
 Phase 1 ██████████████░░░░░░░░░░  Detection Layer     Sprint 1✅ / 2✅
 Phase 2 ░░░░░░██████████████░░░░  Zone-System          Sprint 3✅ / 4✅ / 5✅
 Phase 3 ░░░░░░░░░░░░████████████  Treatment Intel.     Sprint 6✅ / 7✅
-Phase 4 ░░░░░░░░░░░░░░░░░░░░████  API + Integration    Sprint 8-9
+Phase 4 ░░░░░░░░░░░░░░░░████████  API + Integration    Sprint 8✅ / 9
 Phase 5 ░░░░░░░░░░░░░░░░░░░░████  Validation           Sprint 10-11
 Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██  Deployment           Sprint 12
 ```
@@ -165,23 +165,25 @@ Phase 6 ░░░░░░░░░░░░░░░░░░░░░░██
 
 ---
 
-## Sprint 8 — V2 API + Supabase V2 Schema
+## Sprint 8 — V2 API + Supabase V2 Schema ✅ DONE (22.03.2026)
 **Phase:** 4 (API + Integration)
 **Ziel:** Neuer Endpoint steht, Daten fliessen
+**Ergebnis:** 4 Module, 381 Tests bestanden (47 neue)
 
 | # | Task | Datei | Abhaengigkeit |
 |---|------|-------|---------------|
-| 8.1 | Pydantic V2 Schemas (komplett neu) | `models/schemas.py` | Sprint 5-6 |
+| 8.1 | Pydantic V2 Schemas (komplett neu) | `models/schemas_v2.py` | Sprint 5-7 |
 | 8.2 | `POST /api/v2/assessment` Endpoint | `api/v2_routes.py` | 8.1 |
-| 8.3 | `POST /api/v2/compare` Endpoint | `api/v2_routes.py` | 7.1, 8.1 |
-| 8.4 | `GET /api/v2/patients/{id}/history` | `api/v2_routes.py` | 8.1 |
-| 8.5 | Supabase Schema Migration V2 (mit organization_id!) | Migration | — |
+| 8.3 | `POST /api/v2/compare` Endpoint (stub, Sprint 9) | `api/v2_routes.py` | 7.1, 8.1 |
+| 8.4 | `GET /api/v2/patients/{id}/history` (stub, Sprint 9) | `api/v2_routes.py` | 8.1 |
+| 8.5 | Supabase Schema Migration V2 (organizations, assessments, comparisons) | Migration | — |
 | 8.6 | Multi-Tenant RLS Policies (Org-Isolation) | Migration | 8.5 |
-| 8.7 | Supabase Storage Bucket einrichten | Supabase | — |
-| 8.8 | Pipeline Orchestrator | `pipeline/orchestrator.py` | Sprint 1-6 |
+| 8.7 | Supabase Storage Bucket `patient-images` | Supabase | — |
+| 8.8 | Pipeline Orchestrator | `pipeline/orchestrator.py` | Sprint 1-7 |
 
-**Deliverable:** Funktionierender V2-Endpoint mit Multi-Tenant Isolation
-**Validierung:** curl/Swagger Test + RLS-Pruefung: Org A sieht keine Daten von Org B
+**Deliverable:** Funktionierender V2 `/assessment` Endpoint mit Multi-Tenant Isolation
+**Validierung:** 381 Tests gruen, Supabase Schema + RLS + Storage verifiziert
+**Status:** ✅ Abgeschlossen — `/compare` und `/history` als Stubs (Supabase-Read in Sprint 9)
 
 ---
 

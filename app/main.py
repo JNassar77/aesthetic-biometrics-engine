@@ -1,14 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import router
+from app.api.routes import router as v1_router
+from app.api.v2_routes import router as v2_router
 from app.config import settings
 
 app = FastAPI(
     title="Aesthetic Biometrics Engine",
     description="Biometric facial analysis for aesthetic medicine. "
-                "Extracts objective measurements from frontal, oblique, and profile images "
-                "to support treatment planning with Botulinum toxin and dermal fillers.",
-    version="0.1.0",
+                "Multi-view zone-based analysis with treatment planning "
+                "for Botulinum toxin and dermal fillers.",
+    version="2.0.0",
 )
 
 app.add_middleware(
@@ -19,17 +20,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router, prefix="/api/v1", tags=["analysis"])
+# V1 Legacy endpoints (backward compatibility)
+app.include_router(v1_router, prefix="/api/v1", tags=["v1-legacy"])
+
+# V2 Zone-based endpoints
+app.include_router(v2_router, prefix="/api/v2", tags=["v2-assessment"])
 
 
 @app.get("/")
 async def root():
     return {
         "service": "Aesthetic Biometrics Engine",
-        "version": "0.1.0",
+        "version": "2.0.0",
         "docs": "/docs",
         "endpoints": {
-            "analyze": "/api/v1/analyze",
-            "health": "/api/v1/health",
+            "v2_assessment": "/api/v2/assessment",
+            "v2_compare": "/api/v2/compare",
+            "v2_health": "/api/v2/health",
+            "v1_analyze": "/api/v1/analyze",
+            "v1_health": "/api/v1/health",
         },
     }
