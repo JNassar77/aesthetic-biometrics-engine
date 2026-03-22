@@ -192,14 +192,25 @@
 
 > **Ziel:** Vertrauen in die Ergebnisse. Genauigkeit validieren.
 
-### Sprint 10 — Test-Suite
+### Sprint 10 — Test-Suite + Reorganisierung ✅ (22.03.2026)
 
-- [ ] Unit Tests: Alle Analyse-Engines mit synthetischen Landmark-Daten
-- [ ] Unit Tests: Zone-Definitionen (vollstaendige Abdeckung aller 16 Zonen)
-- [ ] Unit Tests: Treatment Plan Generator (Priorisierung, Produkt-Matching)
-- [ ] Integration Tests: Voller Pipeline-Durchlauf mit echten Testbildern
-- [ ] Edge Cases: kein Gesicht, mehrere Gesichter, Teilverdeckung, Brille, Bart
-- [ ] Blendshape-Tests: Ruhezustand vs. Ausdruck
+- [x] Tests reorganisiert: `tests/` flach → Unterverzeichnisse:
+  - [x] `tests/analysis/` ← Symmetrie, Proportionen, Engines, Fusion, ZoneAnalyzer, Comparison, **Blendshapes (NEU)**
+  - [x] `tests/treatment/` ← Zone-Definitionen, Produkt-DB, Kontraindikationen, Plan-Generator
+  - [x] `tests/integration/` ← Orchestrator, V2-Routes, Schemas
+  - [x] `tests/services/` ← n8n, Supabase, Logging
+  - [x] `tests/edge_cases/` ← **NEU:** Kein Gesicht, korrupte Bilder, Partial Views, Iris-Occlusion
+  - [x] `tests/fixtures/` ← **NEU:** Synthetische Landmark-Daten (symmetric, asymmetric, aged, blendshapes)
+- [x] `tests/fixtures/synthetic.py` — Factory-Funktionen:
+  - [x] `make_symmetric_face()` — perfekt symmetrisch, 478 Punkte + Iris
+  - [x] `make_asymmetric_face()` — bewusst asymmetrisch (Brow, Cheekbone, Mouth)
+  - [x] `make_aged_face()` — gravitationelle Drift, vertiefte Traenentaeler
+  - [x] `make_blendshapes(neutral/aging/expression)` — 52 Koeffizienten
+  - [x] `make_calibration()` — Standard-CalibrationResult
+- [x] Edge Case Tests (12 Tests): korrupte Bytes, kein Gesicht, partielle Views, Pipeline-Level
+- [x] Partial Detection Tests (7 Tests): Iris-Occlusion, extreme Pose, Boundary-Werte
+- [x] Blendshape Tests (15 Tests): Neutral vs. Expression, dynamische Asymmetrie, Aging-Muster
+- [x] Coverage: 80% (439 Tests, alle gruen)
 
 ### Sprint 11 — Klinische Validierung + Feintuning
 

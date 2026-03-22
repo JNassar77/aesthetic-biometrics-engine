@@ -20,6 +20,7 @@
 | Definition of Done | `docs/DOD.md` | Quality gates for features, fixes, and releases | Baseline, rarely changes |
 | Architecture V2 | `docs/ARCHITECTURE_V2.md` | Complete V2 system redesign with zones and treatment plans | Reference for all V2 work |
 | Sprint Plan | `docs/SPRINTS.md` | 12 Sprints, 6 Phasen, Abhaengigkeiten, Meilensteine | Updated per sprint |
+| Lehrbuch | `docs/lehrbuch/generate_book.js` | DOCX-Lehrbuch (12/16 Kapitel fertig: 3,4,5,6,7,8,9,10,11,12,13,14) | Updated per sprint |
 
 ---
 
@@ -62,6 +63,21 @@
 | **Supabase Service** | `app/services/supabase_service.py` | **V1+V2: save_assessment, get_assessment, get_patient_history, upload_image, save_comparison** | supabase, config | **V2** |
 | **n8n Service** | `app/services/n8n_service.py` | **V1+V2: webhook with V2 envelope (event, assessment_id, aesthetic_score)** | httpx, config | **V2** |
 | **Structured Logging** | `app/utils/logging.py` | **JSON formatter, log_step context manager for pipeline instrumentation** | — | **V2** |
+
+---
+
+## Test Registry
+
+| Directory | Contents | Test Count |
+|---|---|---|
+| `tests/analysis/` | Symmetry, proportions, engines, fusion, zone analyzer, comparison, **blendshapes** | ~150 |
+| `tests/treatment/` | Zone definitions, product database, contraindications, plan generator | ~90 |
+| `tests/integration/` | Orchestrator, V2 routes, schemas | ~50 |
+| `tests/services/` | n8n webhook, Supabase service, structured logging | ~25 |
+| `tests/edge_cases/` | No face, corrupt images, partial views, boundary values | ~20 |
+| `tests/fixtures/` | `synthetic.py` — factory functions for landmarks and blendshapes | — |
+| `tests/` (root) | Head pose, quality gate, landmark index, preprocessor, geometry, calibration | ~100 |
+| **TOTAL** | | **439** |
 
 ---
 

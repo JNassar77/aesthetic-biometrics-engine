@@ -75,7 +75,13 @@ app/
     └── logging.py           # Structured JSON logging + log_step (Sprint 9)
 models/                  # ML model files (not in git, download manually)
   └── face_landmarker.task  # MediaPipe model (3.6MB, see Common Commands)
-tests/                   # Test suite (405 tests passing)
+tests/                   # Test suite (439 tests passing, 80% coverage)
+  ├── analysis/              # Symmetry, proportion, engines, fusion, comparison, blendshapes
+  ├── treatment/             # Zone definitions, product DB, contraindications, plan generator
+  ├── integration/           # Orchestrator, V2 routes, schemas
+  ├── services/              # n8n, Supabase, logging
+  ├── edge_cases/            # No face, corrupt images, partial views, boundary values
+  ├── fixtures/              # Synthetic landmark data (symmetric, asymmetric, aged)
 docs/                    # Project documentation
   TASKS.md               # Roadmap & backlog
   FEATURES.md            # Feature catalog

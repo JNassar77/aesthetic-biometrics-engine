@@ -1397,6 +1397,376 @@ function kapitel8() {
   return content;
 }
 
+// ─── Kapitel 3: Landmark-basierte Gesichtsvermessung (FULL) ───
+
+function kapitel3() {
+  const content = [];
+  content.push(h1("Kapitel 3: Landmark-basierte Gesichtsvermessung"));
+  content.push(p("Die objektive Gesichtsanalyse erfordert ein standardisiertes Koordinatensystem, das anatomische Strukturen zuverlaessig und reproduzierbar lokalisiert. Das MediaPipe Face Landmarker System der Google AI Edge Platform bildet die Grundlage des Aesthetic Biometrics Engine. Es erkennt 478 dreidimensionale Landmarks pro Gesicht und liefert zusaetzlich 52 Blendshape-Koeffizienten (Muskelaktivierungsmuster) sowie eine 4\u00d74-Transformationsmatrix fuer die Kopfpositionsbestimmung."));
+  content.push(p("Dieses Kapitel beschreibt das Landmark-System, seine anatomischen Gruppierungen und die Methodik der Iris-basierten Pixelkalibrierung, die alle nachfolgenden Messungen in klinisch verwertbare Millimeterwerte ueberfuehrt."));
+
+  // 3.1
+  content.push(h2("3.1 Das 478-Punkt-Landmarksystem"));
+  content.push(p("MediaPipe Face Landmarker lokalisiert 478 Punkte pro erkanntem Gesicht. Jeder Punkt wird als normalisiertes 3D-Koordinatentripel (x, y, z) im Bereich [0, 1] zurueckgegeben, wobei x und y die Position relativ zur Bildbreite und -hoehe beschreiben und z die relative Tiefe (negativ = naeher zur Kamera) angibt."));
+  content.push(p("Die Landmarks gliedern sich in drei Gruppen:"));
+  content.push(p("\u2022 Landmarks 0\u2013467: Core Face Mesh \u2014 die klassischen 468 Punkte des Gesichtsnetzes, die Gesichtsoberflaeche, Augen, Brauen, Nase, Mund und Kieferlinie abdecken.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Landmarks 468\u2013472: Linke Iris \u2014 fuenf Punkte (Zentrum, rechts, oben, links, unten), die den linken Irisrand definieren.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Landmarks 473\u2013477: Rechte Iris \u2014 fuenf Punkte analog zur linken Iris.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("Die Iris-Landmarks sind besonders wertvoll, da die menschliche Iris einen nahezu konstanten Durchmesser von 11,7 \u00b1 0,5 mm aufweist (Hashemi et al., 2012) und damit als natuerlicher Massstab fuer die Pixelkalibrierung dient."));
+
+  // 3.1.1 Midline
+  content.push(h3("3.1.1 Midline-Landmarks"));
+  content.push(p("Die Midline-Landmarks liegen auf der Median-Sagittalebene des Gesichts und definieren die vertikale Referenzlinie fuer alle Symmetriemessungen:"));
+
+  const midHeaders = ["Anatomischer Name", "Landmark-Index", "Klinische Bedeutung"];
+  const midWidths = [2800, 1800, 4760];
+  const midRows = [
+    ["Trichion (approx.)", "10", "Hoechster zuverlaessiger Stirnpunkt, Oberkante des oberen Gesichtsdrittels"],
+    ["Glabella", "9", "Nasenwurzel/Brauenzentrum, Referenz fuer Brauensymmetrie"],
+    ["Nasion", "168", "Nasenbeinansatz, Uebergang Stirn\u2192Nase"],
+    ["Rhinion", "5", "Nasenruecken, Referenzpunkt fuer Nasenprofil-Analyse"],
+    ["Pronasale", "4", "Nasenspitze, anteriorster Punkt der Nase, E-Line-Referenz"],
+    ["Subnasale", "2", "Nasenbasis, Drehpunkt fuer Nasolabialwinkel"],
+    ["Labrale superius", "0", "Oberlippenmittelpunkt, obere Vermiliongrenze"],
+    ["Stomion", "13", "Mundspalte, Trennlinie Ober-/Unterlippe"],
+    ["Labrale inferius", "17", "Unterlippenmittelpunkt"],
+    ["Mentolabial-Sulcus", "18", "Lippen-Kinn-Falte"],
+    ["Pogonion", "175", "Anteriorster Kinnpunkt, Referenz fuer Profilanalyse"],
+    ["Gnathion (Menton)", "152", "Tiefster Kinnpunkt, Unterkante des unteren Gesichtsdrittels"],
+  ];
+  content.push(p("Tabelle 3.1: Midline-Landmarks", { bold: true }));
+  content.push(makeTable(midHeaders, midRows, midWidths));
+
+  // 3.1.2 Bilateral
+  content.push(h3("3.1.2 Bilaterale (gepaarte) Landmarks"));
+  content.push(p("Bilaterale Landmarks existieren als links-rechts-Paare und bilden die Grundlage der Symmetrieanalyse. Die Konvention folgt dem MediaPipe-Standard: der erste Index ist der LINKE Landmark (aus Sicht des Betrachters rechts im Bild), der zweite der RECHTE."));
+
+  const pairHeaders = ["Struktur", "Links", "Rechts", "Klinische Relevanz"];
+  const pairWidths = [2400, 1200, 1200, 4560];
+  const pairRows = [
+    ["eye_outer", "263", "33", "Lateraler Augenwinkel, Lidspaltenmessung"],
+    ["eye_inner", "362", "133", "Medialer Augenwinkel, Interkanthaldistanz"],
+    ["brow_outer", "276", "46", "Laterale Braue, Ptosis-Beurteilung"],
+    ["brow_inner", "285", "55", "Mediale Braue, Glabella-Komplex"],
+    ["brow_peak", "282", "52", "Brauenscheitelpunkt, Brauenform-Analyse"],
+    ["mouth_corner", "291", "61", "Mundwinkel, Mundwinkelsymmetrie"],
+    ["cheekbone", "330", "101", "Jochbeinprominenz, Mittelgesichtsvolumen"],
+    ["alar", "309", "79", "Nasenfluegelbreiteste, Nasenbasismessung"],
+    ["gonion", "365", "136", "Kieferwinkel, Jawline-Analyse"],
+    ["malar_high", "329", "100", "Obere Wangenhoehe, Ogee-Kurve"],
+    ["malar_low", "425", "205", "Untere Wange, Nasolabialfalten-Region"],
+    ["infraorbital", "253", "23", "Traenentalregion, Volumendefizit"],
+    ["temporal", "251", "21", "Schlaefenregion, Temporal Hollowing"],
+  ];
+  content.push(p("Tabelle 3.2: Bilaterale Landmarks", { bold: true }));
+  content.push(makeTable(pairHeaders, pairRows, pairWidths));
+
+  // 3.2
+  content.push(h2("3.2 Anatomische Gruppen und Konturen"));
+  content.push(p("Neben einzelnen Punkten definiert das System zusammenhaengende Konturgruppen, die fuer die Analyse von Lippen, Augen und Gesichtsoval verwendet werden:"));
+  content.push(p("\u2022 Lip Upper Outer (11 Punkte: 61\u2192185\u219240\u219239\u219237\u21920\u2192267\u2192269\u2192270\u2192409\u2192291): Aeussere Oberlippenkontur von rechtem zu linkem Mundwinkel. Definiert die Vermiliongrenze und den Cupid\u2019s Bow.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Lip Lower Outer (11 Punkte: 291\u2192375\u2192321\u2192405\u2192314\u219217\u219284\u2192181\u219291\u2192146\u219261): Aeussere Unterlippenkontur, definiert das Lip-Ratio (Ober- zu Unterlippenverhaeltnis).", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Lip Upper/Lower Inner (je 11 Punkte): Innere Lippenraender, relevant fuer die Vermilion-Show und die funktionelle Mundoeffnung.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Left/Right Eye Contour (je 17 Punkte): Vollstaendige Lidkontur fuer Fissura palpebralis und perioperative Analyse.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Left/Right Brow (je 10 Punkte): Brauenkontur fuer Formbewertung und Ptosis-Screening.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Face Oval (37 Punkte): Gesichtsrandkontur von Stirn ueber Wangen zum Kinn, definiert die Gesichtsform und Jawline.", { paragraphOpts: { indent: { left: 360 } } }));
+
+  // 3.3
+  content.push(h2("3.3 Iris-basierte Kalibrierung"));
+  content.push(p("Das zentrale Problem jeder bildbasierten Vermessung ist die Umrechnung von Pixelabstaenden in reale Einheiten. Ohne Kalibrierung sind alle Messungen rein relativ und erlauben keinen Vergleich zwischen Patienten, Aufnahmen oder Zeitpunkten."));
+  content.push(p("Der Aesthetic Biometrics Engine loest dieses Problem durch die Nutzung der menschlichen Iris als natuerlichen Massstab:"));
+
+  content.push(h3("3.3.1 Referenzwert und biologische Grundlage"));
+  content.push(p("Der horizontale Irisdurchmesser (HVID \u2014 Horizontal Visible Iris Diameter) betraegt beim Erwachsenen 11,7 \u00b1 0,5 mm (Hashemi et al., 2012, n = 3.537). Diese bemerkenswerte Konstanz \u2014 unabhaengig von Ethnie, Geschlecht und Alter (ab 20 Jahre) \u2014 macht die Iris zum idealen internen Kalibrierstandard."));
+  content.push(p("Die Kalibrierung erfolgt in drei Schritten:"));
+  content.push(p("1. Iris-Breite in Pixeln messen: Der horizontale Abstand zwischen dem linken und rechten Irispunkt wird berechnet. Dies geschieht fuer beide Augen separat, und der Durchschnitt wird gebildet.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("2. Kalibrierungsfaktor berechnen: px_per_mm = iris_width_px / 11,7 mm. Dieser Faktor konvertiert alle Pixelmessungen in Millimeter.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("3. Plausibilitaetspruefung: Der errechnete Faktor wird gegen die Gesichtsbreite (typisch 130\u2013160 mm) validiert. Weicht der Iris-basierte Wert stark ab, sinkt die Confidence.", { paragraphOpts: { indent: { left: 360 } } }));
+
+  content.push(h3("3.3.2 Fallback-Strategie: Face-Width-Schaetzung"));
+  content.push(p("In Situationen, in denen die Iris-Kalibrierung nicht zuverlaessig ist \u2014 zum Beispiel bei Brillentraegern, geschlossenen Augen oder Profilaufnahmen, bei denen eine Iris verdeckt ist \u2014 aktiviert das System automatisch einen Fallback:"));
+  content.push(p("Der Fallback nutzt die Gesichtsbreite (Bizygomatische Distanz), die typischerweise 130\u2013160 mm betraegt. Diese Schaetzung ist weniger praezise als die Iris-Methode (erwarteter Fehler: 5\u201310 % statt 2\u20133 %), wird aber zuverlaessig erkannt, da die Landmarks fuer den Gesichtsrand selbst bei schwierigen Aufnahmen robust sind."));
+
+  const calHeaders = ["Eigenschaft", "Iris-Kalibrierung", "Face-Width-Fallback"];
+  const calWidths = [2600, 3380, 3380];
+  const calRows = [
+    ["Methode", "iris_width_px / 11,7 mm", "face_width_px / 140,0 mm (geschaetzt)"],
+    ["Genauigkeit", "2\u20133 % Fehler", "5\u201310 % Fehler"],
+    ["Confidence", "0,85\u20130,95", "0,40\u20130,55"],
+    ["Voraussetzung", "Beide Iris-Landmarks sichtbar", "Face-Oval-Landmarks vorhanden"],
+    ["Aktivierung", "Standard (bevorzugt)", "Automatisch bei Iris-Confidence < Schwelle"],
+  ];
+  content.push(p("Tabelle 3.3: Vergleich der Kalibrierungsmethoden", { bold: true }));
+  content.push(makeTable(calHeaders, calRows, calWidths));
+
+  content.push(h3("3.3.3 Confidence-Modell"));
+  content.push(p("Die Kalibrierungs-Confidence wird durch mehrere Faktoren bestimmt:"));
+  content.push(p("\u2022 Iris-Symmetrie: Stimmen die Durchmesser beider Iris ueberein? Eine starke Abweichung (z. B. durch Verdeckung) reduziert die Confidence.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Iris-Groesse in Pixeln: Zu kleine Iris (< 15 px Durchmesser) fuehren zum automatischen Fallback, da die Messungenauigkeit zu gross wird.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Cross-Validation: Der Iris-basierte Kalibrierungsfaktor wird gegen die Gesichtsbreite geprueft. Stimmen beide ueberein (innerhalb 15 %), steigt die Confidence.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("KLINISCHER HINWEIS: Die Genauigkeit der Kalibrierung ist der limitierende Faktor fuer alle nachfolgenden Millimeter-Messungen. Eine Iris-basierte Kalibrierung mit Confidence > 0,85 ermoeglicht klinisch verwertbare Aussagen. Messungen mit Face-Width-Fallback (Confidence 0,40\u20130,55) sollten als Schaetzungen interpretiert und mit Vorsicht klinisch verwendet werden.", { bold: true }));
+
+  return content;
+}
+
+// ─── Kapitel 10: Multi-View Fusion (FULL) ───
+
+function kapitel10() {
+  const content = [];
+  content.push(h1("Kapitel 10: Multi-View Fusion"));
+  content.push(p("Die aesthetische Gesichtsanalyse aus einer einzelnen Aufnahme liefert stets nur eine partielle Sicht. Frontale Fotos erfassen die bilaterale Symmetrie, nicht aber die sagittale Projektion. Profilaufnahmen zeigen die Nasen- und Kinnprojektion, nicht aber die Mittelgesichtsbreite. Erst die systematische Kombination mehrerer Ansichten \u2014 frontal (0\u00b0), oblique (45\u00b0) und profil (90\u00b0) \u2014 ergibt ein vollstaendiges klinisches Bild."));
+  content.push(p("Dieses Kapitel beschreibt den Multi-View-Fusion-Algorithmus des Aesthetic Biometrics Engine, der Messungen aus bis zu drei Ansichten confidence-gewichtet zusammenfuehrt, Widersprueche zwischen Views erkennt und eine konsolidierte Zonenanalyse produziert."));
+
+  // 10.1
+  content.push(h2("10.1 Designprinzipien der Fusion"));
+  content.push(p("Drei Grundregeln bestimmen die Architektur der Multi-View Fusion:"));
+  content.push(p("Regel 1 \u2014 Nur Landmark-Geometrie wird fusioniert: Blendshape-Koeffizienten (Muskelaktivierungen) werden NIEMALS ueber Views fusioniert. Der Grund: Zwischen den Aufnahmen aendert sich die Mimik des Patienten. Eine Blendshape-basierte Messung (z. B. Muskeltonus) ist nur innerhalb derselben Aufnahme gueltig.", { bold: true }));
+  content.push(p("Regel 2 \u2014 Primaere View dominiert: Jede Zone hat eine primaere Ansicht, die klinisch am aussagekraeftigsten ist (z. B. frontal fuer Symmetrie, profil fuer E-Line). Sekundaere Views bestaetigen oder korrigieren, ueberstimmen aber nie die primaere Messung.", { bold: true }));
+  content.push(p("Regel 3 \u2014 Widersprueche werden explizit gemeldet: Wenn zwei Views fuer dieselbe Metrik stark abweichende Werte liefern, wird dies nicht stillschweigend gemittelt, sondern als Contradiction markiert und die Confidence reduziert.", { bold: true }));
+
+  // 10.2
+  content.push(h2("10.2 Confidence-gewichtete Fusion"));
+  content.push(p("Die Fusion einer Metrik folgt einer gewichteten Mittelung:"));
+  content.push(p("Formel: fused_value = (\u03A3 value_i \u00d7 weight_i) / (\u03A3 weight_i)"));
+  content.push(p("Die Gewichte sind:"));
+
+  const wHeaders = ["View-Typ", "Basis-Gewicht", "Beschreibung"];
+  const wWidths = [2400, 2400, 4560];
+  const wRows = [
+    ["Primary", "1,0", "Volle Gewichtung \u2014 klinisch massgebliche Ansicht fuer diese Zone"],
+    ["Secondary", "0,7", "Reduzierte Gewichtung \u2014 Best\u00e4tigung der Prim\u00e4rmessung"],
+  ];
+  content.push(p("Tabelle 10.1: View-Gewichte", { bold: true }));
+  content.push(makeTable(wHeaders, wRows, wWidths));
+
+  content.push(p("Das effektive Gewicht eines sekundaeren Views wird zusaetzlich mit der Kalibrierungs-Confidence des jeweiligen Bildes multipliziert: effective_weight = 0,7 \u00d7 calibration_confidence."));
+  content.push(p("Die Gesamt-Confidence einer fusionierten Messung steigt mit der Anzahl bestaetiegender Views: confidence = min(1,0; 0,8 + n_secondary \u00d7 0,1). Eine Messung aus nur einem View hat Confidence 0,8; bei Bestaetigung durch einen zweiten View steigt sie auf 0,9."));
+
+  // 10.3
+  content.push(h2("10.3 Widerspruchserkennung"));
+  content.push(p("Ein Widerspruch (Contradiction) wird erkannt, wenn zwei Views fuer dieselbe Metrik Werte liefern, die ueber einem metrik-abhaengigen Schwellenwert auseinanderliegen:"));
+
+  const cHeaders = ["Einheit", "Schwellenwert", "Beispiel"];
+  const cWidths = [1600, 2400, 5360];
+  const cRows = [
+    ["mm", "> 3,0 mm", "Nasenbreite frontal 35 mm vs. oblique 39 mm \u2192 Contradiction"],
+    ["Grad (\u00b0)", "> 10,0\u00b0", "Nasolabialwinkel profil 95\u00b0 vs. oblique 108\u00b0 \u2192 Contradiction"],
+    ["Ratio", "> 0,15", "Lip Ratio frontal 1,6 vs. oblique 1,9 \u2192 Contradiction"],
+    ["Score (0\u2013100)", "> 15 Punkte", "Symmetrie-Score frontal 88 vs. oblique 70 \u2192 Contradiction"],
+  ];
+  content.push(p("Tabelle 10.2: Widerspruchsschwellen nach Metrik-Einheit", { bold: true }));
+  content.push(makeTable(cHeaders, cRows, cWidths));
+
+  content.push(p("Wird ein Widerspruch erkannt, geschieht Folgendes:"));
+  content.push(p("\u2022 Die Contradiction wird mit Zone, Metrik, beiden Werten und prozentualem Unterschied protokolliert.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Die Fusion-Confidence der betroffenen Messung wird um 40 % reduziert (Faktor 0,6).", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Die betroffene Metrik erhaelt das Flag contradiction = true.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("Klinische Interpretation: Widersprueche entstehen haeufig durch suboptimale Bildqualitaet in einem der Views, durch leichte Kopfdrehungen zwischen Aufnahmen oder durch tatsaechlich asymmetrische 3D-Strukturen (z. B. einseitige Schwellung). In jedem Fall signalisieren sie dem Behandler, dass die Messung mit Vorsicht zu interpretieren ist."));
+
+  // 10.4
+  content.push(h2("10.4 Fusion-Zuordnung der Zonen"));
+  content.push(p("Nicht alle 19 Zonen erfordern Multi-View Fusion. Profilspezifische Zonen (NP1, LP1, CH2) werden ausschliesslich aus der Profilansicht analysiert, da eine frontale Messung des Nasenprofils oder der Lippenprojektion klinisch nicht sinnvoll ist."));
+
+  const fHeaders = ["Zone-ID", "Zone", "Primaere View", "Sekundaere Views", "Fusion"];
+  const fWidths = [1000, 2400, 1600, 2200, 1160];
+  const fRows = [
+    ["T1", "Temporal", "oblique", "\u2014", "Nein"],
+    ["Bw1", "Brow Lateral", "frontal", "oblique", "Ja"],
+    ["Bw2", "Glabella", "frontal", "\u2014", "Nein"],
+    ["Ck1", "Zygomatic Arch", "oblique", "frontal", "Ja"],
+    ["Ck2", "Zygomatic Eminence", "frontal", "oblique", "Ja"],
+    ["Ck3", "Mid-Cheek", "oblique", "frontal", "Ja"],
+    ["It1", "Tear Trough", "frontal", "oblique", "Ja"],
+    ["NLF", "Nasolabialfalte", "oblique", "frontal", "Ja"],
+    ["Lp1", "Upper Lip", "frontal", "\u2014", "Nein"],
+    ["Lp2", "Lower Lip", "frontal", "\u2014", "Nein"],
+    ["ML1", "Marionette", "frontal", "oblique", "Ja"],
+    ["Jw1", "Pre-jowl Sulcus", "frontal", "oblique", "Ja"],
+    ["Jw2", "Jawline", "frontal", "oblique", "Ja"],
+    ["Ch1", "Pogonion (Kinn)", "frontal", "profil", "Ja"],
+    ["NP1", "Nasal Profile", "profil", "\u2014", "Nein"],
+    ["LP1", "Lip Projection", "profil", "\u2014", "Nein"],
+    ["CH2", "Chin-Neck Angle", "profil", "\u2014", "Nein"],
+    ["Fw1", "Forehead", "frontal", "\u2014", "Nein"],
+    ["Pc1", "Perioral", "frontal", "\u2014", "Nein"],
+  ];
+  content.push(p("Tabelle 10.3: Fusion-Konfiguration aller 19 Zonen", { bold: true }));
+  content.push(makeTable(fHeaders, fRows, fWidths));
+
+  content.push(p("KLINISCHER HINWEIS: Die Fusion funktioniert auch bei partiellen Daten. Wenn nur ein frontales und ein Profilbild vorliegen (ohne Oblique), werden die oblique-abhaengigen Zonen (T1, Ck1, Ck3, NLF) nur aus dem verfuegbaren Material analysiert, mit entsprechend reduzierter Confidence. Dies ermoeglicht flexible klinische Workflows, in denen nicht immer alle drei Standardaufnahmen verfuegbar sind.", { bold: true }));
+
+  return content;
+}
+
+// ─── Kapitel 12: Zone-zu-Produkt-Matching (FULL) ───
+
+function kapitel12() {
+  const content = [];
+  content.push(h1("Kapitel 12: Zone-zu-Produkt-Matching"));
+  content.push(p("Die Ueberfuehrung einer zonenbasierten Diagnose in konkrete Produktempfehlungen erfordert ein strukturiertes Regelwerk, das rheologische Produkteigenschaften mit anatomischen Anforderungen abgleicht. Der Aesthetic Biometrics Engine verfuegt ueber eine integrierte Produktdatenbank mit 14 Produkten aus 6 Kategorien, die systematisch den 19 Behandlungszonen zugeordnet werden."));
+  content.push(p("Dieses Kapitel beschreibt die Produktkategorien, ihre rheologischen Eigenschaften, die Zuordnungslogik und die zonenspezifischen Empfehlungen."));
+
+  // 12.1
+  content.push(h2("12.1 Produktkategorien und Rheologie"));
+  content.push(p("Die sechs Produktkategorien spiegeln die klinische Klassifikation aesthetischer Injektabilia wider:"));
+
+  const catHeaders = ["Kategorie", "Beschreibung", "G\u2019 (Pa)", "Typische Anwendung"];
+  const catWidths = [2200, 3200, 1200, 2760];
+  const catRows = [
+    ["HA Deep", "Hochviskoese Hyaluronsaeure", "400\u2013600", "Tiefe Volumenaugmentation, Knochenersatz"],
+    ["HA Medium", "Mittlere Viskositaet", "150\u2013300", "Konturierung, Stuetzstruktur"],
+    ["HA Soft", "Weiche Hyaluronsaeure", "50\u2013100", "Lippen, feine Linien, Tr\u00e4nental"],
+    ["Non-HA Volumizer", "CaHA, PLLA Biostimulatoren", "\u2014", "Kollagenstimulation, tiefe Volumenrestauration"],
+    ["Neurotoxin", "Botulinumtoxin Typ A", "\u2014", "Muskelrelaxation, dynamische Falten"],
+    ["Skin Booster", "Hydratation, Hautqualitaet", "\u2014", "Hauttextur, Feuchtigkeit, Elastizitaet"],
+  ];
+  content.push(p("Tabelle 12.1: Produktkategorien", { bold: true }));
+  content.push(makeTable(catHeaders, catRows, catWidths));
+
+  content.push(p("Der elastische Modul G\u2019 (gesprochen \u201eG-Prime\u201c) ist der zentrale rheologische Parameter: Er beschreibt die Festigkeit eines Gels unter Belastung. Je hoeher G\u2019, desto steifer das Produkt und desto staerker die Lift-Kapazitaet. Regionen wie das Jochbein (Ck1/Ck2) erfordern hohe G\u2019-Werte, waehrend Lippen (Lp1/Lp2) weiche Produkte benoetigen."));
+
+  // 12.2
+  content.push(h2("12.2 Injektionstechniken und Injektionsebenen"));
+  content.push(p("Jede Zonenempfehlung umfasst neben dem Produkt auch die empfohlene Injektionstechnik und -tiefe:"));
+
+  const techHeaders = ["Technik", "Beschreibung", "Typische Zonen"];
+  const techWidths = [2400, 3800, 3160];
+  const techRows = [
+    ["Bolus", "Einzeldepot in der Tiefe, punktuelles Volumen", "Ck1, Ck2, Ch1 (supraperiostal)"],
+    ["Linear Threading", "Lineare Deposition beim Zurueckziehen", "NLF, ML1, Jawline"],
+    ["Serial Puncture", "Mehrere kleine Depots in Reihe", "Lippen, Perioral"],
+    ["Fan", "Faecherfoermige Verteilung von einem Einstichpunkt", "Temporal, Mid-Cheek"],
+    ["Microdroplet", "Superfizielle Mikro-Injektionen", "Tear Trough, Skin Booster"],
+    ["BAP (Bio-Aesthetic Points)", "Standardisierte Injektionspunkte nach de Maio", "Ck2, Jw1, Jw2"],
+  ];
+  content.push(p("Tabelle 12.2: Injektionstechniken", { bold: true }));
+  content.push(makeTable(techHeaders, techRows, techWidths));
+
+  const depthHeaders = ["Ebene", "Tiefe", "Typische Produkte"];
+  const depthWidths = [2800, 3200, 3360];
+  const depthRows = [
+    ["Supraperiostal", "Auf dem Knochen", "HA Deep, CaHA (Volify, Radiesse)"],
+    ["Tief subkutan", "Tiefes Fettgewebe", "HA Deep/Medium, Sculptra"],
+    ["Subkutan", "Oberfl\u00e4chliches Fettgewebe", "HA Medium (Voluma, Volift)"],
+    ["Subdermal", "Unter der Dermis", "HA Soft (Volbella, Volite)"],
+    ["Intradermal", "In der Dermis", "Skin Booster (Profhilo, Volite)"],
+    ["Intramuskul\u00e4r", "Im Muskel", "Neurotoxin (Botox, Dysport)"],
+  ];
+  content.push(p("Tabelle 12.3: Injektionsebenen", { bold: true }));
+  content.push(makeTable(depthHeaders, depthRows, depthWidths));
+
+  // 12.3
+  content.push(h2("12.3 Zonenspezifisches Produkt-Matching"));
+  content.push(p("Die Zuordnungslogik folgt dem Prinzip: anatomische Anforderung \u2192 rheologische Eignung \u2192 Produktempfehlung. Fuer jede Zone werden passende Produkte, Techniken, Injektionsebene und Volumenbereiche spezifiziert."));
+  content.push(p("Beispielhafte Zuordnungen:", { bold: true }));
+
+  const matchHeaders = ["Zone", "Kategorie", "Produkte", "Technik", "Volumen/Seite"];
+  const matchWidths = [1200, 1400, 2800, 2000, 1960];
+  const matchRows = [
+    ["T1 Temporal", "Non-HA", "Radiesse, Sculptra", "Fan", "0,5\u20131,5 ml"],
+    ["Ck2 Zygoma", "HA Deep", "Volux, Voluma", "Bolus/BAP", "0,5\u20131,5 ml"],
+    ["It1 Tear Trough", "HA Soft", "Volbella, Belotero Soft", "Microdroplet", "0,2\u20130,5 ml"],
+    ["Lp1 Upper Lip", "HA Soft", "Volbella, Juvederm Smile", "Serial Puncture", "0,3\u20130,8 ml"],
+    ["Jw2 Jawline", "HA Deep", "Volux", "Linear/BAP", "0,5\u20132,0 ml"],
+    ["Ch1 Kinn", "HA Deep", "Volux, Voluma", "Bolus", "0,5\u20131,5 ml"],
+  ];
+  content.push(p("Tabelle 12.4: Beispielhafte Zone-zu-Produkt-Zuordnungen", { bold: true }));
+  content.push(makeTable(matchHeaders, matchRows, matchWidths));
+
+  content.push(p("Das System empfiehlt Volumenranges (Minimum bis Maximum pro Seite), die auf publizierten Konsensus-Empfehlungen und klinischer Erfahrung basieren. Die Angabe als Range statt als fester Wert respektiert die individuelle klinische Entscheidung des Behandlers."));
+
+  // 12.4
+  content.push(h2("12.4 Vaskul\u00e4res Risikoprofil"));
+  content.push(p("Bestimmte Zonen sind als vaskul\u00e4re High-Risk-Zonen klassifiziert, in denen die Gefahr einer intravasal\u00e4ren Injektion erh\u00f6ht ist. Das System kennzeichnet diese Zonen automatisch mit Sicherheitshinweisen:"));
+  content.push(p("\u2022 Tear Trough (It1): A./V. angularis, Infraorbitalarterie. Hoechstes Blindheitsrisiko.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Nasal Profile (NP1): A. dorsalis nasi, laterale Nasalarterie. Risiko der Nasenspitzennekrose.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Glabella (Bw2): A. supratrochlearis, Endast der A. ophthalmica. Blindheitsrisiko bei retrograder Embolisation.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("KLINISCHER HINWEIS: Die Produkt-Matching-Engine ersetzt nicht das klinische Urteil des Behandlers. Sie bietet eine evidenzbasierte Orientierung, die der Behandler auf Basis seiner Erfahrung, der individuellen Patientenanatomie und der Patientenwuensche anpassen muss.", { bold: true }));
+
+  return content;
+}
+
+// ─── Kapitel 13: Klinische Priorisierung (FULL) ───
+
+function kapitel13() {
+  const content = [];
+  content.push(h1("Kapitel 13: Klinische Priorisierung"));
+  content.push(p("Nach der zonenbasierten Analyse und dem Produkt-Matching steht der Behandler vor der Frage: Welche Zone wird zuerst behandelt? Und kann alles in einer Sitzung erfolgen? Die klinische Priorisierung des Treatment Plan Generators folgt einem strukturierten Algorithmus, der Schweregrad, anatomische Hierarchie und Sicherheitsgrenzen kombiniert."));
+
+  // 13.1
+  content.push(h2("13.1 Severity-basierte Klassifikation"));
+  content.push(p("Jede Zone erhaelt durch die Zonenanalyse einen Severity-Score (0\u201310). Dieser Score wird in drei Behandlungskategorien unterteilt:"));
+
+  const sevHeaders = ["Kategorie", "Severity-Range", "Bedeutung", "Anzeigefarbe"];
+  const sevWidths = [2400, 1800, 3800, 1360];
+  const sevRows = [
+    ["Primary Concern", "\u2265 3,0", "Klinisch relevante Abweichung, Behandlung empfohlen", "Rot"],
+    ["Secondary Concern", "1,0 \u2013 2,9", "Subklinisch, bei Patientenwunsch behandelbar", "Gelb"],
+    ["Keine Behandlung", "< 1,0", "Innerhalb der Norm, keine Indikation", "Gruen"],
+  ];
+  content.push(p("Tabelle 13.1: Severity-Klassifikation", { bold: true }));
+  content.push(makeTable(sevHeaders, sevRows, sevWidths));
+
+  content.push(p("Nur Zonen mit Severity \u2265 1,0 werden in den Behandlungsplan aufgenommen. Die Unterscheidung zwischen Primary und Secondary bestimmt die Reihenfolge und Dringlichkeit."));
+
+  // 13.2
+  content.push(h2("13.2 Strukturelle Hierarchie"));
+  content.push(p("Die klinische Logik der aesthetischen Medizin folgt dem Prinzip: Fundament vor Detail. Strukturelle Zonen (Knochen-nahe Volumisierung) werden vor Detail-Zonen (oberflaechliche Korrekturen) behandelt, da die strukturelle Grundlage die Ergebnisse der Detailkorrekturen beeinflusst."));
+  content.push(p("Beispiel: Eine Lippenaugmentation (Lp1) ohne vorherige Mittelgesichtsrestauration (Ck2/Ck3) kann ein unharmonisches Ergebnis produzieren, da das Lippenergebnis auf einem eingesunkenen Mittelgesicht \u201esitzt\u201c."));
+  content.push(p("Die strukturelle Prioritaet wird durch eine 5-stufige Hierarchie kodiert:"));
+
+  const prioHeaders = ["Priorit\u00e4t", "Typ", "Zonen (Beispiele)", "Behandlungslogik"];
+  const prioWidths = [1200, 1800, 3000, 3360];
+  const prioRows = [
+    ["1 (h\u00f6chste)", "Strukturell", "Ck1, Ck2, Ch1, Jw2", "Knochen-nahe Volumisierung als Fundament"],
+    ["2", "Semi-strukturell", "Ck3, Jw1, ML1", "Tiefes Fettgewebe-Support"],
+    ["3", "Medium", "NLF, T1, Bw1, Fw1", "Regionale Korrekturen"],
+    ["4", "Detail", "Lp1, Lp2, It1, Pc1", "Oberflaechliche Verfeinerung"],
+    ["5 (niedrigste)", "Toxin-only", "Bw2, Fw1 (dynamisch)", "Neurotoxin, kein Volumenbedarf"],
+  ];
+  content.push(p("Tabelle 13.2: Strukturelle Priorit\u00e4tshierarchie", { bold: true }));
+  content.push(makeTable(prioHeaders, prioRows, prioWidths));
+
+  // 13.3
+  content.push(h2("13.3 Composite Priority Score"));
+  content.push(p("Die tatsaechliche Behandlungsreihenfolge ergibt sich aus einem kombinierten Score:"));
+  content.push(p("priority_score = severity \u00d7 2,0 + structural_weight"));
+  content.push(p("wobei structural_weight = 6 \u2212 structural_priority (also Prioritaet 1 \u2192 Gewicht 5, Prioritaet 5 \u2192 Gewicht 1)."));
+  content.push(p("Dieses Modell stellt sicher, dass:"));
+  content.push(p("\u2022 Bei gleichem Schweregrad die strukturellere Zone zuerst behandelt wird.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Ein hoher Schweregrad (z. B. 8/10) in einer Detail-Zone immer noch vor einem niedrigen Schweregrad (z. B. 3/10) in einer strukturellen Zone kommt.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Die Severity den dominanten Faktor darstellt (Faktor 2,0), waehrend die strukturelle Ordnung als Tie-Breaker wirkt."));
+
+  // 13.4
+  content.push(h2("13.4 Sitzungsplanung"));
+  content.push(p("Der Treatment Plan Generator verteilt die priorisierten Concerns auf ein oder mehrere Behandlungssitzungen. Dabei gelten zwei Sicherheitsgrenzen:"));
+
+  const limHeaders = ["Parameter", "Grenzwert", "Begr\u00fcndung"];
+  const limWidths = [3200, 2200, 3960];
+  const limRows = [
+    ["Max. Filler-Volumen/Sitzung", "6,0 ml", "Konservatives Sicherheitslimit, reduziert Schwellungsrisiko"],
+    ["Max. Zonen/Sitzung", "6 Zonen", "Praktisches Limit f\u00fcr Behandlungsdauer und Patientenkomfort"],
+    ["Sitzungsintervall", "4 Wochen", "Standardintervall f\u00fcr Nachbehandlung und Gewebeerholung"],
+  ];
+  content.push(p("Tabelle 13.3: Sitzungslimits", { bold: true }));
+  content.push(makeTable(limHeaders, limRows, limWidths));
+
+  content.push(p("Die Zuordnung erfolgt sequentiell: Die nach Priority Score sortierten Concerns werden der Reihe nach auf Sessions verteilt. Sobald eine Session das Volumenlimit oder das Zonenlimit erreicht, wird eine neue Session eroeffnet."));
+  content.push(p("Session 1 Focus: Structural foundation \u2014 strukturelle und semi-strukturelle Zonen mit hoechster Prioritaet."));
+  content.push(p("Session 2+ Focus: Refinement \u2014 Detail-Zonen und sekundaere Concerns."));
+  content.push(p("Neurotoxin-Behandlungen koennen parallel zu Filler-Behandlungen in derselben Sitzung erfolgen und zaehlen nicht gegen das Volumenlimit."));
+
+  // 13.5
+  content.push(h2("13.5 Kontraindikationspruefung"));
+  content.push(p("Vor der finalen Planausgabe durchlaeuft jeder Behandlungsvorschlag eine automatisierte Kontraindikationspruefung (vgl. Kapitel 14). Drei Prueftypen sind implementiert:"));
+  content.push(p("\u2022 Extreme Asymmetrie: Asymmetrien > 15 % koennen auf Pathologien (Fazialisparese, Kieferfehlstellung) hinweisen und erfordern fachaerztliche Abklaerung vor kosmetischer Behandlung.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Vaskul\u00e4res Risiko: High-Risk-Zonen (It1, NP1, Bw2) erhalten automatisch Sicherheitshinweise zu Gef\u00e4ssanatomie und Aspirationspflicht.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 \u00dcberbehandlung: Das System warnt, wenn viele Zonen gleichzeitig hohe Severity-Werte zeigen (\u2265 5 Zonen mit Severity \u2265 5), da dies auf systemische Faktoren (starkes Altern, Gewichtsverlust) hindeuten kann.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("KLINISCHER HINWEIS: Der Behandlungsplan ist eine evidenzbasierte Empfehlung, kein Behandlungsprotokoll. Die finale Entscheidung ueber Produkt, Volumen, Technik und Zeitplan obliegt dem Behandler auf Basis seiner klinischen Expertise und der individuellen Patientenanamnese.", { bold: true }));
+
+  return content;
+}
+
 // ─── Placeholder chapters ───
 
 function placeholderChapter(title) {
@@ -1483,10 +1853,7 @@ async function main() {
           ...placeholderSection("2.3 Vaskul\u00e4re Anatomie und Danger Zones"),
           ...placeholderSection("2.4 Mimische Muskulatur"),
           pb(),
-          ...placeholderChapter("Kapitel 3: Landmark-basierte Gesichtsvermessung"),
-          ...placeholderSection("3.1 Das 478-Punkt-Landmarksystem"),
-          ...placeholderSection("3.2 Anatomische Gruppen"),
-          ...placeholderSection("3.3 Iris-basierte Kalibrierung"),
+          ...kapitel3(),
           pb(),
           // TEIL II
           h1("Teil II \u2014 Analysemethoden"),
@@ -1504,15 +1871,15 @@ async function main() {
           h1("Teil III \u2014 Das Zonen-System"),
           ...kapitel9(),
           pb(),
-          ...placeholderChapter("Kapitel 10: Multi-View Fusion"),
+          ...kapitel10(),
           pb(),
           // TEIL IV
           h1("Teil IV \u2014 Behandlungsplanung"),
           ...kapitel11(),
           pb(),
-          ...placeholderChapter("Kapitel 12: Zone-zu-Produkt-Matching"),
+          ...kapitel12(),
           pb(),
-          ...placeholderChapter("Kapitel 13: Klinische Priorisierung"),
+          ...kapitel13(),
           pb(),
           ...kapitel14(),
           pb(),
