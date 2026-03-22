@@ -183,7 +183,7 @@ class TestAssessmentResponse:
             treatment_plan=TreatmentPlanResponse(),
             calibration=CalibrationResponse(method="iris", px_per_mm=5.2, confidence=0.92),
         )
-        assert r.engine_version == "2.0.0"
+        assert r.engine_version == "2.1.0"
         assert isinstance(r.assessment_id, UUID)
         assert r.aesthetic_score == 85.0
 
@@ -309,7 +309,7 @@ class TestHealthResponse:
     def test_default(self):
         h = HealthResponse()
         assert h.status == "healthy"
-        assert h.version == "2.0.0"
+        assert h.version == "2.1.0"
         assert h.model_loaded is False
 
     def test_with_model(self):

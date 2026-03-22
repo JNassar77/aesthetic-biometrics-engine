@@ -1,6 +1,13 @@
 """
 Frontal (0 deg) Analysis
 ========================
+
+.. deprecated:: 2.0.0
+    V1 Legacy module. Retained for backward compatibility with /api/v1/analyze.
+    New code should use the V2 engines:
+    - analysis/symmetry_engine.py (6-axis bilateral symmetry)
+    - analysis/proportion_engine.py (thirds, fifths, golden ratio, lip ratio)
+
 Measurements:
   1. Symmetry: horizontal/vertical deviations from median sagittal line
   2. Facial thirds: Trichion-Glabella / Glabella-Subnasale / Subnasale-Mentum

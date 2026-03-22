@@ -20,7 +20,7 @@
 | Definition of Done | `docs/DOD.md` | Quality gates for features, fixes, and releases | Baseline, rarely changes |
 | Architecture V2 | `docs/ARCHITECTURE_V2.md` | Complete V2 system redesign with zones and treatment plans | Reference for all V2 work |
 | Sprint Plan | `docs/SPRINTS.md` | 12 Sprints, 6 Phasen, Abhaengigkeiten, Meilensteine | Updated per sprint |
-| Lehrbuch | `docs/lehrbuch/generate_book.js` | DOCX-Lehrbuch (12/16 Kapitel fertig: 3,4,5,6,7,8,9,10,11,12,13,14) | Updated per sprint |
+| Lehrbuch | `docs/lehrbuch/generate_book.js` | DOCX-Lehrbuch (16/16 Kapitel komplett) | Updated per sprint |
 
 ---
 
@@ -52,7 +52,7 @@
 | **Symmetry Engine** | `app/analysis/symmetry_engine.py` | **6-axis bilateral symmetry + blendshape dynamic asymmetry** | face_landmarker, pixel_calibration | **V2** |
 | **Proportion Engine** | `app/analysis/proportion_engine.py` | **Facial thirds, fifths, golden ratio, lip ratio + Cupid's bow** | face_landmarker, pixel_calibration | **V2** |
 | **Profile Engine** | `app/analysis/profile_engine.py` | **E-line, nasolabial angle, chin projection, nasal dorsum, Steiner, cervicomental** | face_landmarker, pixel_calibration, geometry | **V2** |
-| **Volume Engine** | `app/analysis/volume_engine.py` | **Ogee curve, temporal hollowing, tear trough, jowl assessment (3D depth)** | face_landmarker, pixel_calibration, geometry | **V2** |
+| **Volume Engine** | `app/analysis/volume_engine.py` | **Ogee curve, temporal hollowing, tear trough, jowl, buccal corridor (3D depth)** | face_landmarker, pixel_calibration, geometry | **V2** |
 | **Aging Engine** | `app/analysis/aging_engine.py` | **Muscle tonus from blendshapes, gravitational drift, periorbital aging** | face_landmarker, pixel_calibration | **V2** |
 | **Multi-View Fusion** | `app/analysis/multi_view_fusion.py` | **Confidence-weighted landmark fusion across views + contradiction detection** | zone_definitions | **V2** |
 | **Zone Analyzer** | `app/analysis/zone_analyzer.py` | **Orchestrates all engines → Zone Report + Aesthetic Score** | all engines, multi_view_fusion, zone_definitions | **V2** |
@@ -63,6 +63,8 @@
 | **Supabase Service** | `app/services/supabase_service.py` | **V1+V2: save_assessment, get_assessment, get_patient_history, upload_image, save_comparison** | supabase, config | **V2** |
 | **n8n Service** | `app/services/n8n_service.py` | **V1+V2: webhook with V2 envelope (event, assessment_id, aesthetic_score)** | httpx, config | **V2** |
 | **Structured Logging** | `app/utils/logging.py` | **JSON formatter, log_step context manager for pipeline instrumentation** | — | **V2** |
+| **API Key Auth** | `app/api/auth.py` | **X-API-Key header validation, dev mode bypass** | config | **V2.1** |
+| **Rate Limiter** | `app/api/rate_limit.py` | **In-memory sliding window rate limiting per IP** | config | **V2.1** |
 
 ---
 
@@ -76,8 +78,8 @@
 | `tests/services/` | n8n webhook, Supabase service, structured logging | ~25 |
 | `tests/edge_cases/` | No face, corrupt images, partial views, boundary values | ~20 |
 | `tests/fixtures/` | `synthetic.py` — factory functions for landmarks and blendshapes | — |
-| `tests/` (root) | Head pose, quality gate, landmark index, preprocessor, geometry, calibration | ~100 |
-| **TOTAL** | | **439** |
+| `tests/` (root) | Head pose, quality gate, landmark index, preprocessor, geometry, calibration, **performance benchmark** | ~105 |
+| **TOTAL** | | **442** |
 
 ---
 
@@ -89,7 +91,8 @@
 | Supabase Project | PostgreSQL | `mbwteypkehrmeqzdzdph` (AestheticBiometricsDB, eu-west-1) |
 | Supabase URL | — | `https://mbwteypkehrmeqzdzdph.supabase.co` |
 | Docker Image | Python 3.11-slim | `Dockerfile` in repo root |
-| Docker Compose | Dev environment | `docker-compose.yml` in repo root |
+| Docker Image | Python 3.11-slim (multi-stage) | `Dockerfile` in repo root |
+| CI/CD | GitHub Actions | `.github/workflows/ci.yml` (test + Docker build) |
 | Deployment Target | Railway | Not yet configured |
 | n8n Webhook | n8n | Configured via `N8N_WEBHOOK_URL` env var |
 
@@ -118,10 +121,10 @@
 
 | Method | Path | Purpose | Auth | Status |
 |---|---|---|---|---|
-| POST | `/api/v2/assessment` | **3-view zone analysis + treatment plan** | None (planned) | **Active** |
-| POST | `/api/v2/compare` | **Before/After assessment comparison** | None (planned) | Stub (Sprint 9) |
-| GET | `/api/v2/patients/{id}/history` | **Patient assessment history** | None (planned) | Stub (Sprint 9) |
-| GET | `/api/v2/health` | **V2 health check** | None | **Active** |
+| POST | `/api/v2/assessment` | **3-view zone analysis + treatment plan** | X-API-Key | **Active** |
+| POST | `/api/v2/compare` | **Before/After assessment comparison** | X-API-Key | **Active** |
+| GET | `/api/v2/patients/{id}/history` | **Patient assessment history** | X-API-Key | **Active** |
+| GET | `/api/v2/health` | **V2 health check (DB, model, uptime)** | None | **Active** |
 | POST | `/api/v1/analyze` | Legacy single-image analysis | None (planned) | Active (legacy) |
 | GET | `/api/v1/health` | Legacy health check | None | Active (legacy) |
 | GET | `/` | Service info & discovery | None | Active |
@@ -139,6 +142,8 @@
 | `ALLOWED_ORIGINS` | No | `http://localhost:3000` | CORS allowed origins (comma-separated) |
 | `MAX_IMAGE_SIZE_MB` | No | `10` | Maximum upload size |
 | `MIN_FACE_CONFIDENCE` | No | `0.7` | Minimum detection confidence threshold |
+| `API_KEYS` | No | `""` | Comma-separated API keys; empty = dev mode (no auth) |
+| `RATE_LIMIT_RPM` | No | `60` | Requests per minute per IP; 0 = disabled |
 
 ---
 

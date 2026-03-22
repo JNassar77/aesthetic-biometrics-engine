@@ -185,7 +185,7 @@ class AssessmentResponse(BaseModel):
     calibration: CalibrationResponse
 
     # Metadata
-    engine_version: str = "2.0.0"
+    engine_version: str = "2.1.0"
     processing_time_ms: int | None = None
     views_analyzed: list[str] = []
 
@@ -193,7 +193,7 @@ class AssessmentResponse(BaseModel):
         "example": {
             "assessment_id": "550e8400-e29b-41d4-a716-446655440000",
             "patient_id": None,
-            "engine_version": "2.0.0",
+            "engine_version": "2.1.0",
         }
     }}
 
@@ -278,7 +278,7 @@ class AssessmentSummary(BaseModel):
     zones_count: int
     primary_concern: str | None = None
     views_analyzed: list[str] = []
-    engine_version: str = "2.0.0"
+    engine_version: str = "2.1.0"
 
 
 class PatientHistoryResponse(BaseModel):
@@ -293,9 +293,10 @@ class PatientHistoryResponse(BaseModel):
 class HealthResponse(BaseModel):
     """Health check response."""
     status: str = "healthy"
-    version: str = "2.0.0"
+    version: str = "2.1.0"
     model_loaded: bool = False
     supabase_connected: bool = False
+    uptime_seconds: float | None = None
 
 
 # Forward reference update for ImageQualityResponse

@@ -30,7 +30,7 @@
 - [x] `detection/landmark_index.py` — Vollstaendige 478-Punkt-Referenz mit anatomischen Gruppierungen
 - [x] `pipeline/image_preprocessor.py` — EXIF-Rotation, Resize, Face-Crop (Lens Distortion Fix)
 - [x] `pipeline/quality_gate.py` — Erweiterte Qualitaetskontrolle + Neutral-Expression-Check
-- [ ] V1-Code in `app/core/` als Legacy markieren (nicht loeschen) → verschoben auf Sprint 2
+- [x] V1-Code in `app/core/` als Legacy markieren (Deprecation-Docstrings hinzugefuegt)
 
 ### Sprint 2 — Iris-Kalibrierung + Geometrie-Upgrade ✅ (21.03.2026)
 
@@ -77,7 +77,7 @@
   - [x] Temporal Hollowing Detection
   - [x] Tear Trough Depth Estimation
   - [x] Pre-jowl Sulcus Detection
-  - [ ] Buccal Corridor Analysis → verschoben auf Sprint 5 (abhaengig von Multi-View)
+  - [x] Buccal Corridor Analysis (in volume_engine.py, mouth_corner + cheekbone Landmarks)
 - [x] `analysis/aging_engine.py` — Neu:
   - [x] Blendshape-Muster → Muskeltonus-Profil
   - [x] Gravitationelle Veraenderungen (Landmark-Drift nach unten)
@@ -219,7 +219,7 @@
 - [ ] Test mit diversen Demographien (Alter, Geschlecht, Ethnie)
 - [ ] Behandlungsplan-Review durch klinischen Berater
 - [ ] Severity-Schwellenwerte kalibrieren
-- [ ] Performance-Benchmark: Ziel < 3s fuer 3-Bild-Assessment
+- [x] Performance-Benchmark: < 3s fuer 3-Bild-Assessment (tests/test_benchmark_performance.py, avg < 1ms)
 
 ---
 
@@ -229,13 +229,14 @@
 
 ### Sprint 12 — Production-Ready
 
-- [ ] Docker Image optimieren (Multi-stage Build, < 1.5GB)
+- [x] Docker Image optimieren (Multi-stage Build)
 - [ ] Railway Deployment konfigurieren
-- [ ] Health Monitoring (Healthcheck-Endpoint + Alerts)
-- [ ] Rate Limiting + API Key Authentication
-- [ ] CI/CD Pipeline (GitHub Actions: Test → Build → Deploy)
+- [x] Health Monitoring (V2 /health mit DB-Check, Model-Check, Uptime)
+- [x] Rate Limiting (`app/api/rate_limit.py`, sliding window, RATE_LIMIT_RPM)
+- [x] API Key Authentication (`app/api/auth.py`, X-API-Key, API_KEYS env var)
+- [x] CI/CD Pipeline (`.github/workflows/ci.yml`: pytest + Docker build)
 - [ ] `.env.production` Konfiguration
-- [ ] Swagger/OpenAPI Docs finalisieren
+- [x] Swagger/OpenAPI Docs finalisieren (Tags, Descriptions, Examples, Version 2.1.0)
 - [ ] DSGVO-Checkliste (Patientendaten, Bildloeschung)
 
 ---

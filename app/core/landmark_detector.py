@@ -1,3 +1,12 @@
+"""
+V1 Legacy Landmark Detector.
+
+.. deprecated:: 2.0.0
+    V1 Legacy module. Retained for backward compatibility with /api/v1/analyze.
+    New code should use detection/face_landmarker.py (Tasks API with 478 landmarks,
+    52 blendshapes, transformation matrix for head pose).
+"""
+
 import mediapipe as mp
 import numpy as np
 import cv2

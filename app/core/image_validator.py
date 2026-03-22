@@ -1,3 +1,12 @@
+"""
+V1 Legacy Image Validator.
+
+.. deprecated:: 2.0.0
+    V1 Legacy module. Retained for backward compatibility with /api/v1/analyze.
+    New code should use pipeline/quality_gate.py (multi-level quality checks
+    with hard/soft pose rejection and expression validation).
+"""
+
 import cv2
 import numpy as np
 from app.models.schemas import QualityWarning

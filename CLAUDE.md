@@ -33,7 +33,9 @@ app/
 ├── config.py            # Pydantic settings (env vars)
 ├── api/
 │   ├── v1_routes.py     # V1 API endpoints (/analyze, /health) — renamed Sprint 9
-│   └── v2_routes.py     # V2 API: /assessment, /compare, /history, /health
+│   ├── v2_routes.py     # V2 API: /assessment, /compare, /history, /health
+│   ├── auth.py          # X-API-Key authentication middleware (Sprint 12)
+│   └── rate_limit.py    # In-memory sliding window rate limiter (Sprint 12)
 ├── detection/           # V2 landmark detection (Sprint 1) ✅
 │   ├── face_landmarker.py     # Tasks API: 478 pts + blendshapes + matrix
 │   ├── landmark_index.py      # Anatomical groups + 19 zone mappings
@@ -46,7 +48,7 @@ app/
 │   ├── symmetry_engine.py     # 6-axis bilateral symmetry + dynamic asymmetry
 │   ├── proportion_engine.py   # Thirds, fifths, golden ratio, lip ratio
 │   ├── profile_engine.py      # E-line, NLA, chin, nasal dorsum, Steiner
-│   ├── volume_engine.py       # Ogee curve, temporal, tear trough, jowl (3D)
+│   ├── volume_engine.py       # Ogee curve, temporal, tear trough, jowl, buccal corridor (3D)
 │   ├── aging_engine.py        # Muscle tonus, gravitational drift, periorbital
 │   ├── multi_view_fusion.py   # Confidence-weighted landmark fusion (Sprint 5)
 │   ├── zone_analyzer.py       # Orchestrates all engines → Zone Report (Sprint 5)
@@ -56,7 +58,7 @@ app/
 │   ├── product_database.py    # 14 products, zone→product mapping, vascular risk
 │   ├── plan_generator.py      # Severity prioritization, clinical ordering, sessions
 │   └── contraindication_check.py  # Safety: asymmetry, vascular, overtreatment
-├── core/                # V1 analysis engines (legacy, still functional)
+├── core/                # V1 analysis engines (deprecated, see deprecation docstrings)
 │   ├── landmark_detector.py   # Legacy FaceMesh wrapper
 │   ├── image_validator.py     # Legacy quality checks
 │   ├── frontal_analyzer.py    # Symmetry, facial thirds, lip ratio
@@ -75,7 +77,7 @@ app/
     └── logging.py           # Structured JSON logging + log_step (Sprint 9)
 models/                  # ML model files (not in git, download manually)
   └── face_landmarker.task  # MediaPipe model (3.6MB, see Common Commands)
-tests/                   # Test suite (439 tests passing, 80% coverage)
+tests/                   # Test suite (442 tests passing, 80% coverage)
   ├── analysis/              # Symmetry, proportion, engines, fusion, comparison, blendshapes
   ├── treatment/             # Zone definitions, product DB, contraindications, plan generator
   ├── integration/           # Orchestrator, V2 routes, schemas

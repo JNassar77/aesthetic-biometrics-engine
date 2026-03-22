@@ -1,6 +1,12 @@
 """
 Oblique (45 deg) Analysis
 =========================
+
+.. deprecated:: 2.0.0
+    V1 Legacy module. Retained for backward compatibility with /api/v1/analyze.
+    New code should use analysis/volume_engine.py (Ogee curve with 3D depth,
+    temporal hollowing, tear trough, pre-jowl sulcus).
+
 Measurements:
   1. Ogee curve: S-shaped convexity from forehead through malar eminence
      to the buccal region. Evaluates midface volume.

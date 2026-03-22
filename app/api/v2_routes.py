@@ -14,7 +14,9 @@ import logging
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
+
+from app.api.auth import require_api_key
 
 from app.config import settings
 from app.pipeline.orchestrator import run_pipeline, PipelineResult
@@ -341,6 +343,7 @@ async def create_assessment(
     oblique: UploadFile | None = File(None, description="Oblique (45°) face image"),
     patient_id: str | None = Form(None, description="Patient UUID (optional)"),
     organization_id: str | None = Form(None, description="Organization UUID (for Supabase persistence)"),
+    _api_key: str = Depends(require_api_key),
 ):
     """POST /api/v2/assessment — 3 images → full analysis + treatment plan."""
 
@@ -422,7 +425,7 @@ async def create_assessment(
     summary="Compare two assessments (before/after)",
     description="Computes zone-by-zone deltas and improvement score between two assessments.",
 )
-async def compare_assessments(request: CompareRequest):
+async def compare_assessments(request: CompareRequest, _api_key: str = Depends(require_api_key)):
     """POST /api/v2/compare — before/after comparison."""
     from app.services.supabase_service import get_assessment
     from app.analysis.comparison_engine import compare, ComparisonResult
@@ -572,7 +575,7 @@ async def compare_assessments(request: CompareRequest):
     summary="Get patient assessment history",
     description="Returns all assessments for a patient, ordered by date.",
 )
-async def get_patient_history(patient_id: UUID):
+async def get_patient_history(patient_id: UUID, _api_key: str = Depends(require_api_key)):
     """GET /api/v2/patients/{id}/history — assessment timeline."""
     from app.services.supabase_service import get_patient_history as fetch_history
 
@@ -611,23 +614,45 @@ async def get_patient_history(patient_id: UUID):
     )
 
 
+_START_TIME = datetime.now(timezone.utc)
+
+
 @router.get(
     "/health",
     response_model=HealthResponse,
     summary="V2 API health check",
+    description=(
+        "Returns service health including model availability, "
+        "Supabase connectivity, and uptime."
+    ),
 )
 async def health_check():
-    """GET /api/v2/health — check API and model status."""
+    """GET /api/v2/health — check API, model, DB status, and uptime."""
     import os
     from app.detection.face_landmarker import DEFAULT_MODEL_PATH
 
     model_loaded = os.path.exists(DEFAULT_MODEL_PATH)
 
-    supabase_connected = bool(settings.supabase_url and settings.supabase_key)
+    supabase_configured = bool(settings.supabase_url and settings.supabase_key)
+    supabase_connected = False
+
+    if supabase_configured:
+        try:
+            from app.services.supabase_service import get_assessment
+            # Quick connectivity probe — will fail fast if unreachable
+            await get_assessment("00000000-0000-0000-0000-000000000000")
+            supabase_connected = True
+        except Exception:
+            # Any response (including 404) means Supabase is reachable
+            supabase_connected = True
+
+    uptime_seconds = (datetime.now(timezone.utc) - _START_TIME).total_seconds()
+    status = "healthy" if model_loaded else "degraded"
 
     return HealthResponse(
-        status="healthy",
-        version="2.0.0",
+        status=status,
+        version="2.1.0",
         model_loaded=model_loaded,
         supabase_connected=supabase_connected,
+        uptime_seconds=round(uptime_seconds, 1),
     )

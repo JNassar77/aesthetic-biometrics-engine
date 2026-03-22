@@ -1,6 +1,12 @@
 """
 Profile (90 deg) Analysis
 =========================
+
+.. deprecated:: 2.0.0
+    V1 Legacy module. Retained for backward compatibility with /api/v1/analyze.
+    New code should use analysis/profile_engine.py (E-Line, NLA, Steiner,
+    nasal dorsum, cervicomental angle, chin projection — all in mm).
+
 Measurements:
   1. Ricketts E-line: line from pronasale (nose tip) to pogonion (chin).
      Upper lip should sit ~4mm behind, lower lip ~2mm behind this line.

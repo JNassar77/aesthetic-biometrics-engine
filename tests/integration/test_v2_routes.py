@@ -205,7 +205,7 @@ class TestBuildAssessmentResponse:
         result = self._make_pipeline_result()
         resp = _build_assessment_response(result, patient_id=None)
 
-        assert resp.engine_version == "2.0.0"
+        assert resp.engine_version == "2.1.0"
         assert resp.aesthetic_score == 78.0
         assert len(resp.zones) == 1
         assert resp.zones[0].zone_id == "Ck2"

@@ -62,12 +62,28 @@ class JowlAssessment:
 
 
 @dataclass
+class BuccalCorridor:
+    """Buccal corridor analysis.
+
+    The buccal corridor is the dark space between the buccal surface of
+    teeth/cheek and the mouth corner during a smile. In a resting analysis,
+    we measure the lateral recession between the cheekbone and mouth corner
+    as a proxy for buccal fat volume. Best assessed from oblique view.
+    """
+    left_width_mm: float    # Lateral distance mouth_corner to cheekbone (left)
+    right_width_mm: float   # Same for right
+    asymmetry_mm: float     # |left - right|
+    is_deficient: bool      # True if corridor suggests volume loss
+
+
+@dataclass
 class VolumeAnalysis:
     """Complete volume analysis result."""
     ogee: OgeeCurve
     temporal: TemporalVolume
     tear_trough: TearTrough
     jowl: JowlAssessment
+    buccal_corridor: BuccalCorridor | None = None
 
 
 def _z_depth_mm(
@@ -223,6 +239,49 @@ def analyze_jowl(
     )
 
 
+def analyze_buccal_corridor(
+    detection: DetectionResult,
+    calibration: CalibrationResult,
+) -> BuccalCorridor:
+    """Assess buccal corridor width.
+
+    Measures the lateral distance from mouth corner to cheekbone on each side.
+    A narrow corridor (small distance) suggests adequate buccal fat volume;
+    a wide corridor suggests hollowing. Best assessed from oblique view
+    where the lateral cheek recession is most visible.
+    """
+    mouth_l = PAIRED["mouth_corner"][0]   # 291
+    mouth_r = PAIRED["mouth_corner"][1]   # 61
+    cheek_l = PAIRED["cheekbone"][0]      # 330
+    cheek_r = PAIRED["cheekbone"][1]      # 101
+
+    # 2D lateral distance between mouth corner and cheekbone
+    left_px = euclidean_2d(
+        (detection.px(mouth_l)[0], detection.px(mouth_l)[1]),
+        (detection.px(cheek_l)[0], detection.px(cheek_l)[1]),
+    )
+    right_px = euclidean_2d(
+        (detection.px(mouth_r)[0], detection.px(mouth_r)[1]),
+        (detection.px(cheek_r)[0], detection.px(cheek_r)[1]),
+    )
+
+    left_mm = calibration.to_mm(left_px)
+    right_mm = calibration.to_mm(right_px)
+    asymmetry = abs(left_mm - right_mm)
+
+    # Buccal deficiency threshold: if distance is large, cheek appears hollow
+    DEFICIENCY_THRESHOLD = 35.0  # mm — wide corridor indicates volume loss
+    avg = (left_mm + right_mm) / 2
+    is_deficient = bool(avg > DEFICIENCY_THRESHOLD)
+
+    return BuccalCorridor(
+        left_width_mm=round(left_mm, 1),
+        right_width_mm=round(right_mm, 1),
+        asymmetry_mm=round(asymmetry, 1),
+        is_deficient=is_deficient,
+    )
+
+
 def analyze(
     detection: DetectionResult,
     calibration: CalibrationResult,
@@ -236,4 +295,5 @@ def analyze(
         temporal=analyze_temporal(detection, calibration),
         tear_trough=analyze_tear_trough(detection, calibration),
         jowl=analyze_jowl(detection, calibration),
+        buccal_corridor=analyze_buccal_corridor(detection, calibration),
     )

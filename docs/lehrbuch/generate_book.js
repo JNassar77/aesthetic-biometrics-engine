@@ -1767,6 +1767,472 @@ function kapitel13() {
   return content;
 }
 
+// ─── Kapitel 1: Einfuehrung in die aesthetische Gesichtsanalyse (FULL) ───
+
+function kapitel1() {
+  const content = [];
+  content.push(h1("Kapitel 1: Einfuehrung in die aesthetische Gesichtsanalyse"));
+  content.push(p("Die aesthetische Gesichtsanalyse hat sich in den vergangenen Jahrzehnten von einer rein subjektiven, erfahrungsbasierten Beurteilung zu einer zunehmend standardisierten, messwertgestuetzten Disziplin entwickelt. Diese Transformation wurde durch drei parallele Entwicklungen angetrieben: die Etablierung standardisierter Fotografieprotokolle, die mathematische Formalisierung aesthetischer Ideale und die juengste Integration kuenstlicher Intelligenz in die klinische Diagnostik."));
+  content.push(p("Das vorliegende Werk beschreibt den Aesthetic Biometrics Engine — ein KI-gestuetztes System, das aus standardisierten Fotografien (frontal, oblique, profil) biometrische Gesichtsmessungen extrahiert, 19 anatomische Behandlungszonen analysiert und evidenzbasierte Behandlungsempfehlungen generiert. Es richtet sich an aesthetisch taetige Aerzte, die ihre klinische Entscheidungsfindung durch objektive Daten unterstuetzen moechten."));
+
+  // 1.1 Historischer Kontext
+  content.push(h2("1.1 Historischer Kontext"));
+  content.push(p("Die systematische Vermessung des menschlichen Gesichts hat eine lange Tradition. Bereits in der Renaissance definierte Leonardo da Vinci Proportionsregeln fuer das ideale Gesicht, basierend auf der Aufteilung in horizontale Drittel und vertikale Fuenftel. Diese Konzepte wurden im 20. Jahrhundert durch die Kephalometrie weiterentwickelt."));
+  content.push(p("Wegweisende Arbeiten in der aesthetischen Gesichtsvermessung:", { bold: true }));
+  content.push(p("\u2022 Ricketts (1968/1982): Einfuehrung der Aesthetic E-Line und des Divine Proportion Konzepts (Goldener Schnitt, Phi = 1,618). Diese Arbeiten legten den Grundstein fuer die mathematische Beschreibung aesthetischer Harmonie.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Farkas (1994): Umfassende anthropometrische Normwerte fuer ueber 100 Gesichtsmessungen an verschiedenen ethnischen Populationen. Erstmals wurden populationsspezifische Referenzwerte fuer die klinische Praxis verfuegbar.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 De Maio (2021): Einfuehrung der MD Codes\u2122 \u2014 ein zonenbasiertes Behandlungsschema, das anatomische Regionen mit spezifischen Injektionstechniken und Produktempfehlungen verknuepft. Dieses Konzept inspirierte das 19-Zonen-System des vorliegenden Systems.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("Der entscheidende Paradigmenwechsel der letzten Jahre liegt in der Automatisierung der Gesichtsvermessung. Waehrend klassische Kephalometrie manuelle Punktmarkierung auf Roentgenbildern erforderte, ermoeglichen moderne Computer-Vision-Systeme die automatische Erkennung von bis zu 478 Gesichtspunkten (Landmarks) aus einfachen Fotografien \u2014 in Echtzeit und mit einer Genauigkeit, die manuelle Messungen in vielen Parametern uebertrifft."));
+
+  // 1.2 Standardisierte Fotografie
+  content.push(h2("1.2 Standardisierte Fotografie"));
+  content.push(p("Die Grundlage jeder biometrischen Gesichtsanalyse ist die standardisierte Fotodokumentation. Ohne reproduzierbare Aufnahmebedingungen sind Messungen nicht vergleichbar \u2014 weder zwischen verschiedenen Patienten noch im Vorher-Nachher-Vergleich desselben Patienten. Das System arbeitet mit drei standardisierten Aufnahmewinkel:"));
+
+  content.push(h3("1.2.1 Die drei Standardansichten"));
+  const viewHeaders = ["Ansicht", "Winkel", "Primaere Analysebereiche", "Klinischer Fokus"];
+  const viewWidths = [1500, 1200, 3300, 3360];
+  const viewRows = [
+    ["Frontal", "0\u00b0", "Symmetrie, Proportionen (Drittel/Fuenftel), Lippen, Nasolabialfalte", "Symmetrieabweichungen, Brauenposition, Lippenverhaeltnis"],
+    ["Oblique", "45\u00b0", "Ogee-Kurve, Volumen (Temporal, Wange, Jowl), Traenental", "Mittelgesichtsvolumen, Konturdefizite, Altersveraenderungen"],
+    ["Profil", "90\u00b0", "E-Linie, NLA, Kinnprojektion, Nasenruecken, Kinn-Hals-Winkel", "Lippenposition, Nasenform, Kinnharmonie"],
+  ];
+  content.push(p("Tabelle 1.1: Die drei Standardansichten der aesthetischen Fotodokumentation", { bold: true }));
+  content.push(makeTable(viewHeaders, viewRows, viewWidths));
+
+  content.push(h3("1.2.2 Aufnahmeprotokoll"));
+  content.push(p("Fuer reproduzierbare Ergebnisse muessen folgende Bedingungen eingehalten werden:"));
+  content.push(p("\u2022 Beleuchtung: Gleichmaessige, diffuse Ausleuchtung ohne harte Schatten. Idealerweise Ringblitz oder zwei symmetrisch positionierte Softboxen.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Hintergrund: Einfarbig, neutral (blau oder grau empfohlen), ohne ablenkende Elemente.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Kopfhaltung: Natuerliche Kopfposition (Natural Head Position, NHP). Der Patient blickt geradeaus auf einen Fixpunkt in Augenhoehe. Die Frankfurter Horizontale (Tragion\u2013Infraorbitale) sollte horizontal verlaufen.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Gesichtsausdruck: Neutral, entspannt. Kein Laecheln, keine Stirnrunzeln, Lippen leicht geschlossen.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Aufloesung: Mindestens 640\u00d7480 Pixel; empfohlen 1024\u00d71024 oder hoeher.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("Das System prueft diese Kriterien automatisch ueber die Quality Gate (vgl. Kapitel 16): Aufloesung, Helligkeit, Kontrast und Schaerfe werden gemessen, die Kopfhaltung wird ueber Head-Pose-Estimation validiert, und der Gesichtsausdruck wird ueber Blendshape-Analyse auf Neutralitaet geprueft."));
+
+  content.push(h3("1.2.3 Bildvorverarbeitung"));
+  content.push(p("Vor der Analyse durchlaeuft jedes Bild eine automatisierte Vorverarbeitungskette (Image Preprocessor):"));
+  content.push(p("1. EXIF-Orientierung korrigieren: Smartphone-Kameras speichern die Orientierung haeufig als Metadatum statt die Pixel zu rotieren. Das System liest das EXIF-Tag und rotiert das Bild entsprechend."));
+  content.push(p("2. Gesichtszentrierter Zuschnitt: Ein quadratischer Bildausschnitt wird um das erkannte Gesicht herum erzeugt. Dies eliminiert Verzeichnungen am Bildrand, die bei Smartphone-Weitwinkellinsen auftreten (Barrel Distortion)."));
+  content.push(p("3. Standardgroesse: Das Bild wird auf 1024\u00d71024 Pixel skaliert \u2014 die optimale Groesse fuer die Landmark-Erkennung."));
+  content.push(p("Diese Vorverarbeitung stellt sicher, dass die nachfolgende Analyse unabhaengig von Kameratyp, Bildgroesse und Aufnahmeformat konsistente Ergebnisse liefert."));
+
+  // 1.3 KI-gestuetzte Analyse
+  content.push(h2("1.3 KI-gestuetzte Analyse"));
+  content.push(p("Der Aesthetic Biometrics Engine nutzt maschinelles Lernen fuer die Gesichtserkennung und kombiniert dies mit regelbasierter medizinischer Logik fuer die klinische Interpretation. Dieser hybride Ansatz vereint die Staerken beider Paradigmen:"));
+
+  content.push(h3("1.3.1 Maschinelles Lernen: Landmark-Erkennung"));
+  content.push(p("Die Erkennung der 478 Gesichtspunkte (Landmarks) erfolgt ueber ein vortrainiertes neuronales Netz (MediaPipe Face Landmarker). Dieses Modell wurde auf Millionen von Gesichtern trainiert und erkennt anatomische Strukturen mit subpixel-genauer Praezision. Zusaetzlich liefert es:"));
+  content.push(p("\u2022 52 Blendshapes: Numerische Koeffizienten (0,0\u20131,0) fuer einzelne Gesichtsmuskelgruppen (z.\u202fB. browDownLeft, mouthSmileRight). Diese ermoeglichen die Analyse des Muskeltonus in Ruhe \u2014 ein Indikator fuer Neurotoxin-Bedarf.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Transformation Matrix: Eine 4\u00d74-Matrix, aus der die Kopfhaltung (Yaw, Pitch, Roll) abgeleitet wird. Dies validiert, ob das Bild der angegebenen Ansicht entspricht.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 3D-Koordinaten: Jeder Landmark hat neben x/y auch eine z-Koordinate (Tiefe), was volumetrische Analysen wie die Ogee-Kurve ermoelicht.", { paragraphOpts: { indent: { left: 360 } } }));
+
+  content.push(h3("1.3.2 Regelbasierte Medizinlogik"));
+  content.push(p("Die klinische Interpretation der erkannten Landmarks erfolgt durch sechs spezialisierte Analyse-Engines:"));
+
+  const engineHeaders = ["Engine", "Kapitel", "Analyseschwerpunkt"];
+  const engineWidths = [2500, 1200, 5660];
+  const engineRows = [
+    ["Symmetrie-Engine", "Kap. 4", "Bilaterale Symmetrie auf 6 Achsen, pro-Zone Asymmetrie-Score, dynamische Asymmetrie"],
+    ["Proportionen-Engine", "Kap. 5", "Gesichtsdrittel, Fuenftel, Goldener Schnitt, Lippenverhaeltnis"],
+    ["Profil-Engine", "Kap. 6", "E-Linie, Nasolabialwinkel, Kinnprojektion, Nasenrueckenprofil"],
+    ["Volumen-Engine", "Kap. 7", "Ogee-Kurve, Temporal Hollowing, Traenental, Pre-Jowl Sulcus"],
+    ["Aging-Engine", "Kap. 8", "Muskeltonus-Profil, gravitationelle Drift, periobitale Alterung"],
+    ["Zone Analyzer", "Kap. 9\u201310", "Orchestrierung aller Engines \u2192 19-Zonen-Report mit Severity"],
+  ];
+  content.push(p("Tabelle 1.2: Die sechs Analyse-Engines", { bold: true }));
+  content.push(makeTable(engineHeaders, engineRows, engineWidths));
+
+  content.push(h3("1.3.3 Vom Messwert zum Behandlungsplan"));
+  content.push(p("Der wesentliche Unterschied dieses Systems zu reinen Vermessungswerkzeugen liegt in der klinischen Handlungsanleitung. Der Analysepfad verlaeuft in vier Stufen:"));
+  content.push(p("1. Erkennung: 478 Landmarks + 52 Blendshapes + Head Pose aus 3 Bildern extrahieren."));
+  content.push(p("2. Analyse: Sechs Engines berechnen medizinische Messwerte (mm, Grad, Scores)."));
+  content.push(p("3. Zonenbewertung: Messwerte werden den 19 Behandlungszonen zugeordnet, Severity-Scores berechnet und nach klinischer Dringlichkeit sortiert."));
+  content.push(p("4. Behandlungsplan: Fuer jede behandlungsbeduerftige Zone werden Produkte, Techniken, Volumina und Sicherheitshinweise empfohlen."));
+  content.push(p("Dieses Kapitel gibt einen Ueberblick ueber den Gesamtansatz. Die folgenden Kapitel vertiefen jeden Aspekt: von der anatomischen Grundlage (Kapitel 2) ueber die Kalibrierung und Vermessung (Kapitel 3) bis hin zur Behandlungsplanung (Kapitel 11\u201314) und Ergebniskontrolle (Kapitel 15\u201316)."));
+
+  return content;
+}
+
+// ─── Kapitel 2: Anatomische Grundlagen (FULL) ───
+
+function kapitel2() {
+  const content = [];
+  content.push(h1("Kapitel 2: Anatomische Grundlagen"));
+  content.push(p("Die sichere und effektive Anwendung von Fillern und Neurotoxinen setzt ein tiefgreifendes Verstaendnis der Gesichtsanatomie voraus. Dieses Kapitel beschreibt die vier anatomischen Schichten, die fuer die aesthetische Gesichtsanalyse und -behandlung relevant sind: das knoecherne Geruest mit den Retaining Ligaments, die Fettkompartimente, die vaskulaere Anatomie und die mimische Muskulatur. Das Verstaendnis dieser Strukturen ist entscheidend fuer die Interpretation der Analyseergebnisse und die sichere Umsetzung der Behandlungsempfehlungen."));
+
+  // 2.1 Gesichtsknochen und Retaining Ligaments
+  content.push(h2("2.1 Gesichtsknochen und Retaining Ligaments"));
+  content.push(p("Das knoecherne Geruest bestimmt die dreidimensionale Grundform des Gesichts. Die relevanten Strukturen fuer die biometrische Analyse umfassen:"));
+
+  content.push(h3("2.1.1 Knoecherne Referenzpunkte"));
+  const boneHeaders = ["Struktur", "Landmark-Region", "Klinische Bedeutung"];
+  const boneWidths = [2200, 2500, 4660];
+  const boneRows = [
+    ["Os frontale (Stirnbein)", "Glabella, Supraorbitalrand", "Definiert Stirnkontur und Brauenposition; Basis fuer Zone Fo1, Bw1, Bw2"],
+    ["Os zygomaticum (Jochbein)", "Zygomatic Arch, Eminentia", "Breitester Punkt des Mittelgesichts; Basis fuer Zonen Ck1, Ck2; bestimmt Ogee-Kurve"],
+    ["Maxilla (Oberkiefer)", "Subnasale, Piriformis", "Traegt die Nasenbasis und beeinflusst den Nasolabialwinkel; Basis fuer Zonen Ns1, Pf1"],
+    ["Mandibula (Unterkiefer)", "Pogonion, Gonion, Mentale", "Definiert Kinn und Jawline; Basis fuer Zonen Ch1, Jl1; bestimmt Profillinie"],
+    ["Os nasale (Nasenbein)", "Nasion, Rhinion", "Nasenprofil und Nasofrontalwinkel; Basis fuer Zone Pf1"],
+  ];
+  content.push(p("Tabelle 2.1: Knoecherne Referenzpunkte und ihre klinische Zuordnung", { bold: true }));
+  content.push(makeTable(boneHeaders, boneRows, boneWidths));
+
+  content.push(h3("2.1.2 Retaining Ligaments"));
+  content.push(p("Die Retaining Ligaments sind bindegewebige Verbindungen zwischen Periost und Dermis, die das Weichgewebe am Skelett fixieren. Mit zunehmender Laxitaet dieser Ligamente kommt es zur altersbedingten Gewebeptose \u2014 einem der Hauptindikatoren, die das System ueber den Gravitational-Drift-Score (vgl. Kapitel 8) erkennt."));
+  content.push(p("Klinisch relevante Retaining Ligaments:", { bold: true }));
+  content.push(p("\u2022 Orbicularis Retaining Ligament (ORL): Fixiert das Unterlid am Orbitarand. Laxitaet fuehrt zur Traenentalvertiefung (Zone Tt1) und Lower-Lid-Laxity.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Zygomatic Ligament: Verbindet den Jochbogen mit der Haut ueber dem Malar Fat Pad. Laxitaet verursacht die Abflachung der Wangenhoehe (Ck2) und vertieft die Nasolabialfalte (Ns1).", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Masseteric Ligament: Fixiert die Weichteile ueber dem M. masseter. Laxitaet traegt zur Jowl-Bildung bei (Zone Jw1).", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Mandibular Ligament: Am anterioren Unterkieferrand. Laxitaet fuehrt zur Marionettenfaltenvertiefung (Zone Mn1).", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("Das System erkennt die Folgen dieser Ligament-Laxitaet indirekt ueber Landmark-Positionen und Volumendefizit-Scores. Eine direkte Darstellung der Ligamente ist auf Fotografien nicht moeglich \u2014 ihre Funktion wird ueber die resultierenden Weichgewebeveraenderungen erschlossen."));
+
+  // 2.2 Fettkompartimente
+  content.push(h2("2.2 Fettkompartimente"));
+  content.push(p("Die Gesichtsfettkompartimente bilden die Grundlage fuer das Verstaendnis von Volumenverlust und Konturveraenderungen. Sie sind in tiefe (supraperiostale) und oberflaechliche (subkutane) Kompartimente gegliedert, die unabhaengig voneinander an Volumen verlieren."));
+
+  content.push(h3("2.2.1 Tiefe Fettkompartimente"));
+  content.push(p("\u2022 Deep Medial Cheek Fat (DMCF): Liegt direkt auf dem Oberkiefer, medial des Jochbeins. Volumenverlust fuehrt zur Vertiefung der Nasolabialfalte und des Traenentals. Betrifft primaer die Zonen Ck3, Ns1 und Tt1.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Sub-Orbicularis Oculi Fat (SOOF): Unterhalb des M. orbicularis oculi, ueber dem Jochbein. Volumenverlust fuehrt zur Abflachung der Wangenhoehe (Ck2) und verstaerkt das Traenental.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Buccal Fat Pad (Bichat-Fettkoerper): Zwischen Wangenmuskulatur und Masseter. Sein Volumen beeinflusst die Wangenbreite und den Buccal Corridor.", { paragraphOpts: { indent: { left: 360 } } }));
+
+  content.push(h3("2.2.2 Oberflaechliche Fettkompartimente"));
+  content.push(p("\u2022 Malar Fat Pad: Das oberflaechliche Wangenfettpolster. Seine kaudale Migration (Gravitational Drift) ist einer der sichtbarsten Alterungseffekte und fuehrt zur Nasolabialfaltenvertiefung. Die Volumen-Engine (Kapitel 7) erkennt diesen Effekt ueber die Ogee-Kurve und den Malar-Prominence-Ratio.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Temporal Fat Pad: Oberflaechliches und tiefes temporales Fett. Atrophie fuehrt zum Temporal Hollowing (Zone T1), einem fruehen Alterungszeichen.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Periorbital Fat: Komplex geschichtetes Fett um die Augenhohle. Pseudohernie oder Atrophie fuehrt zu Traenensaecken respektive Traenental (Zone Tt1).", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("Das System quantifiziert Volumenverlust indirekt ueber Konturanalyse (Ogee-Kurve, Temporal-Depth, Tear-Trough-Depth) und ordnet die Ergebnisse den entsprechenden Zonen zu. Die Volumenscore-Berechnung (Kapitel 7) nutzt die z-Koordinaten der 3D-Landmarks, um Tiefenunterschiede zu erkennen, die auf Volumendefizite hindeuten."));
+
+  // 2.3 Vaskulaere Anatomie und Danger Zones
+  content.push(h2("2.3 Vaskulaere Anatomie und Danger Zones"));
+  content.push(p("Die Kenntnis der Gesichtsgefaesse ist fuer die sichere Injektion von Fillern essentiell. Vaskulaere Komplikationen (Embolie, Kompression) gehoeren zu den schwerwiegendsten Risiken in der aesthetischen Medizin. Das System kennzeichnet Hochrisikozonen automatisch mit vaskulaeren Warnhinweisen (vgl. Kapitel 14)."));
+
+  content.push(h3("2.3.1 Arterielle Versorgung"));
+  content.push(p("Die Gesichtsdurchblutung erfolgt primaer ueber zwei Hauptgefaesse:"));
+  content.push(p("\u2022 A. facialis: Verlaeuft ueber den Unterkieferrand, lateral der Nasolabialfalte nach cranial. Sie gibt die A. labialis superior und inferior ab (Versorgung der Lippen, Zone Lp1) und setzt sich als A. angularis fort (mediale Kanthusregion, Zone Tt1).", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 A. temporalis superficialis: Verlaeuft vor dem Ohr nach cranial in die Temporalregion (Zone T1). Sie gibt den R. zygomaticoorbicularis ab, der die laterale Periorbitalregion versorgt.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("Zusaetzlich relevante Gefaesse:", { bold: true }));
+  content.push(p("\u2022 A. dorsalis nasi: Verlaeuft auf dem Nasenruecken und ist die haeufigste Ursache vaskulaerer Komplikationen bei non-chirurgischer Rhinoplastik (Zone Pf1).", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 A. supratrochlearis/A. supraorbitalis: Versorgen die Glabellaregion (Zone Bw2) und die Stirn (Zone Fo1).", { paragraphOpts: { indent: { left: 360 } } }));
+
+  content.push(h3("2.3.2 Vaskulaere Risikozonen im System"));
+  content.push(p("Die Produktdatenbank (Kapitel 11) klassifiziert 8 der 19 Behandlungszonen als vaskulaere Risikozonen. Fuer diese Zonen werden automatisch Sicherheitshinweise generiert:"));
+  const vascHeaders = ["Zone", "Name", "Gefaehrdetes Gefaess", "Risikoniveau"];
+  const vascWidths = [800, 2500, 3200, 2860];
+  const vascRows = [
+    ["Tt1", "Traenental", "A. angularis, A. infraorbitalis", "Hoch"],
+    ["Pf1", "Nasenprofil", "A. dorsalis nasi, A. angularis", "Sehr hoch"],
+    ["Lp1", "Oberlippe", "A. labialis superior", "Hoch"],
+    ["Bw2", "Glabella", "A. supratrochlearis", "Hoch"],
+    ["Ns1", "Nasolabialfalte", "A. facialis", "Mittel"],
+    ["Bw1", "Laterale Braue", "R. zygomaticoorbicularis", "Mittel"],
+    ["T1", "Temporal", "A. temporalis superficialis", "Mittel"],
+    ["Fo1", "Stirn", "A. supraorbitalis", "Mittel"],
+  ];
+  content.push(p("Tabelle 2.2: Vaskulaere Risikozonen des Systems", { bold: true }));
+  content.push(makeTable(vascHeaders, vascRows, vascWidths));
+  content.push(p("Die detaillierte Beschreibung der vaskulaeren Sicherheitsmechanismen findet sich in Kapitel 14 (Sicherheit und Kontraindikationen)."));
+
+  // 2.4 Mimische Muskulatur
+  content.push(h2("2.4 Mimische Muskulatur"));
+  content.push(p("Die mimische Muskulatur (Gesichtsausdruck-Muskulatur) ist fuer zwei Aspekte der Analyse relevant: (1) die Neurotoxin-Indikation bei Hyperaktivitaet und (2) die Blendshape-basierte Muskeltonusanalyse in Ruhe (vgl. Kapitel 8). Im Gegensatz zur Kaumuskulatur inseriert die mimische Muskulatur direkt in der Haut, was ihre Auswirkungen auf die Gesichtsoberflaeche erklaert."));
+
+  content.push(h3("2.4.1 Oberes Gesichtsdrittel"));
+  content.push(p("\u2022 M. frontalis: Stirnheber, erzeugt horizontale Stirnfalten. Einziger Brauenheber. Der Blendshape browInnerUp korreliert mit seiner Aktivitaet. WICHTIG: Isolierte Neurotoxin-Behandlung ohne gleichzeitige Glabellabehandlung kann zur Brauenptosis fuehren (vgl. Zone Fo1, Kapitel 14.4).", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 M. corrugator supercilii: Brauenrunzler, erzeugt vertikale Glabellafalten ('11-Linien'). Die Blendshapes browDownLeft/Right messen seine Aktivitaet. Haeufigste Neurotoxin-Indikation (Zone Bw2).", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 M. procerus: Zieht die Glabella nach kaudal, erzeugt horizontale Nasenwurzelfalten. Wird gemeinsam mit dem Corrugator behandelt.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 M. orbicularis oculi: Ringmuskel um das Auge, verantwortlich fuer Kraehenfuesse und Squint-Muster. Die Blendshapes eyeSquintLeft/Right messen seinen Tonus.", { paragraphOpts: { indent: { left: 360 } } }));
+
+  content.push(h3("2.4.2 Mittleres und unteres Gesichtsdrittel"));
+  content.push(p("\u2022 M. zygomaticus major/minor: Heben den Mundwinkel nach lateral-cranial (Laecheln). Die Blendshapes mouthSmileLeft/Right korrelieren mit ihrer Aktivitaet. Asymmetrische Aktivierung in Ruhe kann auf eine periphere Fazialisparese hindeuten (vgl. Kapitel 14.3).", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 M. levator labii superioris: Hebt die Oberlippe. Beteiligt an der Nasolabialfaltentiefe.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 M. orbicularis oris: Ringmuskel der Lippen. Lip-Flip-Indikation bei Hyperaktivitaet (2\u20136 Units Neurotoxin, Zone Lp1). Der Blendshape mouthPucker misst seinen Tonus.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 M. depressor anguli oris (DAO): Zieht den Mundwinkel nach kaudal, verursacht den mueden, traurigen Ausdruck. Beteiligt an der Marionettenfaltenbildung (Zone Mn1).", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 M. mentalis: Hebt das Kinnpolster ('Kinngruebelchen-Muskel'). Hyperaktivitaet erzeugt eine unruhige Kinnoberflaeche (Peau d'orange).", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 M. platysma: Breiter Halsmuskel, der im Alter Banding und den Turkey-Neck-Effekt verursacht. Beeinflusst den Cervicomental Angle (Zone Pf3).", { paragraphOpts: { indent: { left: 360 } } }));
+
+  content.push(h3("2.4.3 Integration in das Analysesystem"));
+  content.push(p("Das System nutzt die Blendshape-Koeffizienten als indirekten Indikator fuer den Muskeltonus in Ruhe. Die Aging-Engine (Kapitel 8) berechnet einen Muskeltonus-Score pro Zone, der die Summe der aktivitaetsgewichteten Blendshape-Koeffizienten darstellt. Ein erhoehter Tonus in Ruhe (z.\u202fB. browDownLeft > 0,2 ohne bewusstes Stirnrunzeln) deutet auf eine Neurotoxin-Indikation hin."));
+  content.push(p("WICHTIG: Blendshape-Werte sind immer nur pro Aufnahme gueltig und werden NIEMALS ueber verschiedene Ansichten (frontal, oblique, profil) fusioniert. Nur die geometrischen Landmark-Positionen werden im Multi-View-Fusion-Prozess (Kapitel 10) zusammengefuehrt.", { bold: true }));
+
+  return content;
+}
+
+// ─── Kapitel 15: Before/After-Vergleich (FULL) ───
+
+function kapitel15() {
+  const content = [];
+  content.push(h1("Kapitel 15: Before/After-Vergleich"));
+  content.push(p("Die objektive Messung von Behandlungsergebnissen ist eine der wichtigsten Funktionen des Aesthetic Biometrics Engine. Waehrend Vorher-Nachher-Fotos in der aesthetischen Medizin allgegenwaertig sind, fehlt haeufig eine systematische, quantitative Auswertung. Die Comparison Engine schliesst diese Luecke, indem sie zwei Zone-Reports (pre-treatment und post-treatment) systematisch vergleicht und den Behandlungserfolg in messbaren Kennzahlen ausdrueckt."));
+  content.push(p("Dieses Kapitel beschreibt die Methodik des Before/After-Vergleichs: die Delta-Berechnung pro Zone, den Improvement Score, die Status-Klassifikation und die Heatmap-Visualisierung. Die Engine ist als reine Berechnungslogik implementiert \u2014 ohne Datenbankabhaengigkeit \u2014 und kann sowohl fuer einzelne Behandlungen als auch fuer longitudinale Behandlungsverlaeufe eingesetzt werden."));
+
+  // 15.1 Grundprinzip
+  content.push(h2("15.1 Grundprinzip des Vergleichs"));
+  content.push(p("Der Vergleich basiert auf der einfachen Idee, zwei vollstaendige Gesichtsanalysen (Zone-Reports) desselben Patienten nebeneinanderzustellen und die Differenzen systematisch auszuwerten. Jeder Zone-Report enthaelt pro Zone:"));
+  content.push(p("\u2022 Severity-Score (0\u201310): Wie stark ist die Zone behandlungsbeduerftig?", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Einzelmessungen: Konkrete biometrische Messwerte (in mm, Grad oder Scores)", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Aesthetic Score (0\u2013100): Gesamtaesthetischer Score ueber alle 19 Zonen", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("Der Vergleich erzeugt fuer jede Zone ein ZoneDelta-Objekt, das die Veraenderung zwischen Pre und Post beschreibt. Aus diesen Deltas werden der Gesamtverbesserungswert und die Heatmap-Visualisierung abgeleitet."));
+  content.push(p("API-Endpunkt: POST /api/v2/compare erwartet zwei Assessment-IDs (pre_assessment_id, post_assessment_id), laedt die zugehoerigen Zone-Reports aus Supabase und fuehrt den Vergleich durch. Das Ergebnis wird als ComparisonResponse zurueckgegeben und optional in der Tabelle treatment_comparisons persistiert.", { bold: true }));
+
+  // 15.2 Delta-Berechnung
+  content.push(h2("15.2 Delta-Berechnung pro Zone"));
+  content.push(p("Fuer jede der 19 Zonen wird ein ZoneDelta berechnet, das folgende Felder enthaelt:"));
+  const deltaHeaders = ["Feld", "Berechnung", "Interpretation"];
+  const deltaWidths = [2800, 3000, 3560];
+  const deltaRows = [
+    ["severity_delta", "post_severity \u2212 pre_severity", "Negativ = Verbesserung, Positiv = Verschlechterung"],
+    ["severity_improvement_pct", "(\u2212severity_delta / pre_severity) \u00d7 100", "Prozentuale Verbesserung relativ zum Ausgangswert"],
+    ["measurement_deltas", "Pro Messwert: post_value \u2212 pre_value", "Detaillierte Veraenderung jedes einzelnen Messwerts"],
+    ["status", "Klassifikation (siehe 15.3)", "improved / worsened / unchanged / resolved / new"],
+  ];
+  content.push(p("Tabelle 15.1: Felder des ZoneDelta-Objekts", { bold: true }));
+  content.push(makeTable(deltaHeaders, deltaRows, deltaWidths));
+
+  content.push(h3("15.2.1 Measurement-Level Deltas"));
+  content.push(p("Zusaetzlich zum Severity-Delta werden die einzelnen Messwerte innerhalb jeder Zone verglichen. Fuer jeden Messwert, der in beiden Assessments vorhanden ist, wird berechnet:"));
+  content.push(p("\u2022 delta: Absolute Differenz (post_value \u2212 pre_value)", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 delta_pct: Prozentuale Veraenderung relativ zum Pre-Wert", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 improved: Boolean \u2014 ob sich der Wert dem Idealbereich angenaehert hat", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("Die Verbesserungsbeurteilung nutzt die Idealwertbereiche aus den Zonen-Definitionen (vgl. Kapitel 9). Wenn Idealwerte vorhanden sind, wird geprueft, ob der Post-Wert naeher am Idealmittelpunkt liegt als der Pre-Wert. Fuer Metriken ohne Idealbereich gelten typspezifische Heuristiken: Asymmetrie- und Deviations-Metriken verbessern sich bei Abnahme, Traenentaltiefe bei Reduktion."));
+  content.push(p("Aenderungsschwelle: Eine minimale Aenderung von 5% (MEASUREMENT_CHANGE_THRESHOLD = 0,05) ist erforderlich, um als tatsaechliche Veraenderung gewertet zu werden. Dies verhindert, dass Messrauschen als Behandlungserfolg interpretiert wird.", { bold: true }));
+
+  // 15.3 Status-Klassifikation
+  content.push(h2("15.3 Status-Klassifikation"));
+  content.push(p("Jede Zone erhaelt einen von fuenf Status-Codes, die den Behandlungsverlauf kategorisieren:"));
+  const statusHeaders = ["Status", "Bedingung", "Klinische Bedeutung"];
+  const statusWidths = [1500, 4000, 3860];
+  const statusRows = [
+    ["resolved", "Post-Severity < 1,0 UND Pre-Severity \u2265 1,0", "Zone vollstaendig behandelt \u2014 kein weiterer Handlungsbedarf"],
+    ["improved", "Severity-Delta < \u22120,5", "Deutliche Verbesserung, moeglicherweise weitere Sitzung noetig"],
+    ["unchanged", "Severity-Delta zwischen \u22120,5 und +0,5", "Keine signifikante Veraenderung \u2014 Behandlungsansatz ueberpruefen"],
+    ["worsened", "Severity-Delta > +0,5", "Verschlechterung \u2014 moegliche Komplikation oder Progression abklaeren"],
+    ["new", "Zone nur im Post-Assessment vorhanden", "Neues Problem entstanden \u2014 kann durch Behandlung anderer Zonen bedingt sein"],
+  ];
+  content.push(p("Tabelle 15.2: Status-Klassifikation der Zonenveraenderung", { bold: true }));
+  content.push(makeTable(statusHeaders, statusRows, statusWidths));
+  content.push(p("Die Schwellenwerte (SEVERITY_CHANGE_THRESHOLD = 0,5 und RESOLVED_THRESHOLD = 1,0) wurden konservativ gewaehlt, um Messrauschen von tatsaechlichen Veraenderungen zu unterscheiden. Ein Severity-Delta von \u00b10,5 kann allein durch normale Variabilitaet in der Bildaufnahme entstehen."));
+  content.push(p("Die Sortierung der Zone-Deltas im Ergebnis erfolgt nach absolutem Severity-Delta (groesste Veraenderung zuerst), was dem Kliniker sofort zeigt, in welchen Zonen die deutlichsten Veraenderungen stattgefunden haben."));
+
+  // 15.4 Improvement Score
+  content.push(h2("15.4 Improvement Score"));
+  content.push(p("Der Improvement Score (0\u2013100) ist die zentrale KPI des Before/After-Vergleichs. Er fasst die Veraenderungen aller behandelten Zonen in einen einzigen Wert zusammen und ermoeglicht den schnellen Ueberblick ueber den Gesamtbehandlungserfolg."));
+
+  content.push(h3("15.4.1 Berechnungsmethodik"));
+  content.push(p("Der Score wird als gewichtetes Mittel der Verbesserungsquoten aller behandelten Zonen berechnet:"));
+  content.push(p("1. Fuer jede Zone mit Pre-Severity \u2265 1,0 (behandlungsbeduerftig) wird die Verbesserungsquote berechnet: improvement_ratio = \u2212severity_delta / pre_severity (Wert zwischen \u22121,0 und +1,0)"));
+  content.push(p("2. Die Gewichtung erfolgt nach Regionen (REGION_WEIGHTS): Midface 1,2 | Lower Face 1,0 | Upper Face 0,8 | Profile 1,0. Diese Gewichtung spiegelt die klinische Bedeutung wider."));
+  content.push(p("3. Das gewichtete Mittel wird auf die Skala 0\u2013100 skaliert, wobei 50 = keine Veraenderung."));
+
+  content.push(h3("15.4.2 Interpretation"));
+  const scoreHeaders = ["Score-Bereich", "Bewertung", "Klinische Implikation"];
+  const scoreWidths = [1800, 2500, 5060];
+  const scoreRows = [
+    ["75\u2013100", "Exzellentes Ergebnis", "Behandlungsziele weitgehend oder vollstaendig erreicht"],
+    ["60\u201374", "Gute Verbesserung", "Deutliche Verbesserung, evtl. eine weitere Sitzung geplant"],
+    ["50\u201359", "Moderate Verbesserung", "Messbare Veraenderung, aber Behandlungsziele nicht vollstaendig erreicht"],
+    ["40\u201349", "Minimale Veraenderung", "Kaum Verbesserung \u2014 Behandlungsstrategie ueberdenken"],
+    ["< 40", "Bedenken", "Moeglicherweise Verschlechterung in einigen Zonen \u2014 Ursachenanalyse empfohlen"],
+  ];
+  content.push(p("Tabelle 15.3: Interpretation des Improvement Scores", { bold: true }));
+  content.push(makeTable(scoreHeaders, scoreRows, scoreWidths));
+  content.push(p("Der Baseline-Wert von 50 (keine Veraenderung) wurde bewusst gewaehlt, um sowohl Verbesserungen (> 50) als auch Verschlechterungen (< 50) abzubilden. Ein Score von exakt 50,0 bedeutet, dass die gewichteten Verbesserungen und Verschlechterungen sich gegenseitig aufheben."));
+
+  // 15.5 Aesthetic Score Delta
+  content.push(h2("15.5 Aesthetic Score Delta"));
+  content.push(p("Zusaetzlich zum zonenspezifischen Improvement Score wird der Gesamt-Aesthetic-Score (0\u2013100, vgl. Kapitel 9) fuer Pre und Post verglichen. Das Delta (post \u2212 pre) gibt die Veraenderung des aesthetischen Gesamteindrucks an."));
+  content.push(p("Zusammenhaeng: Der Aesthetic Score ist der uebergreifende Qualitaetsindikator, waehrend der Improvement Score die Behandlungswirksamkeit misst. Beide korrelieren, koennen aber divergieren: Eine erfolgreiche Behandlung einer einzelnen schweren Zone (hoher Improvement Score) kann den Aesthetic Score nur gering anheben, wenn die anderen Zonen unbeeinflusst bleiben."));
+
+  // 15.6 Heatmap-Visualisierung
+  content.push(h2("15.6 Heatmap-Visualisierung"));
+  content.push(p("Fuer die Darstellung im Frontend generiert die Engine Heatmap-Daten pro Zone. Jeder HeatmapEntry enthaelt:"));
+  content.push(p("\u2022 pre_intensity / post_intensity (0\u20131): Normalisierte Severity (0 = kein Problem, 1 = schwer). Berechnung: min(1,0; severity / 10,0).", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 delta_intensity (\u22121 bis +1): Veraenderung. Negativ = Verbesserung, Positiv = Verschlechterung.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 color_code: Vorgeschlagene Farbe fuer die Frontend-Darstellung:", { paragraphOpts: { indent: { left: 360 } } }));
+  const heatHeaders = ["Status", "Farbe", "Hex-Code"];
+  const heatWidths = [2500, 3000, 3860];
+  const heatRows = [
+    ["resolved", "Gruen (stark)", "#22c55e"],
+    ["improved", "Gruen (hell)", "#4ade80"],
+    ["unchanged", "Grau", "#9ca3af"],
+    ["worsened", "Rot", "#ef4444"],
+    ["new", "Orange", "#f97316"],
+  ];
+  content.push(p("Tabelle 15.4: Heatmap-Farbzuordnung", { bold: true }));
+  content.push(makeTable(heatHeaders, heatRows, heatWidths));
+  content.push(p("Die Heatmap-Daten koennen im Frontend als zonenspezifische Overlay-Grafik auf dem Gesichtsbild dargestellt werden, wobei jede Zone entsprechend ihres delta_intensity eingefaerbt wird. Dies ermoeglicht dem Behandler und dem Patienten einen intuitiven visuellen Vergleich."));
+
+  // 15.7 Summary-Textgenerierung
+  content.push(h2("15.7 Summary-Textgenerierung"));
+  content.push(p("Die Engine erzeugt automatisch eine Zusammenfassung im natuerlichsprachlichen Format, die drei Informationen kombiniert:"));
+  content.push(p("1. Aesthetic Score Veraenderung: z.\u202fB. 'Aesthetic score: 72,5 \u2192 84,3 (+11,8)'"));
+  content.push(p("2. Zonenstatus-Verteilung: z.\u202fB. 'Zones: 5 improved, 2 resolved, 10 unchanged, 1 worsened'"));
+  content.push(p("3. Gesamtbewertung: z.\u202fB. 'Overall: Good improvement'"));
+  content.push(p("Diese Summary eignet sich fuer die Patientenkommunikation und die Dokumentation im Behandlungsverlauf."));
+
+  // 15.8 Klinische Anwendung
+  content.push(h2("15.8 Klinische Anwendung"));
+  content.push(p("Der Before/After-Vergleich unterstuetzt den Kliniker in drei Szenarien:"));
+  content.push(p("\u2022 Nachkontrolle: Nach einer Behandlung wird ein neues Assessment erstellt und mit dem Pre-Assessment verglichen. Der Kliniker sieht sofort, welche Zonen sich verbessert haben und wo Nachbesserungsbedarf besteht.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Longitudinale Dokumentation: Ueber die Patient-History-API (GET /api/v2/patients/{id}/history) koennen alle Assessments eines Patienten abgerufen und paarweise verglichen werden, um den Behandlungsverlauf ueber mehrere Sitzungen zu verfolgen.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 Qualitaetssicherung: Die aggregierten Improvement Scores ueber alle Patienten hinweg koennen als Qualitaetsmetrik fuer die Praxis dienen (vgl. Kapitel 16).", { paragraphOpts: { indent: { left: 360 } } }));
+
+  return content;
+}
+
+// ─── Kapitel 16: Qualitaetssicherung (FULL) ───
+
+function kapitel16() {
+  const content = [];
+  content.push(h1("Kapitel 16: Qualitaetssicherung"));
+  content.push(p("Die Qualitaet der Analyseergebnisse steht und faellt mit der Qualitaet der Eingangsdaten. Ein noch so ausgefeiltes Analysesystem liefert unbrauchbare Ergebnisse, wenn die Bilder unscharf, falsch belichtet oder aus dem falschen Winkel aufgenommen sind. Das Qualitaetssicherungssystem des Aesthetic Biometrics Engine implementiert daher eine mehrstufige Validierungskette, die jedes Bild vor der Analyse auf Eignung prueft."));
+  content.push(p("Dieses Kapitel beschreibt die drei Saeulen der Qualitaetssicherung: Bildqualitaetspruefung (Image Quality Gate), Kopfhaltungsvalidierung (Pose Validation) und Gesichtsausdruck-Check (Expression Validation). Zusaetzlich wird die Kalibrierungs-Confidence als Mass fuer die Zuverlaessigkeit der absoluten Messungen erlaeutert."));
+
+  // 16.1 Architektur der Quality Gate
+  content.push(h2("16.1 Architektur der Quality Gate"));
+  content.push(p("Die Quality Gate ist als Pipeline organisiert, die sequentiell vier Pruefkategorien durchlaeuft. Jede Pruefung erzeugt QualityWarning-Objekte mit einem Schweregrad (low, medium, high, critical). Warnungen sind grundsaetzlich nicht-blockierend \u2014 die Analyse wird durchgefuehrt und die Warnungen werden im Response mitgeliefert. Nur bei kritischen Befunden (critical) wird das Bild abgelehnt."));
+
+  const gateHeaders = ["Pruefung", "Modul", "Schweregrade", "Blockierend?"];
+  const gateWidths = [2500, 2800, 2000, 2060];
+  const gateRows = [
+    ["Bildqualitaet", "check_image_quality()", "medium, high", "Nein \u2014 Warnungen"],
+    ["Gesichtserkennung", "run_quality_gate()", "high", "Ja \u2014 Abbruch wenn kein Gesicht"],
+    ["Kopfhaltung (hard)", "check_hard_pose_rejection()", "critical", "Ja \u2014 Bild wird abgelehnt"],
+    ["Kopfhaltung (soft)", "check_head_pose()", "medium, high", "Nein \u2014 Warnungen"],
+    ["Gesichtsausdruck", "check_neutral_expression()", "medium", "Nein \u2014 Warnungen"],
+  ];
+  content.push(p("Tabelle 16.1: Pruefkategorien der Quality Gate", { bold: true }));
+  content.push(makeTable(gateHeaders, gateRows, gateWidths));
+  content.push(p("Designprinzip: Das System bevorzugt Warnungen gegenueber Ablehnungen. Ein suboptimales Bild mit Warnungen ist fuer den Kliniker wertvoller als gar kein Ergebnis. Nur wenn die Landmark-Erkennung so unzuverlaessig waere, dass klinische Messungen sinnlos werden, erfolgt eine harte Ablehnung.", { bold: true }));
+
+  // 16.2 Bildqualitaetspruefung
+  content.push(h2("16.2 Bildqualitaetspruefung"));
+  content.push(p("Die Bildqualitaetspruefung analysiert vier physikalische Bildeigenschaften, die die Zuverlaessigkeit der Landmark-Erkennung direkt beeinflussen:"));
+
+  content.push(h3("16.2.1 Aufloesung"));
+  content.push(p("Mindestanforderung: 640\u00d7480 Pixel. Unterhalb dieser Aufloesung sind feine anatomische Strukturen (Vermiliongrenze, Traenentaltiefe, Iris-Durchmesser) nicht zuverlaessig erkennbar. Bei Unterschreitung wird der Warning-Code LOW_RESOLUTION mit Severity 'medium' erzeugt."));
+  content.push(p("Empfehlung: 1024\u00d71024 Pixel oder hoeher. Das System skaliert Bilder intern auf 1024\u00d71024 nach dem Gesichtszuschnitt (Image Preprocessor). Hoehere Eingangsaufloesungen verbessern die Zuschnittsqualitaet, da mehr Bildinformation fuer den Crop zur Verfuegung steht."));
+
+  content.push(h3("16.2.2 Belichtung"));
+  content.push(p("Die mittlere Helligkeit des Graustufenbilds wird als Indikator fuer die Belichtung verwendet:"));
+  const expHeaders = ["Bereich", "Warning-Code", "Severity", "Empfehlung"];
+  const expWidths = [2000, 2200, 1200, 3960];
+  const expRows = [
+    ["< 50 / 255", "UNDEREXPOSED", "high", "Bild zu dunkel \u2014 Beleuchtung erhoehen, Blitz verwenden"],
+    ["50\u2013220 / 255", "\u2014 (OK)", "\u2014", "Akzeptabler Belichtungsbereich"],
+    ["> 220 / 255", "OVEREXPOSED", "high", "Bild ueberbelichtet \u2014 Beleuchtung reduzieren, Blitz vermeiden"],
+  ];
+  content.push(p("Tabelle 16.2: Belichtungsbereiche und Warnungen", { bold: true }));
+  content.push(makeTable(expHeaders, expRows, expWidths));
+
+  content.push(h3("16.2.3 Kontrast"));
+  content.push(p("Der Kontrast wird ueber die Standardabweichung der Helligkeit im Graustufenbild gemessen. Ein Wert unter 30 erzeugt den Warning-Code LOW_CONTRAST mit Severity 'medium'. Niedriger Kontrast erschwert die Erkennung feiner Konturen (Nasolabialfalte, Traenental) und fuehrt zu ungenaeueren Landmark-Positionen."));
+  content.push(p("Empfehlung: Gleichmaessige, diffuse Beleuchtung (Ringblitz oder symmetrische Softboxen) erzeugt guten Kontrast ohne harte Schatten. Direkte Sonne oder punktfoermige Lichtquellen erzeugen starke Schatten, die zu falsch-positiven Volumendefiziten fuehren koennen."));
+
+  content.push(h3("16.2.4 Schaerfe"));
+  content.push(p("Die Bildschaerfe wird ueber die Varianz des Laplace-Operators (Laplacian Variance) gemessen \u2014 ein gaengiges Mass fuer lokale Kantenschaerfe. Ein Wert unter 50 erzeugt den Warning-Code BLURRY mit Severity 'high'."));
+  content.push(p("Unscharfe Bilder fuehren zu ungenauerer Landmark-Platzierung, insbesondere bei feinen Strukturen wie der Vermiliongrenze (Lippenkontur) und der Iris (Kalibrierungsreferenz). Die Iris-basierte Kalibrierung (vgl. Kapitel 3) ist besonders empfindlich gegenueber Unschaerfe, da der Iris-Durchmesser als Massstab dient."));
+
+  // 16.3 Kopfhaltungsvalidierung
+  content.push(h2("16.3 Kopfhaltungsvalidierung (Pose Validation)"));
+  content.push(p("Die Kopfhaltung wird ueber die Head-Pose-Estimation (Yaw, Pitch, Roll aus der Transformationsmatrix, vgl. Kapitel 3) gemessen und gegen ansichtsspezifische Toleranzen geprueft. Das System unterscheidet zwischen weichen Warnungen (Soft Limits) und harten Ablehnungen (Hard Limits)."));
+
+  content.push(h3("16.3.1 Soft Limits (Warnungen)"));
+  content.push(p("Soft Limits erzeugen Warnungen, die auf eine suboptimale aber verwertbare Kopfhaltung hinweisen:"));
+  const softHeaders = ["Ansicht", "Max Yaw", "Max Pitch", "Max Roll"];
+  const softWidths = [2000, 2500, 2500, 2360];
+  const softRows = [
+    ["Frontal", "\u00b112\u00b0", "\u00b110\u00b0", "\u00b18\u00b0"],
+    ["Oblique", "25\u00b0\u201360\u00b0 (abs)", "\u00b110\u00b0", "\u00b18\u00b0"],
+    ["Profil", "> 70\u00b0 (abs)", "\u00b110\u00b0", "\u00b18\u00b0"],
+  ];
+  content.push(p("Tabelle 16.3: Soft Limits fuer die Kopfhaltung", { bold: true }));
+  content.push(makeTable(softHeaders, softRows, softWidths));
+
+  content.push(h3("16.3.2 Hard Limits (Ablehnung)"));
+  content.push(p("Hard Limits fuehren zur Ablehnung des Bildes (Severity 'critical'), da die Landmarks bei extremer Kopfhaltung zu unzuverlaessig fuer klinische Messungen werden:"));
+  const hardHeaders = ["Ansicht", "Max Yaw", "Max Pitch", "Max Roll"];
+  const hardWidths = [2000, 2500, 2500, 2360];
+  const hardRows = [
+    ["Frontal", "\u00b125\u00b0", "\u00b120\u00b0", "\u00b115\u00b0"],
+    ["Oblique", "15\u00b0\u201375\u00b0 (abs)", "\u00b120\u00b0", "\u00b115\u00b0"],
+    ["Profil", "> 55\u00b0 (abs)", "\u00b120\u00b0", "\u00b115\u00b0"],
+  ];
+  content.push(p("Tabelle 16.4: Hard Limits (Bildablehnung)", { bold: true }));
+  content.push(makeTable(hardHeaders, hardRows, hardWidths));
+  content.push(p("Bei einer harten Ablehnung wird die Analyse abgebrochen und dem Nutzer eine Fehlermeldung mit dem konkreten Abweichungswert und der empfohlenen Korrektur angezeigt (z.\u202fB. 'Head rotation 28,3\u00b0 exceeds maximum 25\u00b0 for frontal view. Image rejected.'). Die Analyse wird fuer die anderen Ansichten fortgesetzt, sofern diese akzeptiert werden (Partial-Failure-Handling)."));
+
+  content.push(h3("16.3.3 Ansichtsspezifische Warning-Codes"));
+  const codeHeaders = ["Warning-Code", "Bedingung", "Typische Ursache"];
+  const codeWidths = [2500, 3500, 3360];
+  const codeRows = [
+    ["HEAD_NOT_FRONTAL", "Yaw > 12\u00b0 bei Frontalansicht", "Patient hat den Kopf leicht gedreht"],
+    ["HEAD_NOT_OBLIQUE", "Yaw < 25\u00b0 oder > 60\u00b0 bei Oblique", "Zu wenig oder zu viel Drehung fuer 45\u00b0"],
+    ["HEAD_NOT_PROFILE", "Yaw < 70\u00b0 bei Profilansicht", "Kopf nicht genug zur Seite gedreht"],
+    ["HEAD_TILTED", "Roll > 8\u00b0", "Kopf zur Seite geneigt"],
+    ["HEAD_PITCH", "Pitch > 10\u00b0", "Kopf nach oben oder unten geneigt"],
+    ["POSE_REJECTED", "Ueberschreitung Hard Limit", "Extreme Fehlhaltung \u2014 Bild unbrauchbar"],
+  ];
+  content.push(p("Tabelle 16.5: Warning-Codes der Kopfhaltungsvalidierung", { bold: true }));
+  content.push(makeTable(codeHeaders, codeRows, codeWidths));
+
+  // 16.4 Gesichtsausdruck-Validierung
+  content.push(h2("16.4 Gesichtsausdruck-Validierung (Expression Check)"));
+  content.push(p("Die biometrische Analyse erfordert einen neutralen, entspannten Gesichtsausdruck. Aktive Gesichtsausdruecke veraendern die Landmark-Positionen und fuehren zu fehlerhaften Messwerten. Ein Laecheln verschiebt beispielsweise die Mundwinkel nach lateral-cranial und simuliert eine geringere Nasolabialfaltentiefe."));
+  content.push(p("Die Pruefung erfolgt ueber die Blendshape-Koeffizienten (52 Werte von 0,0 bis 1,0), die die Aktivierung einzelner Gesichtsmuskelgruppen quantifizieren. Fuer 9 klinisch relevante Blendshapes sind Schwellenwerte definiert:"));
+  const exprHeaders = ["Blendshape", "Schwellenwert", "Gemessene Muskelbewegung"];
+  const exprWidths = [2500, 1800, 5060];
+  const exprRows = [
+    ["mouthSmileLeft / Right", "> 0,15", "Laecheln \u2014 verfaelscht Nasolabialfalte, Mundwinkelposition"],
+    ["browDownLeft / Right", "> 0,20", "Stirnrunzeln \u2014 verfaelscht Brauenposition, Glabellabeurteilung"],
+    ["jawOpen", "> 0,10", "Mund offen \u2014 verfaelscht Lippenverhaeltnis, Kinnposition"],
+    ["mouthPucker", "> 0,15", "Lippen gespitzt \u2014 verfaelscht Lippenvolumenmessung"],
+    ["mouthFunnel", "> 0,15", "Lippen gerundet \u2014 verfaelscht Vermiliongrenze"],
+    ["eyeSquintLeft / Right", "> 0,25", "Augen zusammengekniffen \u2014 verfaelscht periobitale Analyse"],
+  ];
+  content.push(p("Tabelle 16.6: Blendshape-Schwellenwerte fuer Neutral-Expression-Check", { bold: true }));
+  content.push(makeTable(exprHeaders, exprRows, exprWidths));
+  content.push(p("Bei Ueberschreitung eines oder mehrerer Schwellenwerte wird der Warning-Code NON_NEUTRAL_EXPRESSION erzeugt. Die Warnung nennt die bis zu drei staerksten Abweichungen (z.\u202fB. 'Active facial expression detected: mouthSmileLeft: 0,34, mouthSmileRight: 0,28, jawOpen: 0,15')."));
+
+  content.push(h3("16.4.1 Expression Deviation Score"));
+  content.push(p("Zusaetzlich zur binaeren Warnung berechnet die Funktion compute_expression_deviation() einen kontinuierlichen Abweichungswert (0,0 = neutral, 1,0 = extreme Expression). Dieser Score wird von der Zone-Analyse genutzt, um Blendshape-basierte Befunde (Muskeltonus, dynamische Asymmetrie) bei nicht-neutralem Ausdruck automatisch herabzugewichten."));
+  content.push(p("Die Berechnung erfolgt ueber den normalisierten Ueberschuss: Fuer jeden Blendshape oberhalb seines Schwellenwerts wird (value \u2212 threshold) / (1,0 \u2212 threshold) berechnet und das arithmetische Mittel aller Ueberschuesse gebildet."));
+  content.push(p("WICHTIG: Expression-Blendshapes werden NIEMALS ueber verschiedene Ansichten gemittelt oder fusioniert. Jede Ansicht hat ihren eigenen Expression-Check, da der Gesichtsausdruck sich zwischen den Aufnahmen aendern kann.", { bold: true }));
+
+  // 16.5 Kalibrierungs-Confidence
+  content.push(h2("16.5 Kalibrierungs-Confidence"));
+  content.push(p("Die Umrechnung von Pixeln in Millimeter erfolgt ueber die Iris-basierte Kalibrierung (vgl. Kapitel 3). Die Zuverlaessigkeit dieser Kalibrierung wird als Confidence-Wert (0,0\u20131,0) angegeben:"));
+  content.push(p("\u2022 > 0,9 (Iris-basiert, beide Augen sichtbar): Hoechste Genauigkeit (< 3% Fehler). Iris-Durchmesser 11,7 mm als Referenz.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 0,7\u20130,9 (Iris-basiert, ein Auge sichtbar): Gute Genauigkeit (3\u20135% Fehler). Haeufig bei Oblique-Aufnahmen.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 0,5\u20130,7 (Face-Width-Fallback): Moderate Genauigkeit (5\u201310% Fehler). Wird verwendet, wenn Iris nicht zuverlaessig erkennbar (Unschaerfe, Brille, Profil).", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("\u2022 < 0,5: Niedrige Confidence. Absolute mm-Werte sollten mit Vorsicht interpretiert werden; relative Verhaeltnisse (Proportionen, Symmetrie-Scores) bleiben zuverlaessig.", { paragraphOpts: { indent: { left: 360 } } }));
+  content.push(p("Bei niedriger Kalibrierungs-Confidence wird eine QualityWarning im Analyseergebnis mitgeliefert. Der Kliniker sollte in solchen Faellen die absoluten mm-Werte kritisch hinterfragen und sich primaer auf relative Scores (Symmetrie, Proportionen, Severity) stuetzen, die kalibrierungsunabhaengig sind."));
+
+  // 16.6 Zusammenspiel im Pipeline-Orchestrator
+  content.push(h2("16.6 Zusammenspiel im Pipeline-Orchestrator"));
+  content.push(p("Der Pipeline-Orchestrator (vgl. Kapitel 1) integriert die Quality Gate in den Analysepfad wie folgt:"));
+  content.push(p("1. Bild empfangen und vorverarbeiten (Image Preprocessor: EXIF, Crop, Resize)"));
+  content.push(p("2. Bildqualitaet pruefen (check_image_quality) \u2192 Warnungen sammeln"));
+  content.push(p("3. Gesichtserkennung durchfuehren (Face Landmarker)"));
+  content.push(p("4. Falls kein Gesicht erkannt: Warnung NO_FACE_DETECTED, Bild ueberspringen (HTTP 422 wenn kein Bild akzeptiert)"));
+  content.push(p("5. Hard-Pose-Rejection pruefen \u2192 Bei Ablehnung: Bild ueberspringen, naechste Ansicht versuchen"));
+  content.push(p("6. Soft-Pose-Warnungen und Expression-Check \u2192 Warnungen sammeln"));
+  content.push(p("7. Analyse mit allen akzeptierten Ansichten durchfuehren (Partial-Failure: mindestens eine Ansicht muss akzeptiert werden)"));
+  content.push(p("8. Alle Warnungen im Response-Objekt mitliefern"));
+  content.push(p("Dieses Partial-Failure-Handling stellt sicher, dass der Kliniker auch bei suboptimaler Fotodokumentation verwertbare Ergebnisse erhaelt \u2014 mit klaren Hinweisen auf die Einschraenkungen. Wurden beispielsweise nur Frontal- und Oblique-Bild akzeptiert (Profil abgelehnt), fehlen die Profilzonen (Pf1\u2013Pf3, Ch1, Jl1) im Report, aber alle frontal und oblique messbaren Zonen werden vollstaendig analysiert."));
+
+  // 16.7 Empfehlungen fuer die Praxis
+  content.push(h2("16.7 Empfehlungen fuer die Praxis"));
+  content.push(p("Basierend auf den implementierten Qualitaetspruefungen gelten folgende Empfehlungen fuer die klinische Fotodokumentation:"));
+  content.push(p("1. Beleuchtung: Ringblitz oder zwei symmetrische Softboxen auf 45\u00b0. Keine direkte Sonne, kein harter Blitz."));
+  content.push(p("2. Hintergrund: Einfarbig neutral, kein Muster, keine anderen Personen."));
+  content.push(p("3. Aufloesung: Smartphone-Kamera in hoechster Aufloesung (mindestens 1024\u00d71024 empfohlen)."));
+  content.push(p("4. Entfernung: 0,5\u20131,0 Meter zum Patienten \u2014 nah genug fuer Detail, weit genug fuer minimale Verzeichnung."));
+  content.push(p("5. Kopfhaltung: Patient blickt geradeaus auf Fixpunkt in Augenhoehe (Frontal), dreht den Kopf 45\u00b0 (Oblique) bzw. 90\u00b0 (Profil) zur Kamera."));
+  content.push(p("6. Ausdruck: Neutral, entspannt, Lippen leicht geschlossen. Kein Laecheln, keine Stirnrunzeln."));
+  content.push(p("7. Wiederholung: Bei Warnungen (insbesondere BLURRY, UNDEREXPOSED, HEAD_NOT_*) die entsprechende Aufnahme wiederholen."));
+  content.push(p("Die konsistente Einhaltung dieser Standards verbessert nicht nur die Analysequalitaet, sondern ermoeglicht auch zuverlaessigere Before/After-Vergleiche (Kapitel 15), da Variabilitaet in den Aufnahmebedingungen minimiert wird."));
+
+  return content;
+}
+
 // ─── Placeholder chapters ───
 
 function placeholderChapter(title) {
@@ -1842,16 +2308,9 @@ async function main() {
           pb(),
           // TEIL I
           h1("Teil I \u2014 Grundlagen"),
-          ...placeholderChapter("Kapitel 1: Einf\u00fchrung in die \u00e4sthetische Gesichtsanalyse"),
-          ...placeholderSection("1.1 Historischer Kontext"),
-          ...placeholderSection("1.2 Standardisierte Fotografie"),
-          ...placeholderSection("1.3 KI-gest\u00fctzte Analyse"),
+          ...kapitel1(),
           pb(),
-          ...placeholderChapter("Kapitel 2: Anatomische Grundlagen"),
-          ...placeholderSection("2.1 Gesichtsknochen und Retaining Ligaments"),
-          ...placeholderSection("2.2 Fettkompartimente"),
-          ...placeholderSection("2.3 Vaskul\u00e4re Anatomie und Danger Zones"),
-          ...placeholderSection("2.4 Mimische Muskulatur"),
+          ...kapitel2(),
           pb(),
           ...kapitel3(),
           pb(),
@@ -1885,9 +2344,9 @@ async function main() {
           pb(),
           // TEIL V
           h1("Teil V \u2014 Ergebniskontrolle"),
-          ...placeholderChapter("Kapitel 15: Before/After-Vergleich"),
+          ...kapitel15(),
           pb(),
-          ...placeholderChapter("Kapitel 16: Qualit\u00e4tssicherung"),
+          ...kapitel16(),
           pb(),
           // ANHANG
           h1("Anhang"),
