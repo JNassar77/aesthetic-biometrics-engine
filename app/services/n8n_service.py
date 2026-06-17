@@ -78,7 +78,7 @@ async def notify_n8n_v2(
 
     envelope = {
         "event": "assessment_complete",
-        "engine_version": "2.0.0",
+        "engine_version": "2.2.0",
         "assessment_id": assessment_id,
         "patient_id": patient_id,
         "aesthetic_score": aesthetic_score,
