@@ -14,7 +14,7 @@ import logging
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Response, UploadFile
 from fastapi.concurrency import run_in_threadpool
 
 from app.api.auth import require_api_key
@@ -466,6 +466,100 @@ async def create_assessment(
         )
 
     return response
+
+
+# ──────────────────────── Clinical PDF Report ────────────────────────
+
+def _assessment_response_from_row(row: dict) -> AssessmentResponse:
+    """Rebuild an AssessmentResponse from a stored Supabase assessment row.
+
+    Best-effort: the assessments table stores the analysis JSONB (image_quality,
+    global_metrics, zones, treatment_plan, aesthetic_score) plus calibration_method,
+    but not the full calibration object or the 3D reconstruction block. The
+    per-measurement `estimated` flags ARE stored on the zones, so the report's
+    honesty markers are preserved. For a lossless report, POST the assessment to
+    /report directly.
+    """
+    gm = row.get("global_metrics") or {
+        "symmetry_index": 0.0,
+        "facial_thirds": {"upper": 0.33, "middle": 0.33, "lower": 0.34},
+        "golden_ratio_deviation": 0.0,
+    }
+    return AssessmentResponse(
+        assessment_id=UUID(row["id"]),
+        patient_id=UUID(row["patient_id"]) if row.get("patient_id") else None,
+        image_quality=row.get("image_quality") or {},
+        global_metrics=gm,
+        zones=row.get("zones") or [],
+        aesthetic_score=row.get("aesthetic_score") or 0.0,
+        treatment_plan=row.get("treatment_plan") or {},
+        calibration=CalibrationResponse(
+            method=row.get("calibration_method") or "unknown",
+            px_per_mm=0.0, confidence=0.0, reliable=False,
+        ),
+        engine_version=row.get("engine_version", "2.2.0"),
+        processing_time_ms=row.get("processing_time_ms"),
+    )
+
+
+def _pdf_response(pdf_bytes: bytes, assessment_id) -> Response:
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f'inline; filename="assessment_{str(assessment_id)[:8]}.pdf"'
+            )
+        },
+    )
+
+
+@router.post(
+    "/report",
+    summary="Render a clinical PDF report from an assessment",
+    description=(
+        "Accepts a full AssessmentResponse (as returned by /assessment) and returns "
+        "a clinical PDF — zones, severity, per-zone measurements with estimated "
+        "flagging, treatment plan and contraindications. Lossless and independent "
+        "of Supabase."
+    ),
+    response_class=Response,
+)
+async def render_report(response: AssessmentResponse, _api_key: str = Depends(require_api_key)):
+    """POST /api/v2/report — AssessmentResponse JSON → clinical PDF."""
+    from app.services.pdf_report import render_assessment_report
+
+    pdf_bytes = await run_in_threadpool(render_assessment_report, response)
+    return _pdf_response(pdf_bytes, response.assessment_id)
+
+
+@router.get(
+    "/assessment/{assessment_id}/report",
+    summary="Clinical PDF report for a stored assessment",
+    description=(
+        "Fetches a stored assessment from Supabase and renders its clinical PDF. "
+        "Requires Supabase to be configured."
+    ),
+    response_class=Response,
+)
+async def get_assessment_report(assessment_id: UUID, _api_key: str = Depends(require_api_key)):
+    """GET /api/v2/assessment/{id}/report — stored assessment → clinical PDF."""
+    from app.services.supabase_service import get_assessment
+    from app.services.pdf_report import render_assessment_report
+
+    if not settings.supabase_url:
+        raise HTTPException(
+            status_code=503,
+            detail="Supabase is not configured. POST the assessment to /report instead.",
+        )
+
+    row = await get_assessment(assessment_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"Assessment {assessment_id} not found.")
+
+    response = _assessment_response_from_row(row)
+    pdf_bytes = await run_in_threadpool(render_assessment_report, response)
+    return _pdf_response(pdf_bytes, assessment_id)
 
 
 @router.post(
