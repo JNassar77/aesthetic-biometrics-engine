@@ -8,7 +8,13 @@ Assesses facial volume using 3D depth data from landmarks:
 - Pre-jowl sulcus detection
 - Buccal corridor analysis
 
-Uses z-coordinate depth data for volume estimation (Sprint 2 3D geometry).
+Depth source (Sprint 10 / Task 10): when a metric multi-view 3D reconstruction is
+available, depths come from the triangulated point cloud (true anterior-posterior
+millimetres). Otherwise the engine falls back to MediaPipe's relative single-view
+z (an estimate). Either way the depth measurements stay flagged `estimated` until
+the clinical thresholds (HOLLOW_THRESHOLD etc.) are recalibrated against real 3D
+millimetres in Sprint 11 — the values are now real metric depths, but the
+detection thresholds were tuned for the old relative-z scale.
 """
 
 from __future__ import annotations
@@ -21,6 +27,7 @@ from app.detection.face_landmarker import DetectionResult
 from app.detection.landmark_index import PAIRED, MIDLINE
 from app.utils.pixel_calibration import CalibrationResult
 from app.utils.geometry import euclidean_2d, depth_difference
+from app.analysis.multiview_reconstruction import Reconstruction3D
 
 
 @dataclass
@@ -84,6 +91,9 @@ class VolumeAnalysis:
     tear_trough: TearTrough
     jowl: JowlAssessment
     buccal_corridor: BuccalCorridor | None = None
+    # "multi_view_3d" when depths come from the triangulated reconstruction,
+    # "relative_z" when they fall back to MediaPipe's single-view relative z.
+    depth_source: str = "relative_z"
 
 
 def _z_depth_mm(
@@ -101,8 +111,20 @@ def _z_diff_mm(
     idx_a: int,
     idx_b: int,
     calibration: CalibrationResult,
+    reconstruction: Reconstruction3D | None = None,
 ) -> float:
-    """Z-depth difference between two landmarks in mm."""
+    """Anterior-posterior depth difference between two landmarks, in mm.
+
+    With a metric 3D reconstruction this is the true triangulated depth
+    difference. The reconstruction uses +z = forward (anterior), whereas the
+    engine logic below is written for MediaPipe's relative-z convention
+    (negative = forward / closer to camera), so the reconstructed value is
+    NEGATED — this keeps every is_hollowed / is_flattened test and threshold
+    unchanged. Without a reconstruction it falls back to the (estimated) relative
+    MediaPipe z scaled by the horizontal px->mm factor.
+    """
+    if reconstruction is not None:
+        return -reconstruction.depth_between(idx_a, idx_b)
     a = detection.px3d(idx_a)
     b = detection.px3d(idx_b)
     return calibration.to_mm(a[2] - b[2])
@@ -111,6 +133,7 @@ def _z_diff_mm(
 def analyze_ogee(
     detection: DetectionResult,
     calibration: CalibrationResult,
+    reconstruction: Reconstruction3D | None = None,
 ) -> OgeeCurve:
     """Analyze midface ogee curve from depth data.
 
@@ -134,13 +157,13 @@ def analyze_ogee(
 
     # Measure depth transitions (averaged left + right)
     # Malar prominence should project forward (negative z = closer to camera)
-    malar_to_infra_l = _z_diff_mm(detection, malar_high_l, infraorbital_l, calibration)
-    malar_to_infra_r = _z_diff_mm(detection, malar_high_r, infraorbital_r, calibration)
+    malar_to_infra_l = _z_diff_mm(detection, malar_high_l, infraorbital_l, calibration, reconstruction)
+    malar_to_infra_r = _z_diff_mm(detection, malar_high_r, infraorbital_r, calibration, reconstruction)
     malar_depth = (malar_to_infra_l + malar_to_infra_r) / 2
 
     # Malar to buccal transition (should show recession below)
-    malar_to_buccal_l = _z_diff_mm(detection, cheekbone_l, malar_low_l, calibration)
-    malar_to_buccal_r = _z_diff_mm(detection, cheekbone_r, malar_low_r, calibration)
+    malar_to_buccal_l = _z_diff_mm(detection, cheekbone_l, malar_low_l, calibration, reconstruction)
+    malar_to_buccal_r = _z_diff_mm(detection, cheekbone_r, malar_low_r, calibration, reconstruction)
     buccal_transition = (malar_to_buccal_l + malar_to_buccal_r) / 2
 
     # Score: higher depth transitions = better S-curve
@@ -158,6 +181,7 @@ def analyze_ogee(
 def analyze_temporal(
     detection: DetectionResult,
     calibration: CalibrationResult,
+    reconstruction: Reconstruction3D | None = None,
 ) -> TemporalVolume:
     """Assess temporal fossa volume.
 
@@ -170,8 +194,8 @@ def analyze_temporal(
     brow_outer_r = PAIRED["brow_outer"][1]
 
     # Temporal depth relative to brow
-    left_depth = _z_diff_mm(detection, temporal_l, brow_outer_l, calibration)
-    right_depth = _z_diff_mm(detection, temporal_r, brow_outer_r, calibration)
+    left_depth = _z_diff_mm(detection, temporal_l, brow_outer_l, calibration, reconstruction)
+    right_depth = _z_diff_mm(detection, temporal_r, brow_outer_r, calibration, reconstruction)
 
     asymmetry = abs(left_depth - right_depth)
 
@@ -190,6 +214,7 @@ def analyze_temporal(
 def analyze_tear_trough(
     detection: DetectionResult,
     calibration: CalibrationResult,
+    reconstruction: Reconstruction3D | None = None,
 ) -> TearTrough:
     """Assess tear trough (infraorbital hollow) depth."""
     infra_l = PAIRED["infraorbital"][0]
@@ -198,8 +223,8 @@ def analyze_tear_trough(
     cheek_r = PAIRED["cheekbone"][1]
 
     # Tear trough depth relative to cheekbone
-    left_depth = _z_diff_mm(detection, infra_l, cheek_l, calibration)
-    right_depth = _z_diff_mm(detection, infra_r, cheek_r, calibration)
+    left_depth = _z_diff_mm(detection, infra_l, cheek_l, calibration, reconstruction)
+    right_depth = _z_diff_mm(detection, infra_r, cheek_r, calibration, reconstruction)
 
     asymmetry = abs(left_depth - right_depth)
 
@@ -218,6 +243,7 @@ def analyze_tear_trough(
 def analyze_jowl(
     detection: DetectionResult,
     calibration: CalibrationResult,
+    reconstruction: Reconstruction3D | None = None,
 ) -> JowlAssessment:
     """Assess pre-jowl sulcus and jawline continuity."""
     gonion_l = PAIRED["gonion"][0]
@@ -225,8 +251,8 @@ def analyze_jowl(
     pogonion = MIDLINE["pogonion"]
 
     # Jowl depth: gonion region vs chin
-    left_depth = _z_diff_mm(detection, gonion_l, pogonion, calibration)
-    right_depth = _z_diff_mm(detection, gonion_r, pogonion, calibration)
+    left_depth = _z_diff_mm(detection, gonion_l, pogonion, calibration, reconstruction)
+    right_depth = _z_diff_mm(detection, gonion_r, pogonion, calibration, reconstruction)
 
     # Jawline break detected if there's a significant depth discontinuity
     BREAK_THRESHOLD = 2.0  # mm
@@ -285,15 +311,24 @@ def analyze_buccal_corridor(
 def analyze(
     detection: DetectionResult,
     calibration: CalibrationResult,
+    reconstruction: Reconstruction3D | None = None,
 ) -> VolumeAnalysis:
     """Run complete volume analysis.
 
-    Best results from oblique (45°) view where depth variations are visible.
+    With a metric 3D reconstruction (built from frontal + bilateral obliques),
+    depth comes from the triangulated point cloud — true anterior-posterior mm.
+    Without it, the engine falls back to single-view relative z (best from the
+    oblique 45° view, where depth variations are most visible). Either way the
+    depth values remain flagged `estimated` until thresholds are recalibrated
+    against real 3D mm (Sprint 11); `depth_source` records which path was used.
+
+    The buccal corridor stays a 2D lateral measurement (it does not use depth).
     """
     return VolumeAnalysis(
-        ogee=analyze_ogee(detection, calibration),
-        temporal=analyze_temporal(detection, calibration),
-        tear_trough=analyze_tear_trough(detection, calibration),
-        jowl=analyze_jowl(detection, calibration),
+        ogee=analyze_ogee(detection, calibration, reconstruction),
+        temporal=analyze_temporal(detection, calibration, reconstruction),
+        tear_trough=analyze_tear_trough(detection, calibration, reconstruction),
+        jowl=analyze_jowl(detection, calibration, reconstruction),
         buccal_corridor=analyze_buccal_corridor(detection, calibration),
+        depth_source="multi_view_3d" if reconstruction is not None else "relative_z",
     )

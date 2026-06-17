@@ -47,6 +47,20 @@ _PI = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
 # Minimum angular spread (deg) between views to triangulate depth meaningfully.
 MIN_VIEW_SPREAD_DEG = 10.0
 
+# Views excluded from triangulation by policy. The ~90deg profile is deliberately
+# left out: at that angle the iris is too foreshortened to give a trustworthy
+# px->mm scale and its far-side landmarks are largely occluded (MediaPipe guesses
+# them), so including it corrupts the metric solve. Validated on real photos —
+# adding the profile pushed reprojection RMS from ~2.7mm to ~17mm and the
+# reconstructed interpupillary distance out of the anatomical norm. The profile
+# view carries the 2D sagittal profile lines (E-line, nasolabial/chin angles)
+# instead; the bilateral 45deg obliques carry the 3D depth.
+RECONSTRUCTION_EXCLUDED_VIEWS = frozenset({"profile"})
+
+# A view only contributes to triangulation if its iris calibration is reliable
+# (a confident iris scale is what makes the reconstruction metric).
+RECONSTRUCTION_MIN_CALIBRATION_CONFIDENCE = 0.7
+
 
 @dataclass
 class ViewObservation:
@@ -73,6 +87,52 @@ class Reconstruction3D:
     def distance(self, idx_a: int, idx_b: int) -> float:
         """Euclidean 3D distance (mm) between two landmarks."""
         return float(np.linalg.norm(self.points_mm[idx_a] - self.points_mm[idx_b]))
+
+
+def orthonormalize_rotation(matrix: np.ndarray) -> np.ndarray:
+    """Nearest proper rotation (det=+1) to a possibly-scaled 3x3 matrix.
+
+    MediaPipe's facial transformation matrix carries the head orientation but may
+    include scale/shear; reconstruction needs a pure rotation (scale is handled
+    separately by the per-view px->mm calibration). We take the closest orthonormal
+    matrix via SVD and guard against an accidental reflection (det = -1).
+    """
+    m = np.asarray(matrix, dtype=np.float64)[:3, :3]
+    U, _, Vt = np.linalg.svd(m)
+    R = U @ Vt
+    if np.linalg.det(R) < 0.0:
+        U = U.copy()
+        U[:, -1] *= -1.0
+        R = U @ Vt
+    return R
+
+
+def view_observation_from(
+    view: str,
+    landmarks: np.ndarray,
+    image_width: int,
+    image_height: int,
+    transformation_matrix: np.ndarray | None,
+    px_per_mm: float,
+) -> ViewObservation | None:
+    """Build a ViewObservation from a detection's raw outputs.
+
+    Centralises the (audited) convention so the orchestrator and the offline
+    validation script construct observations identically:
+    - landmarks_px = normalized (x, y) scaled to pixels (image space, y-down),
+    - rotation     = orthonormalised head rotation from the transformation matrix,
+    - px_per_mm    = the view's iris calibration scale.
+
+    Returns None when the view lacks a transformation matrix or a usable scale
+    (the caller then has one fewer view for triangulation).
+    """
+    if transformation_matrix is None or px_per_mm <= 0:
+        return None
+    lm = np.asarray(landmarks, dtype=np.float64)[:, :2] * np.array(
+        [image_width, image_height], dtype=np.float64
+    )
+    R = orthonormalize_rotation(transformation_matrix)
+    return ViewObservation(view=view, landmarks_px=lm, rotation=R, px_per_mm=px_per_mm)
 
 
 def _rotation_angle_between(Ra: np.ndarray, Rb: np.ndarray) -> float:
@@ -147,3 +207,42 @@ def reconstruct_3d(views: list[ViewObservation]) -> Reconstruction3D | None:
         angular_spread_deg=round(spread, 1),
         reprojection_rms_mm=round(rms, 3),
     )
+
+
+def reconstruct_from_views(views) -> Reconstruction3D | None:
+    """Build observations from posed, iris-calibrated views and triangulate.
+
+    Args:
+        views: iterable of (view_name, detection, calibration). Each detection
+               must expose .landmarks, .image_width, .image_height and
+               .transformation_matrix; each calibration .method, .confidence and
+               .px_per_mm.
+
+    Applies the reconstruction policy (skip excluded views, require a reliable
+    iris calibration) and then runs reconstruct_3d. Returns None if fewer than
+    two qualifying views remain or the geometry is ill-conditioned — the caller
+    then falls back to the per-view relative-z (estimated) depth.
+    """
+    observations: list[ViewObservation] = []
+    for view_name, detection, calibration in views:
+        if view_name in RECONSTRUCTION_EXCLUDED_VIEWS:
+            continue
+        if detection is None or calibration is None:
+            continue
+        if (
+            calibration.method != "iris"
+            or calibration.confidence < RECONSTRUCTION_MIN_CALIBRATION_CONFIDENCE
+        ):
+            continue
+        obs = view_observation_from(
+            view_name,
+            detection.landmarks,
+            detection.image_width,
+            detection.image_height,
+            detection.transformation_matrix,
+            calibration.px_per_mm,
+        )
+        if obs is not None:
+            observations.append(obs)
+
+    return reconstruct_3d(observations)

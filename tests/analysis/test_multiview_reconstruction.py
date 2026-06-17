@@ -10,10 +10,15 @@ import pytest
 
 from app.analysis.multiview_reconstruction import (
     reconstruct_3d,
+    reconstruct_from_views,
+    orthonormalize_rotation,
+    view_observation_from,
     ViewObservation,
     Reconstruction3D,
     MIN_VIEW_SPREAD_DEG,
 )
+from app.detection.face_landmarker import DetectionResult
+from app.utils.pixel_calibration import CalibrationResult
 
 
 def _rot_y(deg: float) -> np.ndarray:
@@ -130,3 +135,118 @@ class TestReconstruction:
         assert rec is not None
         expected = P[3, 2] - P[7, 2]
         assert abs(rec.depth_between(3, 7) - expected) < 1e-4
+
+
+# ──────────────────────── Convention helpers ────────────────────────
+
+class TestOrthonormalize:
+    def test_recovers_pure_rotation_from_scaled(self):
+        R = _rot_y(37)
+        scaled = R * 2.5  # uniform scale should be removed
+        out = orthonormalize_rotation(scaled)
+        assert np.allclose(out, R, atol=1e-9)
+        assert abs(np.linalg.det(out) - 1.0) < 1e-9
+
+    def test_guards_against_reflection(self):
+        # A matrix with negative determinant must still yield a proper rotation.
+        m = np.diag([1.0, 1.0, -1.0]) @ _rot_y(20)
+        out = orthonormalize_rotation(m)
+        assert np.linalg.det(out) > 0.0  # proper rotation, not a reflection
+
+
+class TestViewObservationFrom:
+    def test_scales_normalized_landmarks_to_pixels(self):
+        norm = np.array([[0.5, 0.25, 0.0], [0.1, 0.9, 0.0]])
+        obs = view_observation_from("frontal", norm, 1000, 800, np.eye(4), 5.0)
+        assert obs is not None
+        assert np.allclose(obs.landmarks_px, [[500, 200], [100, 720]])
+        assert obs.px_per_mm == 5.0
+        assert np.allclose(obs.rotation, np.eye(3))
+
+    def test_none_without_matrix(self):
+        norm = np.zeros((10, 3))
+        assert view_observation_from("frontal", norm, 1000, 800, None, 5.0) is None
+
+    def test_none_without_scale(self):
+        norm = np.zeros((10, 3))
+        assert view_observation_from("frontal", norm, 1000, 800, np.eye(4), 0.0) is None
+
+
+# ──────────────────────── reconstruct_from_views policy ────────────────────────
+
+def _synthetic_detection(P, R, ppm, w=1000, h=1000, centroid=(500.0, 500.0)):
+    """Build a DetectionResult whose normalized landmarks orthographically
+    project P through R at scale ppm (z is irrelevant to the 2D solve)."""
+    proj_px = (R @ P.T).T[:, :2] * ppm + np.asarray(centroid)
+    norm = np.zeros((P.shape[0], 3))
+    norm[:, 0] = proj_px[:, 0] / w
+    norm[:, 1] = proj_px[:, 1] / h
+    mat = np.eye(4)
+    mat[:3, :3] = R
+    return DetectionResult(
+        landmarks=norm, blendshapes={}, transformation_matrix=mat,
+        image_width=w, image_height=h,
+    )
+
+
+def _cal(method="iris", confidence=0.9, ppm=5.0):
+    return CalibrationResult(px_per_mm=ppm, method=method, confidence=confidence)
+
+
+class TestReconstructFromViews:
+    def test_builds_and_recovers(self):
+        P = _make_points(n=50)
+        ppm = 5.0
+        views = [
+            ("frontal", _synthetic_detection(P, _rot_y(0), ppm), _cal()),
+            ("oblique_left", _synthetic_detection(P, _rot_y(35), ppm), _cal()),
+            ("oblique_right", _synthetic_detection(P, _rot_y(-30), ppm), _cal()),
+        ]
+        rec = reconstruct_from_views(views)
+        assert rec is not None
+        assert rec.n_views == 3
+        assert set(rec.views_used) == {"frontal", "oblique_left", "oblique_right"}
+
+    def test_profile_excluded_by_policy(self):
+        P = _make_points(n=50)
+        ppm = 5.0
+        views = [
+            ("frontal", _synthetic_detection(P, _rot_y(0), ppm), _cal()),
+            ("oblique_left", _synthetic_detection(P, _rot_y(35), ppm), _cal()),
+            # A perfectly valid profile observation must still be skipped.
+            ("profile", _synthetic_detection(P, _rot_y(80), ppm), _cal()),
+        ]
+        rec = reconstruct_from_views(views)
+        assert rec is not None
+        assert "profile" not in rec.views_used
+
+    def test_non_iris_calibration_skipped(self):
+        P = _make_points(n=40)
+        ppm = 5.0
+        views = [
+            ("frontal", _synthetic_detection(P, _rot_y(0), ppm), _cal()),
+            ("oblique_left", _synthetic_detection(P, _rot_y(35), ppm), _cal()),
+            ("oblique_right", _synthetic_detection(P, _rot_y(-30), ppm),
+             _cal(method="face_width_estimate", confidence=0.95)),
+        ]
+        rec = reconstruct_from_views(views)
+        assert rec is not None
+        assert "oblique_right" not in rec.views_used
+
+    def test_low_confidence_calibration_skipped(self):
+        P = _make_points(n=40)
+        ppm = 5.0
+        views = [
+            ("frontal", _synthetic_detection(P, _rot_y(0), ppm), _cal()),
+            ("oblique_left", _synthetic_detection(P, _rot_y(35), ppm), _cal()),
+            ("oblique_right", _synthetic_detection(P, _rot_y(-30), ppm),
+             _cal(confidence=0.5)),
+        ]
+        rec = reconstruct_from_views(views)
+        assert rec is not None
+        assert "oblique_right" not in rec.views_used
+
+    def test_returns_none_when_only_profile(self):
+        P = _make_points(n=40)
+        views = [("profile", _synthetic_detection(P, _rot_y(80), 5.0), _cal())]
+        assert reconstruct_from_views(views) is None

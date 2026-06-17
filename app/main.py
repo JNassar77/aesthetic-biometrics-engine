@@ -41,7 +41,7 @@ app = FastAPI(
         f"Default: {settings.rate_limit_rpm} requests/minute per IP. "
         "Health endpoints are exempt."
     ),
-    version="2.1.0",
+    version="2.2.0",
     contact={"name": "Praxis Nassar", "email": "info@praxis-nassar.de"},
     license_info={"name": "Proprietary"},
     openapi_tags=[
@@ -72,7 +72,7 @@ app.include_router(v2_router, prefix="/api/v2", tags=["v2-assessment"])
 async def root():
     return {
         "service": "Aesthetic Biometrics Engine",
-        "version": "2.1.0",
+        "version": "2.2.0",
         "docs": "/docs",
         "endpoints": {
             "v2_assessment": "/api/v2/assessment",

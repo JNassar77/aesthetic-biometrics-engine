@@ -39,6 +39,7 @@ from app.models.schemas_v2 import (
     PatientHistoryResponse,
     ProductRecommendationResponse,
     QualityWarningResponse,
+    Reconstruction3DResponse,
     SessionPlanResponse,
     TreatmentConcernResponse,
     TreatmentPlanResponse,
@@ -161,9 +162,11 @@ def _build_assessment_response(
 ) -> AssessmentResponse:
     """Build the full AssessmentResponse from a PipelineResult."""
 
-    # Image quality per view
+    # Image quality per view. Always report the three canonical slots; add the
+    # bilateral oblique slots only when those images were actually provided.
     image_quality: dict[str, ImageQualityResponse] = {}
-    for view_name in ("frontal", "profile", "oblique"):
+    optional_views = [v for v in ("oblique_left", "oblique_right") if v in result.view_results]
+    for view_name in ["frontal", "profile", "oblique"] + optional_views:
         vr = result.view_results.get(view_name)
         if vr is None:
             image_quality[view_name] = ImageQualityResponse(
@@ -239,6 +242,17 @@ def _build_assessment_response(
         reliable=cal.reliable if cal else False,
     )
 
+    # 3D reconstruction quality signals
+    rec = result.reconstruction
+    reconstruction = Reconstruction3DResponse(
+        available=rec is not None,
+        depth_source="multi_view_3d" if rec is not None else "relative_z",
+        views_used=rec.views_used if rec else [],
+        n_views=rec.n_views if rec else 0,
+        angular_spread_deg=rec.angular_spread_deg if rec else 0.0,
+        reprojection_rms_mm=rec.reprojection_rms_mm if rec else 0.0,
+    )
+
     return AssessmentResponse(
         assessment_id=result.assessment_id,
         patient_id=patient_id,
@@ -248,6 +262,7 @@ def _build_assessment_response(
         aesthetic_score=aesthetic_score,
         treatment_plan=treatment_plan,
         calibration=calibration,
+        reconstruction=reconstruction,
         processing_time_ms=result.processing_time_ms,
         views_analyzed=result.views_analyzed,
         warnings=zr.warnings if zr else [],
@@ -262,6 +277,8 @@ async def _persist_assessment(
     profile_bytes: bytes | None,
     oblique_bytes: bytes | None,
     organization_id: UUID,
+    oblique_left_bytes: bytes | None = None,
+    oblique_right_bytes: bytes | None = None,
 ) -> None:
     """Persist assessment to Supabase (runs as BackgroundTask)."""
     from app.services.supabase_service import save_assessment, upload_image
@@ -272,6 +289,7 @@ async def _persist_assessment(
 
     # Upload images to storage
     frontal_path = profile_path = oblique_path = None
+    oblique_left_path = oblique_right_path = None
     bucket = "patient-images"
     base_path = f"{organization_id}/{assessment_id}"
 
@@ -288,8 +306,20 @@ async def _persist_assessment(
             oblique_path = await upload_image(
                 bucket, f"{base_path}/oblique.jpg", oblique_bytes
             )
+        if oblique_left_bytes:
+            oblique_left_path = await upload_image(
+                bucket, f"{base_path}/oblique_left.jpg", oblique_left_bytes
+            )
+        if oblique_right_bytes:
+            oblique_right_path = await upload_image(
+                bucket, f"{base_path}/oblique_right.jpg", oblique_right_bytes
+            )
     except Exception as exc:
         logger.warning("Image upload failed: %s", exc)
+
+    # The assessments table has a single oblique image column (no schema change
+    # for bilateral obliques yet); store whichever oblique is available.
+    oblique_path = oblique_path or oblique_left_path or oblique_right_path
 
     # Save assessment record
     try:
@@ -334,34 +364,44 @@ async def _persist_assessment(
 @router.post(
     "/assessment",
     response_model=AssessmentResponse,
-    summary="Run a complete 3-view facial assessment",
+    summary="Run a complete facial assessment (up to 4 views)",
     description=(
-        "Upload frontal, profile, and oblique images for a complete zone-based "
-        "analysis with treatment plan. At least one image is required."
+        "Upload frontal, profile and oblique images for a complete zone-based "
+        "analysis with treatment plan. The preferred protocol is four views — "
+        "frontal (0°), 45° left, 45° right and 90° profile: the bilateral obliques "
+        "drive the metric 3D reconstruction. A single generic oblique is still "
+        "accepted. At least one image is required."
     ),
 )
 async def create_assessment(
     background_tasks: BackgroundTasks,
     frontal: UploadFile | None = File(None, description="Frontal (0°) face image"),
     profile: UploadFile | None = File(None, description="Profile (90°) face image"),
-    oblique: UploadFile | None = File(None, description="Oblique (45°) face image"),
+    oblique: UploadFile | None = File(None, description="Generic oblique (45°) face image"),
+    oblique_left: UploadFile | None = File(None, description="Left 45° oblique face image"),
+    oblique_right: UploadFile | None = File(None, description="Right 45° oblique face image"),
     patient_id: str | None = Form(None, description="Patient UUID (optional)"),
     organization_id: str | None = Form(None, description="Organization UUID (for Supabase persistence)"),
     _api_key: str = Depends(require_api_key),
 ):
-    """POST /api/v2/assessment — 3 images → full analysis + treatment plan."""
+    """POST /api/v2/assessment — up to 4 images → full analysis + treatment plan."""
 
     # Validate: at least one image
-    if frontal is None and profile is None and oblique is None:
+    if all(img is None for img in (frontal, profile, oblique, oblique_left, oblique_right)):
         raise HTTPException(status_code=400, detail="At least one image must be provided.")
 
     # Read image bytes
     frontal_bytes = await frontal.read() if frontal else None
     profile_bytes = await profile.read() if profile else None
     oblique_bytes = await oblique.read() if oblique else None
+    oblique_left_bytes = await oblique_left.read() if oblique_left else None
+    oblique_right_bytes = await oblique_right.read() if oblique_right else None
 
     # Size validation
-    for name, data in [("frontal", frontal_bytes), ("profile", profile_bytes), ("oblique", oblique_bytes)]:
+    for name, data in [
+        ("frontal", frontal_bytes), ("profile", profile_bytes), ("oblique", oblique_bytes),
+        ("oblique_left", oblique_left_bytes), ("oblique_right", oblique_right_bytes),
+    ]:
         if data and len(data) > MAX_IMAGE_BYTES:
             raise HTTPException(
                 status_code=413,
@@ -390,6 +430,8 @@ async def create_assessment(
         frontal_bytes=frontal_bytes,
         profile_bytes=profile_bytes,
         oblique_bytes=oblique_bytes,
+        oblique_left_bytes=oblique_left_bytes,
+        oblique_right_bytes=oblique_right_bytes,
         patient_id=parsed_patient_id,
     )
 
@@ -419,6 +461,8 @@ async def create_assessment(
             profile_bytes,
             oblique_bytes,
             parsed_org_id,
+            oblique_left_bytes,
+            oblique_right_bytes,
         )
 
     return response
@@ -656,7 +700,7 @@ async def health_check():
 
     return HealthResponse(
         status=status,
-        version="2.1.0",
+        version="2.2.0",
         model_loaded=model_loaded,
         supabase_connected=supabase_connected,
         uptime_seconds=round(uptime_seconds, 1),
