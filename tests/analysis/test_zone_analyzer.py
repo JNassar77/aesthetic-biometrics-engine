@@ -438,3 +438,54 @@ class TestZoneCoverage:
         # Should have zones from all four regions
         assert "upper_face" in regions or "midface" in regions
         assert "lower_face" in regions or "profile" in regions
+
+
+# ──────────────── Calibration Reliability Gate ────────────────
+
+
+class TestCalibrationGate:
+    """Patient-safety gate: mm values must be flagged when not trustworthy."""
+
+    def test_reliable_iris_calibration_no_warning(self):
+        """Confident iris calibration → reliable True, no CALIBRATION_UNRELIABLE warning."""
+        report = analyze(
+            frontal=_make_view_input(),
+            profile=_make_view_input(),
+            oblique=_make_view_input(),
+        )
+        assert report.calibration.reliable is True
+        assert not any("CALIBRATION_UNRELIABLE" in w for w in report.warnings)
+
+    def test_experimental_depth_flagged_even_when_calibrated(self):
+        """Relative-z / out-of-plane measurements stay estimated even with good calibration."""
+        report = analyze(
+            frontal=_make_view_input(),
+            profile=_make_view_input(),
+            oblique=_make_view_input(),
+        )
+        by_name = {m.name: m for z in report.zones for m in z.measurements}
+        # At least one known experimental measurement should be present and flagged.
+        experimental_present = [
+            n for n in ("malar_depth", "tear_trough_depth_left", "chin_projection",
+                        "cervicomental_angle", "jowl_depth_left")
+            if n in by_name
+        ]
+        assert experimental_present, "expected at least one experimental measurement"
+        assert all(by_name[n].estimated for n in experimental_present)
+
+    def test_unreliable_calibration_flags_all_mm_and_warns(self):
+        """Fallback calibration → reliable False, warning emitted, every mm value estimated."""
+        det = _make_detection()
+        bad_cal = CalibrationResult(
+            px_per_mm=5.0, method="face_width_estimate", confidence=0.45,
+        )
+        bad_view = ViewInput(detection=det, calibration=bad_cal, blendshapes={})
+        report = analyze(frontal=bad_view, profile=bad_view, oblique=bad_view)
+
+        assert report.calibration.reliable is False
+        assert any("CALIBRATION_UNRELIABLE" in w for w in report.warnings)
+        mm_measurements = [
+            m for z in report.zones for m in z.measurements if m.unit == "mm"
+        ]
+        assert mm_measurements, "expected some mm measurements"
+        assert all(m.estimated for m in mm_measurements)

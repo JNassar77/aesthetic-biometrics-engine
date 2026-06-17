@@ -25,6 +25,7 @@ from app.treatment.zone_definitions import (
 )
 from app.models.zone_models import (
     ZoneResult, ZoneFinding, ZoneMeasurement, GlobalMetrics, CalibrationInfo,
+    EXPERIMENTAL_MEASUREMENTS,
 )
 from app.analysis import (
     symmetry_engine,
@@ -58,6 +59,12 @@ class ZoneReport:
     expression_deviation: float  # 0-1, how non-neutral the frontal expression was
     views_analyzed: list[str] = field(default_factory=list)
     fusion_contradictions: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+
+
+# Minimum iris-calibration confidence below which mm measurements are not trustworthy.
+# Below this (or with a non-iris fallback), all mm values are flagged estimated.
+CALIBRATION_MIN_CONFIDENCE = 0.7
 
 
 # ──────────────────────── Region Weights for Aesthetic Score ────────────────────────
@@ -447,6 +454,14 @@ def analyze(
     # ── Step 2: Multi-view fusion ──
     fusion: FusionResult = fuse_all_zones(zone_view_data, views_analyzed)
 
+    # ── Calibration reliability gate: without a confident iris calibration,
+    # no mm value is trustworthy, so every mm measurement is flagged estimated. ──
+    primary_cal = frontal.calibration if frontal else (profile.calibration if profile else oblique.calibration)  # type: ignore
+    calibration_reliable = (
+        primary_cal.method == "iris"
+        and primary_cal.confidence >= CALIBRATION_MIN_CONFIDENCE
+    )
+
     # ── Step 3: Build zone results with findings and severity ──
     zone_results: list[ZoneResult] = []
 
@@ -480,6 +495,10 @@ def analyze(
                 ideal_min=ideal_min,
                 ideal_max=ideal_max,
                 deviation_pct=dev_pct,
+                estimated=(
+                    fm.metric_name in EXPERIMENTAL_MEASUREMENTS
+                    or (not calibration_reliable and fm.unit == "mm")
+                ),
             ))
 
         # Compute severity
@@ -551,15 +570,23 @@ def analyze(
     if frontal:
         expression_dev = compute_expression_deviation(frontal.blendshapes)
 
-    # ── Step 8: Calibration info (use frontal as primary) ──
-    primary_cal = frontal.calibration if frontal else (profile.calibration if profile else oblique.calibration)  # type: ignore
+    # ── Step 8: Calibration info (reliability computed before the zone loop) ──
     cal_info = CalibrationInfo(
         method=primary_cal.method,
         px_per_mm=primary_cal.px_per_mm,
         confidence=primary_cal.confidence,
+        reliable=calibration_reliable,
         iris_width_px=primary_cal.iris_width_px,
         face_width_px=primary_cal.face_width_px,
     )
+
+    report_warnings: list[str] = []
+    if not calibration_reliable:
+        report_warnings.append(
+            "CALIBRATION_UNRELIABLE: "
+            f"method={primary_cal.method}, confidence={primary_cal.confidence:.2f}. "
+            "All mm measurements are estimates; do not base injection volumes on them."
+        )
 
     return ZoneReport(
         zones=zone_results,
@@ -569,4 +596,5 @@ def analyze(
         expression_deviation=expression_dev,
         views_analyzed=views_analyzed,
         fusion_contradictions=[c.description for c in fusion.contradictions],
+        warnings=report_warnings,
     )
