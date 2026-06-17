@@ -15,6 +15,9 @@ Thumbs.db
 .coverage
 .pytest_cache/
 htmlcov/
+# Local face photos — biometric data, never commit (keep the README)
+test_images/*
+!test_images/README.md
 # ML models (download via curl, see CLAUDE.md)
 models/*.task
 models/*.tflite
