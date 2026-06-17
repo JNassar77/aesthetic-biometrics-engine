@@ -10,6 +10,7 @@ We decompose the rotation into Euler angles (yaw, pitch, roll) in degrees.
 
 import numpy as np
 from dataclasses import dataclass
+from scipy.spatial.transform import Rotation
 
 
 @dataclass
@@ -44,9 +45,14 @@ class HeadPose:
 
 
 def extract_head_pose(transformation_matrix: np.ndarray | None) -> HeadPose | None:
-    """Extract Euler angles from the 4x4 transformation matrix.
+    """Extract yaw/pitch/roll (degrees) from the 4x4 transformation matrix.
 
-    Uses the rotation-matrix-to-Euler decomposition (ZYX convention).
+    Uses the YXZ intrinsic convention, verified against real captured poses:
+    a left/right head turn is a rotation about the vertical (Y) axis = yaw;
+    an up/down nod is rotation about X = pitch; a tilt toward the shoulder
+    about Z = roll. (The previous ZYX decomposition swapped yaw and pitch,
+    so head turns were mis-reported as pitch — caught once real multi-view
+    photos were run.)
 
     Args:
         transformation_matrix: 4x4 affine matrix from Face Landmarker.
@@ -57,22 +63,11 @@ def extract_head_pose(transformation_matrix: np.ndarray | None) -> HeadPose | No
     if transformation_matrix is None:
         return None
 
-    R = transformation_matrix[:3, :3]
-
-    # Decompose rotation matrix to Euler angles (ZYX convention)
-    sy = np.sqrt(R[0, 0] ** 2 + R[1, 0] ** 2)
-
-    if sy > 1e-6:  # Not gimbal lock
-        pitch = np.arctan2(-R[2, 0], sy)
-        yaw = np.arctan2(R[1, 0], R[0, 0])
-        roll = np.arctan2(R[2, 1], R[2, 2])
-    else:
-        pitch = np.arctan2(-R[2, 0], sy)
-        yaw = np.arctan2(-R[1, 2], R[1, 1])
-        roll = 0.0
+    R = np.asarray(transformation_matrix[:3, :3], dtype=np.float64)
+    yaw, pitch, roll = Rotation.from_matrix(R).as_euler("YXZ", degrees=True)
 
     return HeadPose(
-        yaw=round(float(np.degrees(yaw)), 1),
-        pitch=round(float(np.degrees(pitch)), 1),
-        roll=round(float(np.degrees(roll)), 1),
+        yaw=round(float(yaw), 1),
+        pitch=round(float(pitch), 1),
+        roll=round(float(roll), 1),
     )

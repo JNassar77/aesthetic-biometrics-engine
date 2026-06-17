@@ -34,8 +34,16 @@ async def require_api_key(
     """
     valid_keys = _get_valid_keys()
 
-    # Dev mode: no keys configured → bypass auth
+    # No keys configured.
     if not valid_keys:
+        # In production this is a misconfiguration — fail closed rather than
+        # silently exposing an unauthenticated biometric endpoint.
+        if settings.environment.lower() == "production":
+            raise HTTPException(
+                status_code=503,
+                detail="Server misconfigured: no API keys set in production.",
+            )
+        # Development convenience: bypass auth.
         return "dev-mode"
 
     if api_key is None:

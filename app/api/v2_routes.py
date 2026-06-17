@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
 
 from app.api.auth import require_api_key
 
@@ -76,6 +77,7 @@ def _convert_zone_result(zr) -> ZoneResultResponse:
                 name=m.name,
                 value=m.value,
                 unit=m.unit,
+                estimated=m.estimated,
                 ideal_min=m.ideal_min,
                 ideal_max=m.ideal_max,
                 deviation_pct=m.deviation_pct,
@@ -234,6 +236,7 @@ def _build_assessment_response(
         method=cal.method if cal else "unknown",
         px_per_mm=cal.px_per_mm if cal else 0.0,
         confidence=cal.confidence if cal else 0.0,
+        reliable=cal.reliable if cal else False,
     )
 
     return AssessmentResponse(
@@ -247,6 +250,7 @@ def _build_assessment_response(
         calibration=calibration,
         processing_time_ms=result.processing_time_ms,
         views_analyzed=result.views_analyzed,
+        warnings=zr.warnings if zr else [],
     )
 
 
@@ -380,8 +384,9 @@ async def create_assessment(
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid organization_id format. Must be a UUID.")
 
-    # Run pipeline
-    result = run_pipeline(
+    # Run pipeline (sync CPU-bound work → offload to threadpool, don't block event loop)
+    result = await run_in_threadpool(
+        run_pipeline,
         frontal_bytes=frontal_bytes,
         profile_bytes=profile_bytes,
         oblique_bytes=oblique_bytes,

@@ -18,6 +18,26 @@ class ZoneMeasurement(BaseModel):
     ideal_min: float | None = None
     ideal_max: float | None = None
     deviation_pct: float | None = None  # % deviation from ideal range
+    estimated: bool = False  # True = NOT a validated metric value (see EXPERIMENTAL_MEASUREMENTS)
+
+
+# Measurements whose value is NOT a validated metric measurement and must not be
+# treated as a clinical mm value until real metric depth (multi-view triangulation)
+# exists. Reasons:
+#   - relative MediaPipe z-depth scaled by a horizontal px->mm factor (no metric meaning)
+#   - out-of-plane 2D projection in the 90 deg profile (double systematic error)
+#   - derived from an approximated, non-anatomical landmark (neck_approx)
+EXPERIMENTAL_MEASUREMENTS: frozenset[str] = frozenset({
+    # relative z-depth (volume_engine)
+    "malar_depth",
+    "temporal_depth_left", "temporal_depth_right", "temporal_asymmetry",
+    "tear_trough_depth_left", "tear_trough_depth_right",
+    "jowl_depth_left", "jowl_depth_right",
+    # out-of-plane profile projection
+    "chin_projection",
+    # derived from approximated neck landmark
+    "cervicomental_angle",
+})
 
 
 class ZoneFinding(BaseModel):
@@ -75,5 +95,6 @@ class CalibrationInfo(BaseModel):
     method: str  # "iris" or "face_width_estimate"
     px_per_mm: float
     confidence: float
+    reliable: bool = True  # False = no confident iris calibration; mm values are estimates
     iris_width_px: float | None = None
     face_width_px: float | None = None

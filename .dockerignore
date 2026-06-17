@@ -9,6 +9,7 @@ __pycache__
 *.md
 docs/
 tests/
+test_images/
 Makefile
 docker-compose.yml
 .dockerignore

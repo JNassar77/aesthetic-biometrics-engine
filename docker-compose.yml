@@ -9,7 +9,7 @@ services:
       - ./app:/app/app    # hot-reload in dev
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     healthcheck:
-      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/api/v1/health').raise_for_status()"]
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/api/v2/health').raise_for_status()"]
       interval: 30s
       timeout: 5s
       retries: 3

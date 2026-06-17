@@ -15,16 +15,49 @@ TARGET_SIZE = 1024
 FACE_PADDING_RATIO = 0.35  # 35% padding around detected face
 
 
+def _looks_like_heif(b: bytes) -> bool:
+    """Detect HEIF/HEIC (iPhone default) by the ftyp box brand."""
+    return len(b) >= 12 and b[4:8] == b"ftyp" and b[8:12] in (
+        b"heic", b"heix", b"heim", b"heis",
+        b"hevc", b"hevx", b"hevm", b"hevs",
+        b"mif1", b"msf1",
+    )
+
+
+def _decode_heif(image_bytes: bytes) -> np.ndarray | None:
+    """Decode HEIF/HEIC bytes to a BGR array, honoring EXIF orientation."""
+    try:
+        import io
+        import pillow_heif
+        from PIL import Image, ImageOps
+
+        pillow_heif.register_heif_opener()  # idempotent
+        img = Image.open(io.BytesIO(image_bytes))
+        img = ImageOps.exif_transpose(img)  # apply orientation tag
+        rgb = np.array(img.convert("RGB"))
+        return cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+    except Exception:
+        return None
+
+
 def decode_image(image_bytes: bytes) -> np.ndarray | None:
-    """Decode raw bytes into BGR numpy array. Returns None on failure."""
+    """Decode raw image bytes into a BGR numpy array. Returns None on failure.
+
+    Supports JPEG/PNG/WebP via OpenCV, plus HEIF/HEIC (iPhone default) via pillow-heif.
+    """
     if not image_bytes:
         return None
     arr = np.frombuffer(image_bytes, np.uint8)
     try:
         image = cv2.imdecode(arr, cv2.IMREAD_COLOR)
     except cv2.error:
-        return None
-    return image
+        image = None
+    if image is not None:
+        return image
+    # OpenCV can't decode HEIF/HEIC — fall back for iPhone photos.
+    if _looks_like_heif(image_bytes):
+        return _decode_heif(image_bytes)
+    return None
 
 
 def fix_exif_orientation(image: np.ndarray, image_bytes: bytes) -> np.ndarray:

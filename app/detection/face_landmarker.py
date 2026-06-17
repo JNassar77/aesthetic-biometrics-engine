@@ -5,12 +5,17 @@ Returns 478 landmarks + 52 blendshapes + 4x4 transformation matrix.
 This is the foundation for all V2 analysis engines.
 """
 
+import hashlib
+import logging
 import os
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import mediapipe as mp
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 _BASE_OPTIONS = mp.tasks.BaseOptions
 _FaceLandmarker = mp.tasks.vision.FaceLandmarker
@@ -18,6 +23,19 @@ _FaceLandmarkerOptions = mp.tasks.vision.FaceLandmarkerOptions
 _RunningMode = mp.tasks.vision.RunningMode
 
 DEFAULT_MODEL_PATH = str(Path(__file__).resolve().parents[2] / "models" / "face_landmarker.task")
+
+# Pinned model provenance for reproducibility / audit (medical device).
+# Source: mediapipe-models/face_landmarker/face_landmarker/float16/1
+MODEL_VERSION = "float16/1"
+EXPECTED_MODEL_SHA256 = "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff"
+
+
+def _sha256_of(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 @dataclass
@@ -71,6 +89,20 @@ class FaceLandmarkerV2:
                 "face_landmarker/float16/1/face_landmarker.task"
             )
 
+        # Audit model provenance (medical-device reproducibility).
+        model_sha256 = _sha256_of(model_path)
+        if EXPECTED_MODEL_SHA256 and model_sha256 != EXPECTED_MODEL_SHA256:
+            logger.warning(
+                "Face Landmarker model hash mismatch: loaded %s, expected %s (%s). "
+                "Results may not match the validated baseline.",
+                model_sha256, EXPECTED_MODEL_SHA256, MODEL_VERSION,
+            )
+        else:
+            logger.info(
+                "Face Landmarker model loaded: sha256=%s (%s)", model_sha256, MODEL_VERSION,
+            )
+        self.model_sha256 = model_sha256
+
         options = _FaceLandmarkerOptions(
             base_options=_BASE_OPTIONS(model_asset_path=model_path),
             running_mode=_RunningMode.IMAGE,
@@ -81,6 +113,9 @@ class FaceLandmarkerV2:
             output_facial_transformation_matrixes=True,
         )
         self._landmarker = _FaceLandmarker.create_from_options(options)
+        # MediaPipe landmarkers are not safe for concurrent detect() calls;
+        # serialize so one shared instance can be reused across threadpool workers.
+        self._lock = threading.Lock()
 
     def detect(self, image: np.ndarray) -> DetectionResult | NoFaceResult:
         """Detect face landmarks from a BGR numpy array.
@@ -98,7 +133,8 @@ class FaceLandmarkerV2:
         rgb = image[:, :, ::-1]  # BGR → RGB without copy overhead
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
 
-        result = self._landmarker.detect(mp_image)
+        with self._lock:
+            result = self._landmarker.detect(mp_image)
 
         if not result.face_landmarks:
             return NoFaceResult()

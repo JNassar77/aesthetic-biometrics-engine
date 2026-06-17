@@ -37,6 +37,7 @@ class CalibrationResponse(BaseModel):
     method: str  # "iris" or "face_width_estimate"
     px_per_mm: float
     confidence: float = Field(ge=0, le=1)
+    reliable: bool = True  # False = mm values are estimates, not validated measurements
 
 
 # ──────────────────────── Global Metrics ────────────────────────
@@ -70,7 +71,8 @@ class ZoneMeasurementResponse(BaseModel):
     """A single measurement within a zone."""
     name: str
     value: float
-    unit: str = "mm"
+    unit: str
+    estimated: bool = False  # True = NOT a validated metric value; do not use as a clinical mm value
     ideal_min: float | None = None
     ideal_max: float | None = None
     deviation_pct: float | None = None
@@ -188,6 +190,7 @@ class AssessmentResponse(BaseModel):
     engine_version: str = "2.1.0"
     processing_time_ms: int | None = None
     views_analyzed: list[str] = []
+    warnings: list[str] = []  # assessment-level warnings (e.g. CALIBRATION_UNRELIABLE)
 
     model_config = {"json_schema_extra": {
         "example": {

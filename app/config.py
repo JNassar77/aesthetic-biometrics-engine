@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     min_face_confidence: float = 0.7
     api_keys: str = ""  # Comma-separated API keys; empty = dev mode (no auth)
     rate_limit_rpm: int = 60  # Requests per minute per IP; 0 = disabled
+    environment: str = "development"  # "production" enforces fail-closed auth
 
     model_config = {"env_file": ".env"}
 

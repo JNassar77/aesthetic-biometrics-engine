@@ -2,26 +2,19 @@
 
 import numpy as np
 import pytest
+from scipy.spatial.transform import Rotation
 from app.detection.head_pose import extract_head_pose, HeadPose
 
 
 def _rotation_matrix(yaw_deg: float, pitch_deg: float, roll_deg: float) -> np.ndarray:
-    """Build a 4x4 affine matrix from Euler angles (ZYX convention)."""
-    y = np.radians(yaw_deg)
-    p = np.radians(pitch_deg)
-    r = np.radians(roll_deg)
+    """Build a 4x4 affine matrix from yaw/pitch/roll, matching extract_head_pose.
 
-    Rz = np.array([[np.cos(y), -np.sin(y), 0],
-                    [np.sin(y),  np.cos(y), 0],
-                    [0, 0, 1]])
-    Ry = np.array([[ np.cos(p), 0, np.sin(p)],
-                    [0, 1, 0],
-                    [-np.sin(p), 0, np.cos(p)]])
-    Rx = np.array([[1, 0, 0],
-                    [0,  np.cos(r), -np.sin(r)],
-                    [0,  np.sin(r),  np.cos(r)]])
-
-    R = Rz @ Ry @ Rx
+    Uses the YXZ convention: yaw = rotation about the vertical Y axis (head turn),
+    pitch = rotation about X (nod), roll = rotation about Z (tilt). This matches
+    MediaPipe's transformation matrix — the earlier helper named the Z rotation
+    "yaw", which (together with the old ZYX decode) self-confirmed a wrong result.
+    """
+    R = Rotation.from_euler("YXZ", [yaw_deg, pitch_deg, roll_deg], degrees=True).as_matrix()
     mat = np.eye(4)
     mat[:3, :3] = R
     return mat

@@ -15,6 +15,7 @@ I/O happens at the API route level (Supabase storage, persistence).
 
 from __future__ import annotations
 
+import threading
 import time
 from dataclasses import dataclass, field
 from uuid import UUID, uuid4
@@ -182,6 +183,24 @@ def _process_single_view(
 
 # ──────────────────────── Main Orchestrator ────────────────────────
 
+_landmarker_singleton: FaceLandmarkerV2 | None = None
+_landmarker_lock = threading.Lock()
+
+
+def get_landmarker() -> FaceLandmarkerV2:
+    """Return a process-wide shared FaceLandmarkerV2, created on first use.
+
+    The model (~3.6 MB) is loaded once and reused; the landmarker serializes
+    its own detect() calls internally, so it is safe to share across threads.
+    """
+    global _landmarker_singleton
+    if _landmarker_singleton is None:
+        with _landmarker_lock:
+            if _landmarker_singleton is None:
+                _landmarker_singleton = FaceLandmarkerV2()
+    return _landmarker_singleton
+
+
 def run_pipeline(
     frontal_bytes: bytes | None = None,
     profile_bytes: bytes | None = None,
@@ -204,10 +223,10 @@ def run_pipeline(
     start_time = time.monotonic()
     pipeline_result = PipelineResult()
 
-    # Initialize landmarker if not provided
+    # Initialize landmarker if not provided (shared process-wide singleton)
     if landmarker is None:
         try:
-            landmarker = FaceLandmarkerV2()
+            landmarker = get_landmarker()
         except FileNotFoundError as e:
             pipeline_result.errors.append(str(e))
             return pipeline_result
