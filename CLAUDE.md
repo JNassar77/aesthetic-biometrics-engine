@@ -32,7 +32,6 @@ app/
 ├── main.py              # FastAPI app entrypoint
 ├── config.py            # Pydantic settings (env vars)
 ├── api/
-│   ├── v1_routes.py     # V1 API endpoints (/analyze, /health) — renamed Sprint 9
 │   ├── v2_routes.py     # V2 API: /assessment, /compare, /history, /health
 │   ├── auth.py          # X-API-Key authentication middleware (Sprint 12)
 │   └── rate_limit.py    # In-memory sliding window rate limiter (Sprint 12)
@@ -58,19 +57,12 @@ app/
 │   ├── product_database.py    # 14 products, zone→product mapping, vascular risk
 │   ├── plan_generator.py      # Severity prioritization, clinical ordering, sessions
 │   └── contraindication_check.py  # Safety: asymmetry, vascular, overtreatment
-├── core/                # V1 analysis engines (deprecated, see deprecation docstrings)
-│   ├── landmark_detector.py   # Legacy FaceMesh wrapper
-│   ├── image_validator.py     # Legacy quality checks
-│   ├── frontal_analyzer.py    # Symmetry, facial thirds, lip ratio
-│   ├── profile_analyzer.py    # E-line, nasolabial angle, chin
-│   └── oblique_analyzer.py    # Ogee curve, midface volume
 ├── models/
-│   ├── schemas.py       # Pydantic request/response models (V1)
 │   ├── schemas_v2.py   # V2 API schemas: Assessment, Comparison, Plan (Sprint 8)
 │   └── zone_models.py  # Zone Pydantic models (V2)
 ├── services/            # External integrations (Supabase, n8n)
-│   ├── supabase_service.py  # V1+V2: save_assessment, get, history, upload (Sprint 9)
-│   └── n8n_service.py       # V1+V2: webhook with envelope (Sprint 9)
+│   ├── supabase_service.py  # save_assessment, get, history, upload, comparison
+│   └── n8n_service.py       # webhook with envelope (notify_n8n + notify_n8n_v2)
 └── utils/
     ├── geometry.py          # 2D + 3D math (distance, angle, plane projection)
     ├── pixel_calibration.py # Iris-based px→mm calibration + face-width fallback
@@ -107,8 +99,8 @@ Start here depending on what you need:
 
 | Layer | Technology |
 |---|---|
-| Framework | FastAPI 0.115 |
-| Face Detection | MediaPipe FaceMesh (478 landmarks) |
+| Framework | FastAPI 0.137 |
+| Face Detection | MediaPipe Tasks API — Face Landmarker (478 landmarks + 52 blendshapes) |
 | Image Processing | OpenCV (headless) |
 | Math | NumPy, SciPy |
 | Database | Supabase (AestheticBiometricsDB) |

@@ -12,6 +12,9 @@ Thumbs.db
 .idea/
 .vscode/
 *.log
+.coverage
+.pytest_cache/
+htmlcov/
 # ML models (download via curl, see CLAUDE.md)
 models/*.task
 models/*.tflite

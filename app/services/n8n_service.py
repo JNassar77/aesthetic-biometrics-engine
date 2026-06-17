@@ -21,7 +21,7 @@ async def notify_n8n(payload: dict[str, Any]) -> bool:
     """Send analysis result to n8n webhook for downstream processing.
 
     Args:
-        payload: Serialized AssessmentResponse (V2) or AnalysisResponse (V1).
+        payload: Serialized AssessmentResponse (V2).
 
     Returns:
         True if webhook accepted the payload (HTTP < 400), False otherwise.

@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1_routes import router as v1_router
 from app.api.v2_routes import router as v2_router
 from app.api.rate_limit import RateLimitMiddleware
 from app.config import settings
@@ -33,10 +32,6 @@ app = FastAPI(
             "name": "v2-assessment",
             "description": "V2 Zone-based analysis, comparison, and patient history.",
         },
-        {
-            "name": "v1-legacy",
-            "description": "V1 Legacy endpoints (backward compatibility).",
-        },
     ],
 )
 
@@ -50,9 +45,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# V1 Legacy endpoints (backward compatibility)
-app.include_router(v1_router, prefix="/api/v1", tags=["v1-legacy"])
 
 # V2 Zone-based endpoints
 app.include_router(v2_router, prefix="/api/v2", tags=["v2-assessment"])
@@ -68,7 +60,5 @@ async def root():
             "v2_assessment": "/api/v2/assessment",
             "v2_compare": "/api/v2/compare",
             "v2_health": "/api/v2/health",
-            "v1_analyze": "/api/v1/analyze",
-            "v1_health": "/api/v1/health",
         },
     }
