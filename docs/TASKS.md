@@ -230,23 +230,51 @@
 ### Sprint 12 — Production-Ready
 
 - [x] Docker Image optimieren (Multi-stage Build)
-- [ ] Railway Deployment konfigurieren
+- [x] Railway Deployment konfigurieren (`railway.toml`, eu-Region europe-west4, Sprint 13)
 - [x] Health Monitoring (V2 /health mit DB-Check, Model-Check, Uptime)
 - [x] Rate Limiting (`app/api/rate_limit.py`, sliding window, RATE_LIMIT_RPM)
 - [x] API Key Authentication (`app/api/auth.py`, X-API-Key, API_KEYS env var)
 - [x] CI/CD Pipeline (`.github/workflows/ci.yml`: pytest + Docker build)
-- [ ] `.env.production` Konfiguration
-- [x] Swagger/OpenAPI Docs finalisieren (Tags, Descriptions, Examples, Version 2.1.0)
-- [ ] DSGVO-Checkliste (Patientendaten, Bildloeschung)
+- [x] `.env.production` Konfiguration (`.env.production.example`, Sprint 13)
+- [x] Swagger/OpenAPI Docs finalisieren (Tags, Descriptions, Examples, Version 2.2.0)
+- [ ] DSGVO-Checkliste (Patientendaten, Bildloeschung) — bewusst vor Go-Live, separat
+
+---
+
+## Sprint 13 — Echte 3D-Engines, Reports, Frontend-Daten, Deploy ✅ (17.06.2026)
+
+> **Ziel:** Vollen Funktionsumfang deployment-bereit machen. Engines an echte 3D
+> anbinden, klinischer Report, Frontend-Overlay, Railway-Config. (496 Tests grün.)
+
+- [x] **Task 10 — Engines an echte metrische 3D angebunden**
+  - [x] `volume_engine`: Tiefen (Ogee/Malar, Temporal, Tear-Trough, Jowl) aus
+        `multiview_reconstruction` statt relativer z — **+z=vorne → beim Anbinden negiert**.
+  - [x] Bilaterale Obliques (45°L + 45°R) in `run_pipeline` + `zone_analyzer`
+        (canonical Oblique = höchste Konfidenz; generischer Oblique back-compat).
+  - [x] `reconstruct_from_views`-Policy: **Profil ausgeschlossen** (Iris bei 90° zu
+        verkürzt → korrumpiert Triangulation, an echten Fotos verifiziert), Iris-Gate.
+  - [x] Tiefen bleiben `estimated` (Schwellen nicht für 3D-mm kalibriert = Sprint 11);
+        `depth_source` + `reconstruction`-Block in der Response.
+  - [x] `profile_engine` **bewusst NICHT** an 3D angebunden (Sagittalmaße: 2D-Profil ist
+        Goldstandard; 3D chin_projection war an echten Daten schlechter, dokumentiert).
+  - [x] An echten Fotos validiert: Pupillenabstand 61,9 mm, reproj RMS 2,68 mm
+        (`scripts/validate_3d_reconstruction.py`).
+- [x] **Task 11 — Klinischer PDF-Report** (`app/services/pdf_report.py`, reportlab):
+        Zonen, Severity, Plan, Messwerte mit `†`-estimated-Kennzeichnung +
+        `POST /report` (verlustfrei) und `GET /assessment/{id}/report` (Supabase).
+- [x] **Task 12 — Frontend-Daten** (`app/analysis/overlay.py`): Injection-Point-Koordinaten
+        + Zone-Heatmap (Anker, Intensität, Farbe) pro Zone → `AssessmentResponse.overlay`.
+- [x] **Task 13 — Railway-Deploy**: `railway.toml` (eu europe-west4), `.env.production.example`,
+        Dockerfile lädt Modell im Build mit SHA-Verifikation.
 
 ---
 
 ## Backlog / Future
 
-- [ ] PDF/DOCX Report-Generation pro Assessment
-- [ ] Injection-Point SVG Overlay fuer Frontend
+- [x] PDF/DOCX Report-Generation pro Assessment (PDF, Sprint 13)
+- [x] Injection-Point SVG Overlay fuer Frontend (Koordinaten-Daten, Sprint 13)
 - [ ] Real-time Video-Analyse (WebSocket)
-- [ ] 3D Face Reconstruction aus Multi-View
+- [x] 3D Face Reconstruction aus Multi-View (Triangulation, Sprint 13)
 - [ ] Aging Simulation (Behandlungshaltbarkeit)
 - [ ] AR Overlay fuer Behandlungsvisualisierung
 - [ ] Multi-Language Reports (DE/EN/AR)
