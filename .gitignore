@@ -3,7 +3,11 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+# Env files with real secrets — ignore all, keep the *.example templates
 .env
+.env.*
+!.env.example
+!.env.production.example
 .venv/
 venv/
 *.so
