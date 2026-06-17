@@ -1,0 +1,25 @@
+# Railway deployment config — Aesthetic Biometrics Engine
+# Docs: https://docs.railway.com/reference/config-as-code
+#
+# Build: the Dockerfile downloads + SHA-verifies the MediaPipe model at build time,
+# so no model file needs to be committed. Runtime: bind uvicorn to Railway's $PORT.
+#
+# EU data residency: the service runs in europe-west4 (multiRegionConfig below).
+# Region can also be set in the Railway dashboard; this pins it in code.
+# NOTE: secrets (API_KEYS, SUPABASE_KEY, …) are set as Railway service variables,
+# not here — see .env.production.example for the variable list.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/api/v2/health"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# EU region (data residency). Adjust numReplicas for horizontal scale.
+[deploy.multiRegionConfig."europe-west4-drams3a"]
+numReplicas = 1

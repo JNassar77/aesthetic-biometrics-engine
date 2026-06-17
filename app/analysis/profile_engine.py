@@ -10,7 +10,19 @@ Measures profile-specific metrics from lateral (90°) view:
 - Cervicomental angle (chin-neck junction)
 
 All measurements in mm via iris calibration (Sprint 2).
-Uses 3D geometry where z-depth adds value (Sprint 2).
+
+DEPTH-SOURCE DECISION (Task 10, 2026-06-17): the profile engine deliberately does
+NOT consume the multi-view 3D reconstruction. Its measurements are sagittal-plane
+quantities, and the dedicated 90° profile photo is the clinical gold standard for
+them. The 3D reconstruction excludes the profile view (its iris is too
+foreshortened for a reliable metric scale) and is pitch-sensitive for vertically
+separated midline points, so it is empirically WORSE here: on the real test set the
+2D profile chin_projection read −0.5 mm (correct, balanced chin), while the 3D
+pogonion-vs-subnasale A-P read −22.5 mm (a false severe retrusion). Wiring the
+profile engine to 3D would degrade a good measurement, so we keep the in-plane 2D
+profile measurements. `chin_projection` stays flagged `estimated` (it is still an
+out-of-plane projection sensitive to a non-perfect 90° capture). Real metric
+profile depth is a Sprint 11 item (perspective refinement / bundle adjustment).
 """
 
 from __future__ import annotations

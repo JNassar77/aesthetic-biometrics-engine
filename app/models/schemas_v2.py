@@ -13,6 +13,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from app.version import ENGINE_VERSION
+
 
 # ──────────────────────── Image Quality ────────────────────────
 
@@ -63,6 +65,61 @@ class GlobalMetricsResponse(BaseModel):
     golden_ratio_deviation: float
     lip_ratio: float | None = None
     head_pose: HeadPoseResponse | None = None
+
+
+# ──────────────────────── 3D Reconstruction ────────────────────────
+
+class Reconstruction3DResponse(BaseModel):
+    """Metric multi-view 3D reconstruction quality signals.
+
+    Present when the engine triangulated a metric 3D point cloud from the
+    frontal + bilateral oblique views (the profile is excluded — its iris is too
+    foreshortened for a reliable scale). Volume-zone depths are derived from this
+    cloud when `depth_source == "multi_view_3d"`. Depth measurements stay flagged
+    `estimated` until their clinical thresholds are recalibrated against real 3D
+    millimetres (Sprint 11); these fields let a consumer judge reconstruction
+    quality (more views + wider spread + lower RMS = more trustworthy depth).
+    """
+    available: bool = False
+    depth_source: str = "relative_z"  # "multi_view_3d" | "relative_z"
+    views_used: list[str] = []
+    n_views: int = 0
+    angular_spread_deg: float = 0.0   # spread of head orientations; higher = better depth
+    reprojection_rms_mm: float = 0.0  # mean reprojection residual; lower = better fit
+
+
+# ──────────────────────── Frontend Overlay ────────────────────────
+
+class InjectionPointResponse(BaseModel):
+    """One candidate injection landmark, normalized [0,1] to the anchor view."""
+    landmark_index: int
+    x: float
+    y: float
+
+
+class ZoneOverlayResponse(BaseModel):
+    """Injection-point + heatmap overlay data for one zone.
+
+    Coordinates are normalized [0,1] in the ANALYZED (preprocessed/face-centred)
+    frame the landmarks were detected in; `OverlayResponse.image_dimensions` gives
+    that frame's pixel size per view. `intensity` is severity/10 (heatmap weight).
+    """
+    zone_id: str
+    zone_name: str
+    region: str
+    view: str
+    severity: float = Field(ge=0, le=10)
+    intensity: float = Field(ge=0, le=1)
+    color_code: str
+    centroid_x: float
+    centroid_y: float
+    injection_points: list[InjectionPointResponse] = []
+
+
+class OverlayResponse(BaseModel):
+    """Frontend overlay payload — per-zone injection points and heatmap anchors."""
+    zones: list[ZoneOverlayResponse] = []
+    image_dimensions: dict[str, dict[str, int]] = {}
 
 
 # ──────────────────────── Zone Analysis ────────────────────────
@@ -186,8 +243,14 @@ class AssessmentResponse(BaseModel):
     # Calibration info
     calibration: CalibrationResponse
 
+    # 3D reconstruction quality (None if not attempted)
+    reconstruction: Reconstruction3DResponse | None = None
+
+    # Frontend overlay data — injection points + heatmap (None if not computed)
+    overlay: OverlayResponse | None = None
+
     # Metadata
-    engine_version: str = "2.1.0"
+    engine_version: str = ENGINE_VERSION
     processing_time_ms: int | None = None
     views_analyzed: list[str] = []
     warnings: list[str] = []  # assessment-level warnings (e.g. CALIBRATION_UNRELIABLE)
@@ -196,7 +259,7 @@ class AssessmentResponse(BaseModel):
         "example": {
             "assessment_id": "550e8400-e29b-41d4-a716-446655440000",
             "patient_id": None,
-            "engine_version": "2.1.0",
+            "engine_version": ENGINE_VERSION,
         }
     }}
 
@@ -281,7 +344,7 @@ class AssessmentSummary(BaseModel):
     zones_count: int
     primary_concern: str | None = None
     views_analyzed: list[str] = []
-    engine_version: str = "2.1.0"
+    engine_version: str = ENGINE_VERSION
 
 
 class PatientHistoryResponse(BaseModel):
@@ -296,7 +359,7 @@ class PatientHistoryResponse(BaseModel):
 class HealthResponse(BaseModel):
     """Health check response."""
     status: str = "healthy"
-    version: str = "2.1.0"
+    version: str = ENGINE_VERSION
     model_loaded: bool = False
     supabase_connected: bool = False
     uptime_seconds: float | None = None

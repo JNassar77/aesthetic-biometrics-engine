@@ -48,6 +48,14 @@ def _make_calibration():
     )
 
 
+def _rot_y(deg):
+    t = np.radians(deg)
+    c, s = np.cos(t), np.sin(t)
+    m = np.eye(4)
+    m[:3, :3] = np.array([[c, 0.0, s], [0.0, 1.0, 0.0], [-s, 0.0, c]])
+    return m
+
+
 def _make_image_bytes():
     """Create minimal valid image bytes (1x1 black JPEG)."""
     # Minimal JPEG
@@ -250,6 +258,62 @@ class TestRunPipeline:
             result = run_pipeline(frontal_bytes=b"image")
             assert len(result.errors) > 0
             assert "Model not found" in result.errors[0]
+
+    @patch("app.pipeline.orchestrator.plan_generate")
+    @patch("app.pipeline.orchestrator.zone_analyze")
+    @patch("app.pipeline.orchestrator._process_single_view")
+    @patch("app.pipeline.orchestrator.FaceLandmarkerV2")
+    def test_bilateral_obliques_build_reconstruction(self, mock_cls, mock_process, mock_analyze, mock_plan):
+        """Frontal + bilateral obliques (distinct rotations) → a 3D reconstruction
+        is built and passed to zone analysis; profile is excluded by policy."""
+        mock_cls.return_value = MagicMock()
+
+        # Distinct head rotations give the angular spread reconstruction needs.
+        rot_by_view = {
+            "frontal": _rot_y(0), "oblique_left": _rot_y(35),
+            "oblique_right": _rot_y(-30), "profile": _rot_y(85),
+        }
+
+        def _process(image_bytes, view, landmarker):
+            det = _make_detection()
+            det.transformation_matrix = rot_by_view[view]
+            return ViewResult(
+                view=view, detection=det, calibration=_make_calibration(),
+                accepted=True, confidence=0.9,
+            )
+
+        mock_process.side_effect = _process
+
+        from app.analysis.zone_analyzer import ZoneReport
+        from app.models.zone_models import GlobalMetrics, CalibrationInfo
+        mock_analyze.return_value = ZoneReport(
+            zones=[],
+            global_metrics=GlobalMetrics(
+                symmetry_index=90.0,
+                facial_thirds={"upper": 0.33, "middle": 0.33, "lower": 0.34},
+                golden_ratio_deviation=3.0, aesthetic_score=85.0,
+            ),
+            calibration=CalibrationInfo(method="iris", px_per_mm=5.0, confidence=0.92),
+            aesthetic_score=85.0, expression_deviation=0.05,
+        )
+        mock_plan.return_value = MagicMock()
+
+        result = run_pipeline(
+            frontal_bytes=b"f", profile_bytes=b"p",
+            oblique_left_bytes=b"ol", oblique_right_bytes=b"orr",
+        )
+
+        # All four views processed.
+        assert set(result.views_analyzed) == {"frontal", "profile", "oblique_left", "oblique_right"}
+        # Reconstruction built (profile excluded → exactly 3 contributing views).
+        assert result.reconstruction is not None
+        assert "profile" not in result.reconstruction.views_used
+        assert result.reconstruction.n_views == 3
+        # zone_analyze received the reconstruction + bilateral obliques.
+        _, kwargs = mock_analyze.call_args
+        assert kwargs["reconstruction"] is result.reconstruction
+        assert kwargs["oblique_left"] is not None
+        assert kwargs["oblique_right"] is not None
 
     @patch("app.pipeline.orchestrator.plan_generate")
     @patch("app.pipeline.orchestrator.zone_analyze")

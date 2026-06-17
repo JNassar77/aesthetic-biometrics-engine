@@ -37,6 +37,7 @@ from app.analysis import (
 from app.analysis.multi_view_fusion import (
     ViewMeasurement, fuse_all_zones, FusionResult,
 )
+from app.analysis.multiview_reconstruction import Reconstruction3D
 
 
 # ──────────────────────── Data Containers ────────────────────────
@@ -376,10 +377,31 @@ def compute_aesthetic_score(zones: list[ZoneResult]) -> float:
 
 # ──────────────────────── Main Analyze Function ────────────────────────
 
+def _pick_canonical_oblique(
+    oblique_left: ViewInput | None,
+    oblique_right: ViewInput | None,
+    oblique: ViewInput | None,
+) -> ViewInput | None:
+    """Pick one oblique view to drive the (canonical) volume engine.
+
+    Volume depths come from the fused 3D reconstruction (view-independent), so the
+    2D detection passed to the engine only matters for the relative-z fallback and
+    the 2D buccal corridor. Among the available obliques we take the one with the
+    highest calibration confidence; ties prefer left, then right, then generic.
+    """
+    candidates = [v for v in (oblique_left, oblique_right, oblique) if v is not None]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda v: v.calibration.confidence)
+
+
 def analyze(
     frontal: ViewInput | None = None,
     profile: ViewInput | None = None,
     oblique: ViewInput | None = None,
+    oblique_left: ViewInput | None = None,
+    oblique_right: ViewInput | None = None,
+    reconstruction: Reconstruction3D | None = None,
 ) -> ZoneReport:
     """Run complete zone-based analysis across all available views.
 
@@ -389,17 +411,26 @@ def analyze(
     Args:
         frontal: Frontal view detection + calibration (primary for symmetry/proportions)
         profile: Profile view detection + calibration (primary for E-line/nasal/chin)
-        oblique: Oblique view detection + calibration (primary for volume/temporal)
+        oblique: Generic oblique view (back-compat single-oblique input)
+        oblique_left: Left 45° oblique (preferred protocol)
+        oblique_right: Right 45° oblique (preferred protocol)
+        reconstruction: Optional metric 3D reconstruction (frontal + bilateral
+            obliques). When present the volume engine reads true triangulated
+            depth instead of single-view relative z.
 
     Returns:
         ZoneReport with ranked zones, findings, and aesthetic score.
     """
+    # Canonical oblique drives the volume engine; bilateral obliques additionally
+    # feed the 3D reconstruction (built by the caller / orchestrator).
+    canonical_oblique = _pick_canonical_oblique(oblique_left, oblique_right, oblique)
+
     views_analyzed: list[str] = []
     if frontal:
         views_analyzed.append("frontal")
     if profile:
         views_analyzed.append("profile")
-    if oblique:
+    if canonical_oblique:
         views_analyzed.append("oblique")
 
     if not views_analyzed:
@@ -445,10 +476,14 @@ def analyze(
         prof_result = profile_engine.analyze(profile.detection, profile.calibration)
         _merge_zone_data(_extract_profile_zone_measurements(prof_result))
 
-    # Oblique view engines
+    # Oblique view engines (depth from the 3D reconstruction when available)
     vol_result = None
-    if oblique:
-        vol_result = volume_engine.analyze(oblique.detection, oblique.calibration)
+    if canonical_oblique:
+        vol_result = volume_engine.analyze(
+            canonical_oblique.detection,
+            canonical_oblique.calibration,
+            reconstruction,
+        )
         _merge_zone_data(_extract_volume_zone_measurements(vol_result))
 
     # ── Step 2: Multi-view fusion ──
@@ -456,7 +491,7 @@ def analyze(
 
     # ── Calibration reliability gate: without a confident iris calibration,
     # no mm value is trustworthy, so every mm measurement is flagged estimated. ──
-    primary_cal = frontal.calibration if frontal else (profile.calibration if profile else oblique.calibration)  # type: ignore
+    primary_cal = frontal.calibration if frontal else (profile.calibration if profile else canonical_oblique.calibration)  # type: ignore
     calibration_reliable = (
         primary_cal.method == "iris"
         and primary_cal.confidence >= CALIBRATION_MIN_CONFIDENCE
@@ -517,7 +552,7 @@ def analyze(
             )
 
         # Determine calibration method from the primary view
-        primary_input = {"frontal": frontal, "profile": profile, "oblique": oblique}.get(fz.primary_view)
+        primary_input = {"frontal": frontal, "profile": profile, "oblique": canonical_oblique}.get(fz.primary_view)
         cal_method = primary_input.calibration.method if primary_input else "unknown"
 
         zone_results.append(ZoneResult(

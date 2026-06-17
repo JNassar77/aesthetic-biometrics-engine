@@ -28,8 +28,9 @@ class ZoneMeasurement(BaseModel):
 #   - out-of-plane 2D projection in the 90 deg profile (double systematic error)
 #   - derived from an approximated, non-anatomical landmark (neck_approx)
 EXPERIMENTAL_MEASUREMENTS: frozenset[str] = frozenset({
-    # relative z-depth (volume_engine)
+    # relative z-depth / depth-derived (volume_engine)
     "malar_depth",
+    "ogee_curve_score",  # 0-100 score derived from depth; scaling not calibrated for real 3D mm
     "temporal_depth_left", "temporal_depth_right", "temporal_asymmetry",
     "tear_trough_depth_left", "tear_trough_depth_right",
     "jowl_depth_left", "jowl_depth_right",

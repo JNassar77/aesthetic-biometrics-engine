@@ -10,7 +10,7 @@ Medical AI backend that extracts biometric facial measurements from standardized
 ## Architecture
 
 ```
-Client/n8n ──POST /api/v1/analyze──▶ FastAPI
+Client/n8n ──POST /api/v2/assessment──▶ FastAPI
                                         │
                               ┌─────────┼─────────┐
                               ▼         ▼         ▼
@@ -69,7 +69,7 @@ app/
     └── logging.py           # Structured JSON logging + log_step (Sprint 9)
 models/                  # ML model files (not in git, download manually)
   └── face_landmarker.task  # MediaPipe model (3.6MB, see Common Commands)
-tests/                   # Test suite (442 tests passing, 80% coverage)
+tests/                   # Test suite (499 tests passing)
   ├── analysis/              # Symmetry, proportion, engines, fusion, comparison, blendshapes
   ├── treatment/             # Zone definitions, product DB, contraindications, plan generator
   ├── integration/           # Orchestrator, V2 routes, schemas
@@ -152,7 +152,7 @@ Use `resolve-library-id` → `get-library-docs` for:
 - Files: `snake_case.py`
 - Classes: `PascalCase`
 - Functions/variables: `snake_case`
-- API routes: `/api/v1/...` (versioned)
+- API routes: `/api/v2/...` (versioned)
 - Supabase tables: `snake_case`
 
 ### Error Handling

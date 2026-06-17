@@ -26,12 +26,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt pytest pytest-cov pytest-asyncio httpx
 
-      - name: Download ML model
-        run: |
-          mkdir -p models
-          curl -L -o models/face_landmarker.task \
-            "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
-
+      # No model download needed: the test suite mocks the landmarker and never
+      # loads the real .task file (verified — 499 tests pass without it).
       - name: Run tests with coverage
         run: pytest tests/ -v --cov=app --cov-report=term-missing --tb=short
 
@@ -41,12 +37,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create models directory
-        run: |
-          mkdir -p models
-          curl -L -o models/face_landmarker.task \
-            "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
-
+      # The Dockerfile downloads + SHA-verifies the model itself, so the build is
+      # self-contained (no pre-download here — this also proves that on every CI run).
       - name: Build Docker image
         run: docker build -t aesthetic-biometrics:${{ github.sha }} .
 
