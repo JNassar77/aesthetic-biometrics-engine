@@ -64,6 +64,7 @@ Die mm-Genauigkeit von **Weg A** wird von vier Fehlerquellen bestimmt:
 |---|---|---|
 | **Nicht-synchrone Aufnahmen** (3 Fotos zu verschiedenen Zeitpunkten) | Mimik/Kopfbewegung zwischen Aufnahmen → Korrespondenz-Punkte liegen nicht auf derselben Anatomie | Striktes Protokoll: gleiche Sitzung, neutrale Mimik (wird schon validiert), Kopf still. **Größte Schwäche.** |
 | **Unbekannte Brennweite** | systematischer Tiefen-Skalierungsfehler | EXIF nutzen; pro Kamera einmal kalibrieren |
+| **Perspektivische Verzerrung** (variabler Aufnahme-Abstand) | Nahaufnahmen verzerren Proportionen (Nase wirkt größer); die Iris-Skala korrigiert das **nicht** | perspektivisches Kameramodell + Distanz-Schätzung → siehe §3b |
 | **Head-Pose-Ungenauigkeit** | Triangulationsrauschen | Bündelausgleich; mehr als 3 Ansichten |
 | **Landmark-Lokalisierungsrauschen** | ±1–2 px pro Punkt | Mittelung; Subpixel-Verfeinerung |
 
@@ -72,6 +73,22 @@ Die mm-Genauigkeit von **Weg A** wird von vier Fehlerquellen bestimmt:
 - Hand-gehaltene, nicht-synchrone Patienten-Selfies: **3–5 mm+**, teils nicht klinisch brauchbar.
 
 ➡️ **Kernaussage:** Echtes 3D per Triangulation steht und fällt mit einem **standardisierten Aufnahme-Protokoll.** Das ist gleichzeitig die billigste Qualitäts-Maßnahme und deckt sich mit dem Strategie-Review (standardisierte Fotos sind Voraussetzung für jede mm-Aussage).
+
+---
+
+## 3b. Perspektivische Korrektur — warum echtes 3D auch variable Abstände rettet
+
+Die Iris-Kalibrierung löst den **Maßstab**: Ein Selfie aus 30 cm und ein Foto aus 2 m liefern beide korrekte mm, weil die Iris (11,7 mm) den Abstand herausrechnet. Sie löst aber **nicht** die **perspektivische Verzerrung**: Bei kurzer Aufnahme-Distanz ragen nahe Strukturen (Nase) optisch stärker heraus als entfernte (Ohren) — die Proportionen kippen. Aus einem einzelnen 2D-Bild ist das nicht herausrechenbar; deshalb empfehlen wir heute einen Mindestabstand.
+
+**Echtes 3D korrigiert das automatisch** — und macht damit die letzte große aufnahmebedingte Fehlerquelle (neben der Pose, die wir bereits messen) beherrschbar:
+
+1. Statt der orthografischen Näherung ein **perspektivisches Kameramodell** (Lochkamera) verwenden.
+2. Die **Aufnahme-Distanz mitschätzen** — sie folgt aus der Iris-Pixelgröße und der Brennweite: Iris = 11,7 mm bekannt ⇒ bei bekannter Brennweite ergibt die Iris-Pixelgröße direkt die Kamera-Distanz. EXIF liefert die Brennweite; fehlt sie, wird sie im Bündelausgleich mitoptimiert.
+3. **Bündelausgleich (bundle adjustment)** optimiert Kamerapose + Distanz + Brennweite gemeinsam mit der 3D-Struktur, bis alle Ansichten konsistent sind.
+
+**Effekt:** Die mm-Werte werden robust gegen den Aufnahme-Abstand — egal ob jemand das Handy selbst hält oder aus 2 m fotografiert wird. Das ist der Schritt, der „funktioniert mit beliebigen Fotos" und „klinische mm-Genauigkeit" am nächsten zusammenbringt.
+
+> **Reihenfolge:** Phase 1/2 nutzt zunächst die orthografische Näherung (einfach, deterministisch, sofort gegen synthetische Daten verifizierbar). Die perspektivische Korrektur ist die gezielte Genauigkeits-Stufe **danach** (Phase 2+): Sie ersetzt die Näherung durch das volle Kameramodell, sobald die Triangulation an echten Aufnahmen steht. Beides bleibt reine Geometrie — deterministisch und auditierbar.
 
 ---
 
@@ -99,7 +116,8 @@ preprocess → detect (478 + pose) → calibrate (iris)
 |---|---|---|
 | 0 | **Aufnahme-Protokoll** definieren + Testdatensatz mit Caliper-Ground-Truth (n≥20) | klein, aber Voraussetzung |
 | 1 | Kamera-Modell + Triangulations-Prototyp (2 Ansichten, statische Landmarks) | mittel |
-| 2 | Metrische Skalierung (Iris) + Bündelausgleich + Genauigkeits-Messung vs. Caliper | mittel |
+| 2 | Metrische Skalierung (Iris) + Bündelausgleich + Genauigkeits-Messung vs. Caliper (orthografische Baseline) | mittel |
+| 2b | **Perspektivische Korrektur** (§3b): volles Lochkameramodell + Distanz-/Brennweiten-Schätzung — robust gegen variablen Aufnahme-Abstand | mittel |
 | 3 | Engines auf 3D umstellen; Felder von `estimated` befreien, sobald validiert | mittel |
 | 4 | Robustheit (fehlende Ansichten, schlechte Pose) + Quality-Gate „3D unzuverlässig" | klein–mittel |
 
