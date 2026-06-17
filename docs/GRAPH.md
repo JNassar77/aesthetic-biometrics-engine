@@ -1,5 +1,31 @@
 # System Graphs — Aesthetic Biometrics Engine
 
+> **Note:** the diagrams below depict the original V1 single-image flow (`/api/v1/analyze`, removed). The current engine is the V2 pipeline shown immediately under "V2 Pipeline". A full V1→V2 refresh of the older diagrams is pending doc-debt.
+
+## V2 Pipeline (current — `POST /api/v2/assessment`)
+
+```mermaid
+graph LR
+    U[Client / n8n] -->|frontal + profile + 45°L + 45°R| API[FastAPI /api/v2/assessment]
+    API --> PP[preprocess + EXIF + face-crop]
+    PP --> DET[detect: 478 landmarks + blendshapes + pose]
+    DET --> CAL[iris px→mm calibration]
+    CAL --> REC[3D reconstruction<br/>frontal + bilateral obliques<br/>profile excluded]
+    REC --> ENG[engines: symmetry / proportion / profile / volume*depth from 3D* / aging]
+    ENG --> FUSE[multi-view fusion]
+    FUSE --> ZR[zone report + aesthetic score]
+    ZR --> PLAN[treatment plan]
+    ZR --> OV[overlay: injection points + heatmap]
+    PLAN --> RESP[AssessmentResponse]
+    OV --> RESP
+    REC --> RESP
+    RESP --> PDF[/api/v2/report → clinical PDF/]
+    RESP --> N8N[n8n webhook envelope]
+    RESP --> SB[(Supabase: assessments + storage)]
+```
+
+Key V2 additions vs V1: the **3D reconstruction stage** (before the engines; volume depth reads from it, negated), **bilateral obliques**, the **overlay** block, and the **PDF report** endpoint.
+
 ## System Overview
 
 ```mermaid

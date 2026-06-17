@@ -1,6 +1,29 @@
 # Features — Aesthetic Biometrics Engine
 
 > Complete feature catalog. Each feature includes its purpose, workflow, inputs/outputs, and current status.
+>
+> **Note:** F-001…F-005 below describe the original V1 single-image flow (`/api/v1/analyze`, now removed). The current engine is the V2 zone-based `/api/v2/assessment` flow — see the V2 features (F-100+) first. A full V1→V2 refresh of the F-001…F-005 entries is pending doc-debt.
+
+---
+
+## V2 Features (current engine)
+
+### F-100: Multi-View Zone Assessment (up to 4 views)
+- **Purpose:** Single call (`POST /api/v2/assessment`) takes frontal + profile + bilateral obliques (45°L/R) and returns 19-zone analysis, severity ranking, treatment plan, aesthetic score, calibration, reconstruction quality and overlay data.
+- **Workflow:** preprocess → detect (478 landmarks + blendshapes + pose) → iris calibration → **3D reconstruction** → engines (symmetry/proportion/profile/volume/aging) → multi-view fusion → zone report → treatment plan.
+- **Output:** `AssessmentResponse` (see `CONTRACTS.md`). Engine v2.2.0.
+
+### F-101: Metric 3D Depth (multi-view reconstruction)
+- **Purpose:** Real anterior-posterior depth for the volume zones (ogee/malar, temporal, tear-trough, jowl) via triangulation from frontal + bilateral obliques (profile excluded — iris too foreshortened at 90°). Replaces meaningless relative-z pseudo-mm.
+- **Honesty:** depths stay `estimated` until thresholds are recalibrated against real 3D mm (Sprint 11); `reconstruction` block reports views_used / spread / reprojection RMS. Validated on real photos (interpupillary 61.9 mm). `profile_engine` deliberately stays 2D (sagittal gold standard).
+- **Clinical relevance:** more trustworthy volume-loss assessment when bilateral obliques are captured; standardized capture (true 90° profile ≥55° yaw) required.
+
+### F-102: Clinical PDF Report
+- **Purpose:** Clinician-facing PDF per assessment — zones, severity, per-zone measurements (estimated values flagged `†`), treatment plan, contraindications, honesty footer.
+- **Endpoints:** `POST /api/v2/report` (lossless, from an AssessmentResponse) and `GET /api/v2/assessment/{id}/report` (from Supabase). reportlab, pure-Python.
+
+### F-103: Frontend Overlay Data (injection points + heatmap)
+- **Purpose:** Per-zone injection-point coordinates + heatmap anchor (intensity, severity colour) in `AssessmentResponse.overlay`, normalized to the analyzed frame **with a back-transform to the original upload** (`image_dimensions`: source size + crop rect). Enables a UI to drop markers / render a treatment-need heatmap on the uploaded photo.
 
 ---
 
