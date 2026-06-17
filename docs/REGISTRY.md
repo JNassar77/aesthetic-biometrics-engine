@@ -52,7 +52,9 @@
 | **Symmetry Engine** | `app/analysis/symmetry_engine.py` | **6-axis bilateral symmetry + blendshape dynamic asymmetry** | face_landmarker, pixel_calibration | **V2** |
 | **Proportion Engine** | `app/analysis/proportion_engine.py` | **Facial thirds, fifths, golden ratio, lip ratio + Cupid's bow** | face_landmarker, pixel_calibration | **V2** |
 | **Profile Engine** | `app/analysis/profile_engine.py` | **E-line, nasolabial angle, chin projection, nasal dorsum, Steiner, cervicomental** | face_landmarker, pixel_calibration, geometry | **V2** |
-| **Volume Engine** | `app/analysis/volume_engine.py` | **Ogee curve, temporal hollowing, tear trough, jowl, buccal corridor (3D depth)** | face_landmarker, pixel_calibration, geometry | **V2** |
+| **Volume Engine** | `app/analysis/volume_engine.py` | **Ogee curve, temporal hollowing, tear trough, jowl, buccal corridor — depth from metric 3D reconstruction (negated; fallback relative-z), `estimated`** | face_landmarker, pixel_calibration, multiview_reconstruction | **V2.2** |
+| **3D Reconstruction** | `app/analysis/multiview_reconstruction.py` | **Metric multi-view landmark triangulation (orthographic, iris scale); reconstruct_from_views policy excludes profile, requires iris calibration** | numpy | **V2.2** |
+| **Overlay** | `app/analysis/overlay.py` | **Frontend data: per-zone injection points + heatmap (centroid, intensity, severity colour), normalized to analyzed frame** | landmark_index | **V2.2** |
 | **Aging Engine** | `app/analysis/aging_engine.py` | **Muscle tonus from blendshapes, gravitational drift, periorbital aging** | face_landmarker, pixel_calibration | **V2** |
 | **Multi-View Fusion** | `app/analysis/multi_view_fusion.py` | **Confidence-weighted landmark fusion across views + contradiction detection** | zone_definitions | **V2** |
 | **Zone Analyzer** | `app/analysis/zone_analyzer.py` | **Orchestrates all engines → Zone Report + Aesthetic Score** | all engines, multi_view_fusion, zone_definitions | **V2** |
@@ -62,6 +64,7 @@
 | **Comparison Engine** | `app/analysis/comparison_engine.py` | **Before/After: per-zone deltas, improvement score, measurement deltas, heatmap visualization** | zone_analyzer | **V2** |
 | **Supabase Service** | `app/services/supabase_service.py` | **V1+V2: save_assessment, get_assessment, get_patient_history, upload_image, save_comparison** | supabase, config | **V2** |
 | **n8n Service** | `app/services/n8n_service.py` | **V1+V2: webhook with V2 envelope (event, assessment_id, aesthetic_score)** | httpx, config | **V2** |
+| **PDF Report** | `app/services/pdf_report.py` | **Clinical PDF from AssessmentResponse — zones, severity, plan, measurements with `estimated` flagging** | reportlab | **V2.2** |
 | **Structured Logging** | `app/utils/logging.py` | **JSON formatter, log_step context manager for pipeline instrumentation** | — | **V2** |
 | **API Key Auth** | `app/api/auth.py` | **X-API-Key header validation, dev mode bypass** | config | **V2.1** |
 | **Rate Limiter** | `app/api/rate_limit.py` | **In-memory sliding window rate limiting per IP** | config | **V2.1** |
@@ -79,7 +82,9 @@
 | `tests/edge_cases/` | No face, corrupt images, partial views, boundary values | ~20 |
 | `tests/fixtures/` | `synthetic.py` — factory functions for landmarks and blendshapes | — |
 | `tests/` (root) | Head pose, quality gate, landmark index, preprocessor, geometry, calibration, **performance benchmark** | ~105 |
-| **TOTAL** | | **442** |
+| `tests/analysis/` (3D wiring, overlay) | `test_engine_3d_wiring.py`, `test_overlay.py`, reconstruction policy | +34 |
+| `tests/integration/` (PDF report) | `test_pdf_report.py` — renderer, row reconstruction, endpoints | +11 |
+| **TOTAL** | | **496** |
 
 ---
 
@@ -93,7 +98,7 @@
 | Docker Image | Python 3.11-slim | `Dockerfile` in repo root |
 | Docker Image | Python 3.11-slim (multi-stage) | `Dockerfile` in repo root |
 | CI/CD | GitHub Actions | `.github/workflows/ci.yml` (test + Docker build) |
-| Deployment Target | Railway | Not yet configured |
+| Deployment Target | Railway | `railway.toml` (Dockerfile build, EU region europe-west4, /api/v2/health) |
 | n8n Webhook | n8n | Configured via `N8N_WEBHOOK_URL` env var |
 
 ---
@@ -121,7 +126,9 @@
 
 | Method | Path | Purpose | Auth | Status |
 |---|---|---|---|---|
-| POST | `/api/v2/assessment` | **3-view zone analysis + treatment plan** | X-API-Key | **Active** |
+| POST | `/api/v2/assessment` | **Up to 4-view zone analysis + plan + 3D reconstruction + overlay** | X-API-Key | **Active** |
+| POST | `/api/v2/report` | **Render clinical PDF from an AssessmentResponse (lossless)** | X-API-Key | **Active** |
+| GET | `/api/v2/assessment/{id}/report` | **Clinical PDF for a stored assessment (Supabase)** | X-API-Key | **Active** |
 | POST | `/api/v2/compare` | **Before/After assessment comparison** | X-API-Key | **Active** |
 | GET | `/api/v2/patients/{id}/history` | **Patient assessment history** | X-API-Key | **Active** |
 | GET | `/api/v2/health` | **V2 health check (DB, model, uptime)** | None | **Active** |
@@ -144,6 +151,7 @@
 | `MIN_FACE_CONFIDENCE` | No | `0.7` | Minimum detection confidence threshold |
 | `API_KEYS` | No | `""` | Comma-separated API keys; empty = dev mode (no auth) |
 | `RATE_LIMIT_RPM` | No | `60` | Requests per minute per IP; 0 = disabled |
+| `ENVIRONMENT` | No | `development` | `production` enforces fail-closed auth (503 if no API_KEYS) |
 
 ---
 
@@ -164,3 +172,7 @@
 | pydantic | 2.10.6 | Data validation |
 | pydantic-settings | 2.7.1 | Settings management |
 | python-multipart | 0.0.20 | File upload parsing |
+| reportlab | ≥4.4.0 | Clinical PDF report generation |
+| pillow-heif | ≥1.4.0 | HEIC/iPhone image decode |
+
+> Note: version pins above are illustrative and lag `requirements.txt` (current deps: FastAPI 0.137, mediapipe 0.10.35, pydantic 2.13, etc.). `requirements.txt` is the source of truth.
