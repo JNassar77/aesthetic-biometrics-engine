@@ -244,3 +244,50 @@ class TestBuildAssessmentResponse:
         assert "zones" in data
         assert "treatment_plan" in data
         assert "image_quality" in data
+
+
+# ──────────────────────── Health endpoint ────────────────────────
+
+class TestHealthEndpoint:
+    """The Supabase connectivity probe must distinguish reachable-but-errored
+    (connected) from a transport failure (not connected) — not always report True."""
+
+    def _client(self):
+        from fastapi.testclient import TestClient
+        from app.main import app
+        return TestClient(app)
+
+    def test_version_from_constant(self):
+        from app.version import ENGINE_VERSION
+        resp = self._client().get("/api/v2/health")
+        assert resp.status_code == 200
+        assert resp.json()["version"] == ENGINE_VERSION
+
+    def test_supabase_unconfigured_not_connected(self, monkeypatch):
+        from app.config import settings
+        monkeypatch.setattr(settings, "supabase_url", "")
+        monkeypatch.setattr(settings, "supabase_key", "")
+        assert self._client().get("/api/v2/health").json()["supabase_connected"] is False
+
+    def test_transport_error_means_not_connected(self, monkeypatch):
+        import httpx
+        from app.config import settings
+        monkeypatch.setattr(settings, "supabase_url", "http://supabase.local")
+        monkeypatch.setattr(settings, "supabase_key", "key")
+
+        async def _boom(_id):
+            raise httpx.ConnectError("connection refused")
+
+        monkeypatch.setattr("app.services.supabase_service.get_assessment", _boom)
+        assert self._client().get("/api/v2/health").json()["supabase_connected"] is False
+
+    def test_reachable_but_errored_means_connected(self, monkeypatch):
+        from app.config import settings
+        monkeypatch.setattr(settings, "supabase_url", "http://supabase.local")
+        monkeypatch.setattr(settings, "supabase_key", "key")
+
+        async def _not_found(_id):
+            raise ValueError("404 / no such row")  # reachable, returned an error
+
+        monkeypatch.setattr("app.services.supabase_service.get_assessment", _not_found)
+        assert self._client().get("/api/v2/health").json()["supabase_connected"] is True

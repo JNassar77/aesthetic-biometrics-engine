@@ -13,6 +13,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from app.version import ENGINE_VERSION
+
 
 # ──────────────────────── Image Quality ────────────────────────
 
@@ -248,7 +250,7 @@ class AssessmentResponse(BaseModel):
     overlay: OverlayResponse | None = None
 
     # Metadata
-    engine_version: str = "2.2.0"
+    engine_version: str = ENGINE_VERSION
     processing_time_ms: int | None = None
     views_analyzed: list[str] = []
     warnings: list[str] = []  # assessment-level warnings (e.g. CALIBRATION_UNRELIABLE)
@@ -257,7 +259,7 @@ class AssessmentResponse(BaseModel):
         "example": {
             "assessment_id": "550e8400-e29b-41d4-a716-446655440000",
             "patient_id": None,
-            "engine_version": "2.2.0",
+            "engine_version": ENGINE_VERSION,
         }
     }}
 
@@ -342,7 +344,7 @@ class AssessmentSummary(BaseModel):
     zones_count: int
     primary_concern: str | None = None
     views_analyzed: list[str] = []
-    engine_version: str = "2.2.0"
+    engine_version: str = ENGINE_VERSION
 
 
 class PatientHistoryResponse(BaseModel):
@@ -357,7 +359,7 @@ class PatientHistoryResponse(BaseModel):
 class HealthResponse(BaseModel):
     """Health check response."""
     status: str = "healthy"
-    version: str = "2.2.0"
+    version: str = ENGINE_VERSION
     model_loaded: bool = False
     supabase_connected: bool = False
     uptime_seconds: float | None = None

@@ -8,6 +8,7 @@ from app.api.rate_limit import RateLimitMiddleware
 from app.config import settings
 from app.pipeline.orchestrator import get_landmarker
 from app.utils.logging import setup_logging
+from app.version import ENGINE_VERSION
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ app = FastAPI(
         f"Default: {settings.rate_limit_rpm} requests/minute per IP. "
         "Health endpoints are exempt."
     ),
-    version="2.2.0",
+    version=ENGINE_VERSION,
     contact={"name": "Praxis Nassar", "email": "info@praxis-nassar.de"},
     license_info={"name": "Proprietary"},
     openapi_tags=[
@@ -72,7 +73,7 @@ app.include_router(v2_router, prefix="/api/v2", tags=["v2-assessment"])
 async def root():
     return {
         "service": "Aesthetic Biometrics Engine",
-        "version": "2.2.0",
+        "version": ENGINE_VERSION,
         "docs": "/docs",
         "endpoints": {
             "v2_assessment": "/api/v2/assessment",

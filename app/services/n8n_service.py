@@ -13,6 +13,7 @@ from typing import Any
 import httpx
 
 from app.config import settings
+from app.version import ENGINE_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +79,7 @@ async def notify_n8n_v2(
 
     envelope = {
         "event": "assessment_complete",
-        "engine_version": "2.2.0",
+        "engine_version": ENGINE_VERSION,
         "assessment_id": assessment_id,
         "patient_id": patient_id,
         "aesthetic_score": aesthetic_score,

@@ -20,6 +20,7 @@ from fastapi.concurrency import run_in_threadpool
 from app.api.auth import require_api_key
 
 from app.config import settings
+from app.version import ENGINE_VERSION
 from app.pipeline.orchestrator import run_pipeline, PipelineResult
 from app.models.schemas_v2 import (
     AssessmentResponse,
@@ -526,7 +527,7 @@ def _assessment_response_from_row(row: dict) -> AssessmentResponse:
             method=row.get("calibration_method") or "unknown",
             px_per_mm=0.0, confidence=0.0, reliable=False,
         ),
-        engine_version=row.get("engine_version", "2.2.0"),
+        engine_version=row.get("engine_version", ENGINE_VERSION),
         processing_time_ms=row.get("processing_time_ms"),
     )
 
@@ -809,13 +810,17 @@ async def health_check():
     supabase_connected = False
 
     if supabase_configured:
+        import httpx
+        from app.services.supabase_service import get_assessment
         try:
-            from app.services.supabase_service import get_assessment
-            # Quick connectivity probe — will fail fast if unreachable
+            # Quick connectivity probe.
             await get_assessment("00000000-0000-0000-0000-000000000000")
             supabase_connected = True
+        except httpx.TransportError:
+            # Connection / DNS / timeout failure → genuinely unreachable.
+            supabase_connected = False
         except Exception:
-            # Any response (including 404) means Supabase is reachable
+            # Reachable but returned an error (e.g. 404 / permission) → connected.
             supabase_connected = True
 
     uptime_seconds = (datetime.now(timezone.utc) - _START_TIME).total_seconds()
@@ -823,7 +828,7 @@ async def health_check():
 
     return HealthResponse(
         status=status,
-        version="2.2.0",
+        version=ENGINE_VERSION,
         model_loaded=model_loaded,
         supabase_connected=supabase_connected,
         uptime_seconds=round(uptime_seconds, 1),
