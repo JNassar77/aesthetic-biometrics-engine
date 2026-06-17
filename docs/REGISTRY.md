@@ -95,8 +95,7 @@
 | GitHub Repo | Git | `JNassar77/aesthetic-biometrics-engine` |
 | Supabase Project | PostgreSQL | `mbwteypkehrmeqzdzdph` (AestheticBiometricsDB, eu-west-1) |
 | Supabase URL | — | `https://mbwteypkehrmeqzdzdph.supabase.co` |
-| Docker Image | Python 3.11-slim | `Dockerfile` in repo root |
-| Docker Image | Python 3.11-slim (multi-stage) | `Dockerfile` in repo root |
+| Docker Image | Python 3.11-slim-bookworm (multi-stage; model downloaded + SHA-verified in build) | `Dockerfile` in repo root |
 | CI/CD | GitHub Actions | `.github/workflows/ci.yml` (test + Docker build) |
 | Deployment Target | Railway | `railway.toml` (Dockerfile build, EU region europe-west4, /api/v2/health) |
 | n8n Webhook | n8n | Configured via `N8N_WEBHOOK_URL` env var |
@@ -109,7 +108,7 @@
 |---|---|---|---|---|
 | `organizations` | Multi-tenant root | id, name, slug, settings | PK on id, UNIQUE on slug | **V2** |
 | `patients` | Patient demographics | id, **organization_id**, external_id, name, DOB | PK, org_id, UNIQUE(org_id, external_id) | **V2** |
-| `assessments` | 3-view zone analysis | id, org_id, patient_id, zones (JSONB), treatment_plan (JSONB), aesthetic_score | org_id, patient_date | **V2** |
+| `assessments` | Zone analysis (up to 4 views) | id, org_id, patient_id, zones (JSONB), treatment_plan (JSONB), aesthetic_score | org_id, patient_date | **V2** |
 | `treatment_comparisons` | Before/After deltas | id, org_id, patient_id, pre/post_assessment_id, zone_deltas, improvement_score | org_id, patient_id | **V2** |
 | `biometric_analyses` | Individual view results (V1 legacy) | id, patient_id, view_angle, result_json | patient_id | V1 |
 | `treatment_sessions` | Pre/post grouping (V1 legacy) | id, patient_id, treatment_type | patient_id | V1 |
@@ -118,7 +117,7 @@
 
 | Bucket | Purpose | Access | Limits |
 |---|---|---|---|
-| `patient-images` | Assessment images (frontal, profile, oblique) | Org-scoped RLS | 10MB, JPEG/PNG/WebP |
+| `patient-images` | Assessment images (frontal, profile, oblique, oblique_left/right) | Org-scoped RLS | 10MB, JPEG/PNG/WebP |
 
 ---
 
@@ -157,22 +156,22 @@
 
 ## Dependency Registry
 
+> Minimum versions, mirroring `requirements.txt` (the source of truth).
+
 | Package | Version | Purpose |
 |---|---|---|
-| fastapi | 0.115.6 | Web framework |
-| uvicorn | 0.34.0 | ASGI server |
-| mediapipe | 0.10.21 | Face landmark detection |
-| opencv-python-headless | 4.11.0.86 | Image processing |
-| numpy | 2.2.3 | Numerical computation |
-| scipy | 1.15.2 | Scientific computation |
-| Pillow | 11.1.0 | Image format support |
-| supabase | 2.13.0 | Supabase Python client |
-| python-dotenv | 1.0.1 | .env file loading |
-| httpx | 0.28.1 | Async HTTP client |
-| pydantic | 2.10.6 | Data validation |
-| pydantic-settings | 2.7.1 | Settings management |
-| python-multipart | 0.0.20 | File upload parsing |
-| reportlab | ≥4.4.0 | Clinical PDF report generation |
+| fastapi | ≥0.137.1 | Web framework |
+| uvicorn[standard] | ≥0.49.0 | ASGI server |
+| python-multipart | ≥0.0.32 | File upload parsing |
+| mediapipe | ≥0.10.35 | Face landmark detection (Tasks API) |
+| opencv-python-headless | ≥4.13.0 | Image processing |
+| numpy | ≥2.4.6 | Numerical computation |
+| scipy | ≥1.17.1 | Scientific computation (rotation decomposition) |
+| Pillow | ≥12.2.0 | Image format support |
 | pillow-heif | ≥1.4.0 | HEIC/iPhone image decode |
-
-> Note: version pins above are illustrative and lag `requirements.txt` (current deps: FastAPI 0.137, mediapipe 0.10.35, pydantic 2.13, etc.). `requirements.txt` is the source of truth.
+| supabase | ≥2.31.0 | Supabase Python client |
+| python-dotenv | ≥1.2.2 | .env file loading |
+| httpx | ≥0.28.1 | Async HTTP client |
+| pydantic | ≥2.13.4 | Data validation |
+| pydantic-settings | ≥2.14.1 | Settings management |
+| reportlab | ≥4.4.0 | Clinical PDF report generation |

@@ -2,8 +2,13 @@
 .gitignore
 .env
 .env.example
+.env.production.example
 .venv
 venv
+scripts/
+.github/
+# Model is downloaded + SHA-verified in the build (not copied from context)
+models/
 __pycache__
 *.pyc
 *.md
