@@ -6,9 +6,34 @@ import pytest
 from app.pipeline.image_preprocessor import (
     decode_image,
     normalize_face_crop,
+    compute_face_crop_rect,
+    _crop_rect,
     _apply_orientation,
     TARGET_SIZE,
 )
+
+
+class TestCropRectTransform:
+    def test_compute_face_crop_rect_within_bounds(self):
+        lm = np.full((478, 3), 0.5, dtype=np.float64)
+        lm[:468, 0] = np.linspace(0.35, 0.65, 468)
+        lm[:468, 1] = np.linspace(0.30, 0.70, 468)
+        lm[4] = [0.5, 0.5, 0.0]  # nose centre
+        x1, y1, x2, y2 = compute_face_crop_rect(lm, 1000, 1000)
+        assert 0 <= x1 < x2 <= 1000
+        assert 0 <= y1 < y2 <= 1000
+        assert abs((x1 + x2) / 2 - 500) < 50  # centred face → centred crop
+
+    def test_matches_crop_rect_helper(self):
+        lm = np.full((478, 3), 0.5, dtype=np.float64)
+        lm[:468, 0] = np.linspace(0.4, 0.6, 468)
+        lm[:468, 1] = np.linspace(0.35, 0.65, 468)
+        lm[4] = [0.5, 0.5, 0.0]
+        rect = compute_face_crop_rect(lm, 800, 800)
+        xs = lm[:468, 0] * 800
+        ys = lm[:468, 1] * 800
+        face_size = max(float(xs.max() - xs.min()), float(ys.max() - ys.min()))
+        assert rect == _crop_rect(800, 800, (400.0, 400.0), face_size)
 
 
 class TestDecodeImage:

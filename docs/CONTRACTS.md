@@ -189,7 +189,11 @@ zone status counts, heatmap). `404` if either assessment is missing; `503` witho
   },
 
   "overlay": {                             // frontend data, null if not computed
-    "image_dimensions": {"frontal": {"width": 1024, "height": 1024}, "oblique": {...}},
+    "image_dimensions": {                  // per view: analyzed-frame size + back-transform to the upload
+      "frontal": {"width": 1024, "height": 1024,
+                  "source_width": 1158, "source_height": 1544,
+                  "crop_x": 8, "crop_y": 499, "crop_width": 1072, "crop_height": 1045}
+    },
     "zones": [
       {
         "zone_id": "Tt1", "zone_name": "Tear Trough", "region": "midface",
@@ -218,8 +222,14 @@ must not drive injection volumes. A value is flagged when:
 - the iris calibration was not reliable (`calibration.reliable == false`) — then **every**
   mm value is flagged and an assessment-level `CALIBRATION_UNRELIABLE` warning is added.
 
-Coordinates in `overlay` are normalized to the analyzed (preprocessed / face-centred)
-frame; use `overlay.image_dimensions` for that frame's pixel size.
+Coordinates in `overlay` are normalized [0,1] to the analyzed (preprocessed /
+face-centred) frame. To place markers on the **original upload**, map with the
+per-view back-transform in `image_dimensions`:
+```
+orig_norm_x = (crop_x + x * crop_width)  / source_width
+orig_norm_y = (crop_y + y * crop_height) / source_height
+```
+(When the face re-crop was skipped, the transform is identity: crop = full source.)
 
 ---
 

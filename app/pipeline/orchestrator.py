@@ -28,7 +28,11 @@ from app.detection.face_landmarker import (
     NoFaceResult,
 )
 from app.detection.head_pose import extract_head_pose, HeadPose
-from app.pipeline.image_preprocessor import preprocess, reprocess_with_face_center
+from app.pipeline.image_preprocessor import (
+    preprocess,
+    reprocess_with_face_center,
+    compute_face_crop_rect,
+)
 from app.pipeline.quality_gate import (
     QualityWarning,
     check_image_quality,
@@ -62,6 +66,10 @@ class ViewResult:
     accepted: bool = True
     confidence: float = 0.0
     rejection_reason: str | None = None
+    # Maps the analyzed (face-cropped) frame back to the EXIF-corrected upload, so
+    # overlay coordinates can be placed on the original image. Keys: source_width,
+    # source_height, crop_x, crop_y, crop_width, crop_height (identity = full frame).
+    source_transform: dict[str, int] | None = None
 
 
 @dataclass
@@ -126,6 +134,9 @@ def _process_single_view(
         ))
         return result
 
+    # Source (EXIF-corrected upload) dimensions, before the face-centred re-crop.
+    src_h, src_w = image.shape[:2]
+
     # Step 4: Reprocess with face center for better accuracy
     reprocessed = reprocess_with_face_center(
         image,
@@ -137,9 +148,21 @@ def _process_single_view(
     # Re-detect on reprocessed image
     detection2 = landmarker.detect(reprocessed)
     if isinstance(detection2, NoFaceResult) or not detection2.face_detected:
-        # Fallback to original detection
+        # Fallback to original detection — analyzed frame == source frame (identity).
         detection2 = detection
+        result.source_transform = {
+            "source_width": src_w, "source_height": src_h,
+            "crop_x": 0, "crop_y": 0, "crop_width": src_w, "crop_height": src_h,
+        }
     else:
+        # Analyzed frame is the face crop of the source frame; record the rect so
+        # overlay coords can be mapped back to the original upload.
+        x1, y1, x2, y2 = compute_face_crop_rect(detection.landmarks, src_w, src_h)
+        result.source_transform = {
+            "source_width": src_w, "source_height": src_h,
+            "crop_x": x1, "crop_y": y1,
+            "crop_width": max(1, x2 - x1), "crop_height": max(1, y2 - y1),
+        }
         image = reprocessed
         detection = detection2
 
@@ -336,15 +359,26 @@ def run_pipeline(
         max(oblique_candidates, key=lambda v: v.calibration.confidence)
         if oblique_candidates else None
     )
+    # Map canonical view name → (detection, source_transform) for the overlay.
+    canonical_oblique_name = None
+    if canonical_oblique_input is not None:
+        canonical_oblique_name = next(
+            (n for n in ("oblique_left", "oblique_right", "oblique")
+             if view_inputs.get(n) is canonical_oblique_input),
+            None,
+        )
     view_detections = {}
-    if frontal_input:
-        view_detections["frontal"] = frontal_input.detection
-    if profile_input:
-        view_detections["profile"] = profile_input.detection
-    if canonical_oblique_input:
-        view_detections["oblique"] = canonical_oblique_input.detection
+    view_transforms: dict[str, dict] = {}
+    for canon, vname in (("frontal", "frontal"), ("profile", "profile"),
+                         ("oblique", canonical_oblique_name)):
+        vi = view_inputs.get(vname) if vname else None
+        if vi is not None:
+            view_detections[canon] = vi.detection
+            vr = pipeline_result.view_results.get(vname)
+            if vr is not None and vr.source_transform is not None:
+                view_transforms[canon] = vr.source_transform
     try:
-        pipeline_result.overlay = build_overlay(zone_report, view_detections)
+        pipeline_result.overlay = build_overlay(zone_report, view_detections, view_transforms)
     except Exception as e:
         pipeline_result.errors.append(f"Overlay generation failed: {e}")
         # Non-blocking: overlay is optional frontend data.

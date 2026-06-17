@@ -148,6 +148,47 @@ def _apply_orientation(image: np.ndarray, orientation: int) -> np.ndarray:
     return image
 
 
+def _crop_rect(
+    h: int,
+    w: int,
+    face_center: tuple[float, float],
+    face_size: float,
+) -> tuple[int, int, int, int]:
+    """Square crop rect (x1, y1, x2, y2) around a face center, with padding + clamping.
+
+    Shared by normalize_face_crop and compute_face_crop_rect so the actual crop and
+    the reported overlay back-transform are guaranteed to use identical geometry.
+    """
+    cx, cy = face_center
+    half = int(face_size / 2 * (1 + FACE_PADDING_RATIO))
+    half = max(half, 100)  # minimum crop size
+    x1 = max(0, int(cx - half))
+    y1 = max(0, int(cy - half))
+    x2 = min(w, int(cx + half))
+    y2 = min(h, int(cy + half))
+    return x1, y1, x2, y2
+
+
+def compute_face_crop_rect(
+    landmarks: "np.ndarray",
+    image_width: int,
+    image_height: int,
+) -> tuple[int, int, int, int]:
+    """Crop rect (x1, y1, x2, y2) that reprocess_with_face_center would apply.
+
+    Mirrors reprocess_with_face_center's face-center/size computation but returns
+    the rect instead of the cropped image, so the orchestrator can record the
+    source→analyzed transform for the frontend overlay (without re-cropping).
+    """
+    nose = landmarks[4]
+    cx = nose[0] * image_width
+    cy = nose[1] * image_height
+    xs = landmarks[:468, 0] * image_width
+    ys = landmarks[:468, 1] * image_height
+    face_size = max(float(xs.max() - xs.min()), float(ys.max() - ys.min()))
+    return _crop_rect(image_height, image_width, (cx, cy), face_size)
+
+
 def normalize_face_crop(
     image: np.ndarray,
     face_center: tuple[float, float] | None = None,
@@ -180,14 +221,8 @@ def normalize_face_crop(
         # Default: use 70% of shorter dimension as face size estimate
         face_size = min(w, h) * 0.7
 
-    # Square crop with padding
-    half = int(face_size / 2 * (1 + FACE_PADDING_RATIO))
-    half = max(half, 100)  # minimum crop size
-
-    x1 = max(0, int(cx - half))
-    y1 = max(0, int(cy - half))
-    x2 = min(w, int(cx + half))
-    y2 = min(h, int(cy + half))
+    # Square crop with padding (shared geometry with compute_face_crop_rect)
+    x1, y1, x2, y2 = _crop_rect(h, w, (cx, cy), face_size)
 
     crop = image[y1:y2, x1:x2]
 

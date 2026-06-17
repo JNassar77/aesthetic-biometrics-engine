@@ -51,6 +51,24 @@ class TestBuildOverlay:
         ov = build_overlay(report, {"oblique": det})
         assert ov.image_dimensions["oblique"] == {"width": 1234, "height": 1234}
 
+    def test_source_transform_merged_and_maps_to_original(self):
+        det = make_symmetric_face(image_size=1024)
+        report = _report(_zone("Tt1", "Tear Trough", "midface", 6.5, "frontal"))
+        transform = {
+            "source_width": 3000, "source_height": 4000,
+            "crop_x": 800, "crop_y": 1000, "crop_width": 1400, "crop_height": 1400,
+        }
+        ov = build_overlay(report, {"frontal": det}, {"frontal": transform})
+        dims = ov.image_dimensions["frontal"]
+        assert dims["width"] == 1024 and dims["source_width"] == 3000
+        assert dims["crop_x"] == 800 and dims["crop_width"] == 1400
+
+        # The documented back-transform maps an analyzed-frame coord onto the upload.
+        z = ov.zones[0]
+        orig_x = (dims["crop_x"] + z.centroid_x * dims["crop_width"]) / dims["source_width"]
+        orig_y = (dims["crop_y"] + z.centroid_y * dims["crop_height"]) / dims["source_height"]
+        assert 0.0 <= orig_x <= 1.0 and 0.0 <= orig_y <= 1.0
+
     def test_zone_without_landmark_mapping_skipped(self):
         det = make_symmetric_face()
         # Fo1 (Forehead) has no entry in ZONE_LANDMARKS → no injection points.

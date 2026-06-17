@@ -68,6 +68,7 @@ def _severity_color(severity: float) -> str:
 def build_overlay(
     zone_report,
     view_detections: dict[str, DetectionResult],
+    view_transforms: dict[str, dict] | None = None,
 ) -> OverlayData:
     """Build injection-point + heatmap overlay data for the analyzed zones.
 
@@ -77,6 +78,12 @@ def build_overlay(
             {"frontal": det, "profile": det, "oblique": det}. The oblique entry
             should be the detection driving the volume engine (the canonical
             oblique). Detections are used only for landmark coordinates.
+        view_transforms: optional canonical view name -> source-transform dict
+            (source_width/height, crop_x/y/width/height) mapping the analyzed frame
+            back to the EXIF-corrected upload. Merged into `image_dimensions` so a
+            frontend can place markers on the original image:
+                orig_norm_x = (crop_x + x * crop_width)  / source_width
+                orig_norm_y = (crop_y + y * crop_height) / source_height
 
     Returns:
         OverlayData. Zones whose primary view is unavailable, or that have no
@@ -84,14 +91,19 @@ def build_overlay(
         skipped — their absence is intentional, not an error.
     """
     overlay = OverlayData()
+    view_transforms = view_transforms or {}
 
-    # Record analyzed-frame dimensions per available view.
+    # Record analyzed-frame dimensions (+ source back-transform) per available view.
     for view, det in view_detections.items():
         if det is not None:
-            overlay.image_dimensions[view] = {
+            dims = {
                 "width": int(det.image_width),
                 "height": int(det.image_height),
             }
+            tf = view_transforms.get(view)
+            if tf is not None:
+                dims.update({k: int(v) for k, v in tf.items()})
+            overlay.image_dimensions[view] = dims
 
     for zone in zone_report.zones:
         anchors = ZONE_LANDMARKS.get(zone.zone_id)
