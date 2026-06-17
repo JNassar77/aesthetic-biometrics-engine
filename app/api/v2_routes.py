@@ -34,13 +34,16 @@ from app.models.schemas_v2 import (
     HeatmapEntryResponse,
     HealthResponse,
     ImageQualityResponse,
+    InjectionPointResponse,
     MeasurementDeltaResponse,
     NeurotoxinRecommendationResponse,
+    OverlayResponse,
     PatientHistoryResponse,
     ProductRecommendationResponse,
     QualityWarningResponse,
     Reconstruction3DResponse,
     SessionPlanResponse,
+    ZoneOverlayResponse,
     TreatmentConcernResponse,
     TreatmentPlanResponse,
     ZoneDeltaResponse,
@@ -253,6 +256,31 @@ def _build_assessment_response(
         reprojection_rms_mm=rec.reprojection_rms_mm if rec else 0.0,
     )
 
+    # Frontend overlay data (injection points + heatmap)
+    overlay = None
+    if result.overlay is not None:
+        overlay = OverlayResponse(
+            image_dimensions=result.overlay.image_dimensions,
+            zones=[
+                ZoneOverlayResponse(
+                    zone_id=z.zone_id,
+                    zone_name=z.zone_name,
+                    region=z.region,
+                    view=z.view,
+                    severity=z.severity,
+                    intensity=z.intensity,
+                    color_code=z.color_code,
+                    centroid_x=z.centroid_x,
+                    centroid_y=z.centroid_y,
+                    injection_points=[
+                        InjectionPointResponse(landmark_index=p.landmark_index, x=p.x, y=p.y)
+                        for p in z.injection_points
+                    ],
+                )
+                for z in result.overlay.zones
+            ],
+        )
+
     return AssessmentResponse(
         assessment_id=result.assessment_id,
         patient_id=patient_id,
@@ -263,6 +291,7 @@ def _build_assessment_response(
         treatment_plan=treatment_plan,
         calibration=calibration,
         reconstruction=reconstruction,
+        overlay=overlay,
         processing_time_ms=result.processing_time_ms,
         views_analyzed=result.views_analyzed,
         warnings=zr.warnings if zr else [],

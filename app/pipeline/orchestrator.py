@@ -43,6 +43,7 @@ from app.analysis.multiview_reconstruction import (
     Reconstruction3D,
     reconstruct_from_views,
 )
+from app.analysis.overlay import OverlayData, build_overlay
 from app.treatment.plan_generator import TreatmentPlan, generate as plan_generate
 from app.models.zone_models import CalibrationInfo
 
@@ -71,6 +72,7 @@ class PipelineResult:
     treatment_plan: TreatmentPlan | None = None
     view_results: dict[str, ViewResult] = field(default_factory=dict)
     reconstruction: Reconstruction3D | None = None
+    overlay: OverlayData | None = None
     processing_time_ms: int = 0
     views_analyzed: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
@@ -324,6 +326,28 @@ def run_pipeline(
             (time.monotonic() - start_time) * 1000
         )
         return pipeline_result
+
+    # ── Step 3b: Frontend overlay data (injection points + heatmap) ──
+    # Canonical oblique = highest-confidence oblique (matches zone_analyzer).
+    oblique_candidates = [
+        v for v in (oblique_left_input, oblique_right_input, oblique_input) if v is not None
+    ]
+    canonical_oblique_input = (
+        max(oblique_candidates, key=lambda v: v.calibration.confidence)
+        if oblique_candidates else None
+    )
+    view_detections = {}
+    if frontal_input:
+        view_detections["frontal"] = frontal_input.detection
+    if profile_input:
+        view_detections["profile"] = profile_input.detection
+    if canonical_oblique_input:
+        view_detections["oblique"] = canonical_oblique_input.detection
+    try:
+        pipeline_result.overlay = build_overlay(zone_report, view_detections)
+    except Exception as e:
+        pipeline_result.errors.append(f"Overlay generation failed: {e}")
+        # Non-blocking: overlay is optional frontend data.
 
     # ── Step 4: Generate treatment plan ──
     try:

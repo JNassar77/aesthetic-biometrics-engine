@@ -86,6 +86,40 @@ class Reconstruction3DResponse(BaseModel):
     reprojection_rms_mm: float = 0.0  # mean reprojection residual; lower = better fit
 
 
+# ──────────────────────── Frontend Overlay ────────────────────────
+
+class InjectionPointResponse(BaseModel):
+    """One candidate injection landmark, normalized [0,1] to the anchor view."""
+    landmark_index: int
+    x: float
+    y: float
+
+
+class ZoneOverlayResponse(BaseModel):
+    """Injection-point + heatmap overlay data for one zone.
+
+    Coordinates are normalized [0,1] in the ANALYZED (preprocessed/face-centred)
+    frame the landmarks were detected in; `OverlayResponse.image_dimensions` gives
+    that frame's pixel size per view. `intensity` is severity/10 (heatmap weight).
+    """
+    zone_id: str
+    zone_name: str
+    region: str
+    view: str
+    severity: float = Field(ge=0, le=10)
+    intensity: float = Field(ge=0, le=1)
+    color_code: str
+    centroid_x: float
+    centroid_y: float
+    injection_points: list[InjectionPointResponse] = []
+
+
+class OverlayResponse(BaseModel):
+    """Frontend overlay payload — per-zone injection points and heatmap anchors."""
+    zones: list[ZoneOverlayResponse] = []
+    image_dimensions: dict[str, dict[str, int]] = {}
+
+
 # ──────────────────────── Zone Analysis ────────────────────────
 
 class ZoneMeasurementResponse(BaseModel):
@@ -209,6 +243,9 @@ class AssessmentResponse(BaseModel):
 
     # 3D reconstruction quality (None if not attempted)
     reconstruction: Reconstruction3DResponse | None = None
+
+    # Frontend overlay data — injection points + heatmap (None if not computed)
+    overlay: OverlayResponse | None = None
 
     # Metadata
     engine_version: str = "2.2.0"
