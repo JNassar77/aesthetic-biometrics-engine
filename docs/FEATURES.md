@@ -1,246 +1,195 @@
 # Features — Aesthetic Biometrics Engine
 
-> Complete feature catalog. Each feature includes its purpose, workflow, inputs/outputs, and current status.
->
-> **Note:** F-001…F-005 below describe the original V1 single-image flow (`/api/v1/analyze`, now removed). The current engine is the V2 zone-based `/api/v2/assessment` flow — see the V2 features (F-100+) first. A full V1→V2 refresh of the F-001…F-005 entries is pending doc-debt.
+> Complete feature catalog for the V2 engine (`POST /api/v2/assessment`, zone-based,
+> engine v2.2.0). Each feature lists purpose, module, workflow/output and — where
+> relevant — clinical relevance. The V1 single-image API (`/api/v1/analyze`) was
+> removed (mediapipe 0.10.35 dropped the `mp.solutions` FaceMesh it ran on); its
+> per-view analyses now live inside the V2 zone flow below.
 
 ---
 
-## V2 Features (current engine)
+## Core
 
 ### F-100: Multi-View Zone Assessment (up to 4 views)
-- **Purpose:** Single call (`POST /api/v2/assessment`) takes frontal + profile + bilateral obliques (45°L/R) and returns 19-zone analysis, severity ranking, treatment plan, aesthetic score, calibration, reconstruction quality and overlay data.
-- **Workflow:** preprocess → detect (478 landmarks + blendshapes + pose) → iris calibration → **3D reconstruction** → engines (symmetry/proportion/profile/volume/aging) → multi-view fusion → zone report → treatment plan.
-- **Output:** `AssessmentResponse` (see `CONTRACTS.md`). Engine v2.2.0.
+**Module:** `app/pipeline/orchestrator.py` · **Endpoint:** `POST /api/v2/assessment`
+
+One call takes frontal (0°) + profile (90°) + bilateral obliques (45°L/R) and returns
+a 19-zone analysis with severity ranking, treatment plan, aesthetic score, calibration,
+3D-reconstruction quality and overlay data.
+
+**Workflow:** preprocess (EXIF, face-crop) → detect (478 landmarks + 52 blendshapes +
+pose) → iris px→mm calibration → 3D reconstruction → engines (symmetry / proportion /
+profile / volume / aging) → multi-view fusion → zone report + aesthetic score →
+treatment plan → overlay. **Output:** `AssessmentResponse` (see `CONTRACTS.md`).
 
 ### F-101: Metric 3D Depth (multi-view reconstruction)
-- **Purpose:** Real anterior-posterior depth for the volume zones (ogee/malar, temporal, tear-trough, jowl) via triangulation from frontal + bilateral obliques (profile excluded — iris too foreshortened at 90°). Replaces meaningless relative-z pseudo-mm.
-- **Honesty:** depths stay `estimated` until thresholds are recalibrated against real 3D mm (Sprint 11); `reconstruction` block reports views_used / spread / reprojection RMS. Validated on real photos (interpupillary 61.9 mm). `profile_engine` deliberately stays 2D (sagittal gold standard).
-- **Clinical relevance:** more trustworthy volume-loss assessment when bilateral obliques are captured; standardized capture (true 90° profile ≥55° yaw) required.
+**Module:** `app/analysis/multiview_reconstruction.py`
+
+Real anterior-posterior depth for the volume zones (ogee/malar, temporal, tear-trough,
+jowl) via orthographic triangulation from frontal + bilateral obliques (profile excluded
+— iris too foreshortened at 90°). Replaces meaningless relative-z pseudo-mm.
+
+**Honesty:** depths stay `estimated` until thresholds are recalibrated against real 3D mm
+(Sprint 11); the `reconstruction` block reports views_used / angular spread / reprojection
+RMS. Validated on real photos (interpupillary 61.9 mm, reproj RMS 2.7 mm). `profile_engine`
+deliberately stays 2D (sagittal gold standard; 3D was empirically worse there).
+**Clinical relevance:** trustworthy volume-loss assessment requires bilateral obliques and
+a true 90° profile (≥55° yaw, else the quality gate rejects it).
 
 ### F-102: Clinical PDF Report
-- **Purpose:** Clinician-facing PDF per assessment — zones, severity, per-zone measurements (estimated values flagged `†`), treatment plan, contraindications, honesty footer.
-- **Endpoints:** `POST /api/v2/report` (lossless, from an AssessmentResponse) and `GET /api/v2/assessment/{id}/report` (from Supabase). reportlab, pure-Python.
+**Module:** `app/services/pdf_report.py` · **Endpoints:** `POST /api/v2/report`,
+`GET /api/v2/assessment/{id}/report`
+
+Clinician-facing PDF per assessment — summary, global metrics, zones by severity, per-zone
+measurements (estimated values flagged `†`), treatment plan + totals, contraindications,
+honesty footer. reportlab (pure-Python, runs on the slim image). POST is lossless from an
+`AssessmentResponse`; GET renders a stored assessment from Supabase.
 
 ### F-103: Frontend Overlay Data (injection points + heatmap)
-- **Purpose:** Per-zone injection-point coordinates + heatmap anchor (intensity, severity colour) in `AssessmentResponse.overlay`, normalized to the analyzed frame **with a back-transform to the original upload** (`image_dimensions`: source size + crop rect). Enables a UI to drop markers / render a treatment-need heatmap on the uploaded photo.
+**Module:** `app/analysis/overlay.py`
+
+Per-zone injection-point coordinates + heatmap anchor (intensity = severity/10, severity
+colour) in `AssessmentResponse.overlay`, normalized to the analyzed frame **with a
+back-transform to the original upload** (`image_dimensions`: source size + crop rect).
+Enables a UI to drop markers / render a treatment-need heatmap on the uploaded photo.
 
 ---
 
-## F-001: Frontal Face Analysis (0°)
+## Analysis Engines
 
-**Status:** Implemented
-**Module:** `app/core/frontal_analyzer.py`
-**Endpoint:** `POST /api/v1/analyze?view_angle=frontal`
+### F-104: Symmetry & Proportion (frontal)
+**Modules:** `app/analysis/symmetry_engine.py`, `app/analysis/proportion_engine.py`
 
-### Purpose
-Analyze a frontal photograph for symmetry deviations, facial proportions, and lip balance. Primary use case: treatment planning for Botox (brow lift, masseter) and lip fillers.
+6-axis bilateral symmetry (+ blendshape-based dynamic asymmetry, view-bound), facial
+thirds, horizontal fifths, golden-ratio deviation, lip ratio with Cupid's-bow analysis.
+Feeds the frontal-primary zones and the global metrics.
 
-### Workflow
-1. Receive frontal image via upload or Supabase URL
-2. Detect 478 facial landmarks via MediaPipe FaceMesh
-3. Establish median sagittal line through midline landmarks (glabella, subnasale, mentum)
-4. Compute three sub-analyses:
-   - **Symmetry check:** Compare distances of 6 paired landmark groups from the midline
-   - **Facial thirds:** Measure vertical proportions (upper / middle / lower face)
-   - **Lip ratio:** Measure upper vs. lower vermilion height at midline
-
-### Output
-```json
-{
-  "symmetry": {
-    "horizontal_deviation_mm": 1.2,
-    "vertical_deviation_mm": 0.8,
-    "symmetry_score": 92.5
-  },
-  "facial_thirds": {
-    "upper_third_ratio": 0.31,
-    "middle_third_ratio": 0.34,
-    "lower_third_ratio": 0.35,
-    "deviation_from_ideal": 2.1
-  },
-  "lip_analysis": {
-    "upper_lip_height_px": 18.3,
-    "lower_lip_height_px": 29.1,
-    "ratio": 0.629,
-    "deviation_from_ideal": 0.6
-  }
-}
-```
-
-### Clinical Relevance
-| Measurement | Ideal | Clinical Action if Deviated |
+| Measurement | Ideal | Clinical action if deviated |
 |---|---|---|
 | Symmetry score | >90 | Asymmetric Botox dosing, targeted filler |
 | Facial thirds | 1:1:1 | Lower third short → chin filler; middle third flat → cheek filler |
 | Lip ratio | 1:1.6 | Upper lip thin → lip filler augmentation |
 
----
+### F-105: Profile Analysis (90°)
+**Module:** `app/analysis/profile_engine.py`
 
-## F-002: Profile Analysis (90°)
+Ricketts E-line, nasolabial + nasofrontal angle, chin projection, nasal dorsum
+(hump/saddle), Steiner line, cervicomental angle. In-plane 2D from the dedicated profile
+photo (the sagittal gold standard — intentionally NOT derived from 3D). Out-of-plane
+values stay `estimated`.
 
-**Status:** Implemented
-**Module:** `app/core/profile_analyzer.py`
-**Endpoint:** `POST /api/v1/analyze?view_angle=profile`
-
-### Purpose
-Evaluate lateral facial harmony using established cephalometric reference lines. Primary use case: chin augmentation planning, rhinoplasty assessment, lip projection evaluation.
-
-### Workflow
-1. Receive profile image
-2. Detect landmarks
-3. Compute three sub-analyses:
-   - **Ricketts E-line:** Line from nose tip to chin tip; measure lip distances
-   - **Nasolabial angle:** Angle at subnasale between nose and upper lip vectors
-   - **Chin projection:** Pogonion position relative to subnasale vertical
-
-### Output
-```json
-{
-  "e_line": {
-    "upper_lip_to_eline_mm": -3.2,
-    "lower_lip_to_eline_mm": -1.8,
-    "assessment": "ideal"
-  },
-  "nasolabial_angle": {
-    "angle_degrees": 97.3,
-    "ideal_min": 90.0,
-    "ideal_max": 105.0,
-    "assessment": "within ideal range"
-  },
-  "chin_projection": {
-    "pogonion_offset_mm": -2.1,
-    "assessment": "well-projected"
-  }
-}
-```
-
-### Clinical Relevance
-| Measurement | Ideal | Clinical Action if Deviated |
+| Measurement | Ideal | Clinical action if deviated |
 |---|---|---|
 | E-line upper lip | -4mm | Protruded → assess lip reduction; retruded → lip filler |
 | E-line lower lip | -2mm | Same principle as upper |
 | Nasolabial angle | 90–105° | Acute → rhinoplasty consideration; obtuse → over-rotated tip |
 | Chin projection | ±5mm of subnasale | Retruded → chin filler/implant; prominent → assess jaw |
 
----
+### F-106: Volume Analysis (oblique + 3D)
+**Module:** `app/analysis/volume_engine.py`
 
-## F-003: Oblique Analysis (45°)
+Ogee curve, temporal hollowing, tear-trough depth, pre-jowl sulcus, buccal corridor.
+Depth comes from the F-101 reconstruction when available (negated to the engine
+convention), else falls back to single-view relative z; `depth_source` records which.
+All depth values flagged `estimated`.
 
-**Status:** Implemented
-**Module:** `app/core/oblique_analyzer.py`
-**Endpoint:** `POST /api/v1/analyze?view_angle=oblique`
-
-### Purpose
-Assess the Ogee curve (S-shaped malar convexity) to identify midface volume loss. Primary use case: cheek filler and midface rejuvenation planning.
-
-### Workflow
-1. Receive oblique image
-2. Detect landmarks
-3. Determine which side of the face is more visible
-4. Trace ogee path: glabella → malar high → cheekbone → malar low → mouth corner
-5. Compute curvature deviation from the chord line
-
-### Output
-```json
-{
-  "ogee_curve": {
-    "curve_score": 72.5,
-    "midface_volume_assessment": "adequate",
-    "malar_prominence_ratio": 0.82
-  }
-}
-```
-
-### Clinical Relevance
-| Measurement | Ideal | Clinical Action if Deviated |
+| Measurement | Ideal | Clinical action if deviated |
 |---|---|---|
-| Curve score | >70 | <40: significant volume loss → deep-plane filler (Voluma/Radiesse) |
-| Malar prominence | >0.75 | Low ratio → malar augmentation with filler or implant |
+| Ogee curve score | >70 | <40: significant volume loss → deep-plane filler (Voluma/Radiesse) |
+| Temporal / tear-trough / jowl depth | low | hollowing → targeted volumization (values estimated) |
 
----
+### F-107: Aging Analysis
+**Module:** `app/analysis/aging_engine.py`
 
-## F-004: Image Quality Validation
+Blendshape-derived muscle-tonus profile (frontalis, corrugator), gravitational drift
+(brow/malar/jowl descent), periorbital analysis (crow's feet, lower-lid laxity). Drives
+neurotoxin indications and descent-related zones.
 
-**Status:** Implemented
-**Module:** `app/core/image_validator.py`
+### F-108: Multi-View Fusion
+**Module:** `app/analysis/multi_view_fusion.py`
 
-### Purpose
-Pre-screen images before analysis to warn about conditions that reduce measurement accuracy.
+Confidence-weighted fusion of landmark-geometry measurements when a zone is seen in more
+than one view, with contradiction detection. **Blendshapes are never fused** (expression
+is view-bound). Produces the final per-zone severity inputs.
 
-### Checks
-| Check | Threshold | Warning Code |
+### F-109: Image Quality + Pose + Expression Gate
+**Module:** `app/pipeline/quality_gate.py`
+
+Pre-screens each view; warnings are **non-blocking** (returned in `image_quality`), hard
+pose violations reject a view.
+
+| Check | Threshold | Warning code |
 |---|---|---|
-| Resolution | <640x480 | `LOW_RESOLUTION` |
-| Brightness | <50/255 mean | `UNDEREXPOSED` |
-| Brightness | >220/255 mean | `OVEREXPOSED` |
-| Contrast | <30 std dev | `LOW_CONTRAST` |
+| Resolution | <640×480 | `LOW_RESOLUTION` |
+| Brightness | <50 / >220 mean | `UNDEREXPOSED` / `OVEREXPOSED` |
+| Contrast | <30 std | `LOW_CONTRAST` |
 | Sharpness | <50 Laplacian var | `BLURRY` |
-| Face confidence | <0.7 | `LOW_CONFIDENCE` |
+| Head pose | outside view range / beyond hard limit | `HEAD_NOT_*` / `POSE_REJECTED` |
+| Neutral expression (frontal) | active blendshapes | `NON_NEUTRAL_EXPRESSION` |
 
-### Behavior
-Warnings are **non-blocking** — analysis proceeds but warnings are included in the response. The client/agent decides whether to accept or re-capture.
+Calibration reliability gate: without a confident iris calibration, ALL mm values are
+flagged `estimated` + a `CALIBRATION_UNRELIABLE` assessment warning is added.
 
 ---
 
-## F-005: Supabase Persistence
+## Treatment Intelligence
 
-**Status:** Implemented
+### F-110: Treatment Plan Generator
+**Module:** `app/treatment/plan_generator.py` (+ `product_database.py`, `zone_definitions.py`)
+
+Turns the ranked zones into a plan: severity-based prioritization, clinical ordering
+(structure → detail), session planning, filler-volume + neurotoxin-unit estimates, product
+recommendations (14 products), vascular-risk flags. In `AssessmentResponse.treatment_plan`.
+
+### F-111: Contraindication / Safety Check
+**Module:** `app/treatment/contraindication_check.py`
+
+Flags extreme asymmetry (possible pathology), vascular-risk zones, tear-trough specials,
+overtreatment risk, glabella/forehead dependency. Returned as `contraindications` with
+severity (WARNING/CAUTION/REFERRAL/CONTRAINDICATED).
+
+### F-112: Before/After Comparison
+**Module:** `app/analysis/comparison_engine.py` · **Endpoint:** `POST /api/v2/compare`
+
+Per-zone deltas, region-weighted improvement score, measurement-level deltas vs ideal
+ranges, status classification (improved/worsened/unchanged/resolved/new) and a heatmap.
+
+---
+
+## Integration
+
+### F-113: Supabase Persistence (V2)
 **Module:** `app/services/supabase_service.py`
 
-### Purpose
-Store analysis results linked to patient profiles for longitudinal tracking (before/after comparisons).
+Async (non-blocking) persistence when an `organization_id` is provided: `assessments`
+(JSONB analysis + plan), `treatment_comparisons`, image upload to the `patient-images`
+storage bucket. Multi-tenant (org-scoped RLS). `GET /api/v2/patients/{id}/history` reads
+the timeline. Project: AestheticBiometricsDB (mbwteypkehrmeqzdzdph, eu-west-1).
 
-### Workflow
-1. If `patient_id` is provided in the request, save the full result JSON to `biometric_analyses`
-2. If save fails, append `STORAGE_ERROR` warning — analysis still returns
-3. Treatment sessions link pre- and post-treatment analyses for delta tracking
-
-### Tables
-- `patients` — patient demographics
-- `biometric_analyses` — individual view results (JSONB)
-- `treatment_sessions` — groups pre/post analyses per treatment
-
----
-
-## F-006: n8n Webhook Notification
-
-**Status:** Implemented
+### F-114: n8n Webhook (V2)
 **Module:** `app/services/n8n_service.py`
 
-### Purpose
-Push analysis results to n8n for downstream AI agent processing (report generation, scheduling, notifications).
-
-### Workflow
-1. After analysis completes, POST full response JSON to configured webhook URL
-2. Fire-and-forget: failure does not block the API response
-3. n8n can trigger follow-up workflows (e.g., generate PDF report, notify practitioner)
-
-### Expected n8n Workflow
-```
-Webhook Trigger → Parse JSON → Conditional Logic →
-  ├── Generate Treatment Report
-  ├── Update Patient Dashboard
-  ├── Send Notification to Practitioner
-  └── Schedule Follow-up Analysis
-```
+`notify_n8n_v2` posts an envelope (`event`, `engine_version`, `assessment_id`,
+`aesthetic_score`, `zones_count`, `views_analyzed`, full `data`) to `N8N_WEBHOOK_URL`.
+Fire-and-forget — never blocks the API response.
 
 ---
 
-## Planned Features
+## Planned / Future
 
-| ID | Feature | Priority | Phase |
-|---|---|---|---|
-| F-007 | Auto view-angle detection | High | 2 |
-| F-008 | Before/after delta analysis | High | 3 |
-| F-009 | Treatment recommendation engine | High | 3 |
-| F-010 | Batch multi-view analysis | Medium | 3 |
-| F-011 | Injection point mapping (SVG) | Medium | 3 |
-| F-012 | Brow ptosis detection | Medium | 3 |
-| F-013 | Jawline contour analysis | Medium | 3 |
-| F-014 | Periorbital analysis | Medium | 3 |
-| F-015 | PDF report generation | Medium | 3 |
-| F-016 | Skin texture analysis | Low | 3 |
-| F-017 | Golden ratio (Phi) overlay | Low | 3 |
-| F-018 | Real-time video analysis | Low | 4 |
-| F-019 | 3D face reconstruction | Low | Backlog |
+| ID | Feature | Status |
+|---|---|---|
+| F-008 | Before/after delta analysis | ✅ Done (F-112) |
+| F-009 | Treatment recommendation engine | ✅ Done (F-110) |
+| F-011 | Injection point mapping | ✅ Done — coordinate data (F-103) |
+| F-014 | Periorbital analysis | ✅ Done (F-107) |
+| F-015 | PDF report generation | ✅ Done (F-102) |
+| F-019 | 3D face reconstruction | ✅ Done (F-101) |
+| — | Patient/practice upload frontend | 🔜 Planned (in-practice web app MVP; design TBD) |
+| — | Clinical 3D depth-threshold calibration | 🔜 Sprint 11 (needs caliper ground-truth) |
+| F-007 | Auto view-angle detection | Backlog |
+| F-010 | Batch multi-view analysis | Backlog |
+| F-016 | Skin texture analysis | Backlog |
+| F-017 | Golden ratio (Phi) overlay | Backlog |
+| F-018 | Real-time video analysis (WebSocket) | Backlog |
+| — | Multi-language reports (DE/EN/AR) | Backlog |

@@ -1,8 +1,9 @@
-# System Graphs — Aesthetic Biometrics Engine
+# System Graphs — Aesthetic Biometrics Engine (V2)
 
-> **Note:** the diagrams below depict the original V1 single-image flow (`/api/v1/analyze`, removed). The current engine is the V2 pipeline shown immediately under "V2 Pipeline". A full V1→V2 refresh of the older diagrams is pending doc-debt.
+> Diagrams for the current V2 engine (`/api/v2`, zone-based, engine v2.2.0). The V1
+> single-image API (`/api/v1/analyze`) was removed.
 
-## V2 Pipeline (current — `POST /api/v2/assessment`)
+## V2 Pipeline (`POST /api/v2/assessment`)
 
 ```mermaid
 graph LR
@@ -24,52 +25,61 @@ graph LR
     RESP --> SB[(Supabase: assessments + storage)]
 ```
 
-Key V2 additions vs V1: the **3D reconstruction stage** (before the engines; volume depth reads from it, negated), **bilateral obliques**, the **overlay** block, and the **PDF report** endpoint.
+Key stages unique to V2: the **3D reconstruction** (before the engines; volume depth reads
+from it, negated), **bilateral obliques**, the **overlay** block, and the **PDF report**.
 
 ## System Overview
 
 ```mermaid
 graph TB
     subgraph Clients
-        APP[Praxis App / Frontend]
-        N8N_TRIGGER[n8n Workflow Trigger]
-        API_CLIENT[Direct API Consumer]
+        APP[Praxis web app / tablet — planned]
+        N8N_TRIGGER[n8n workflow]
+        API_CLIENT[Direct API consumer]
     end
 
-    subgraph "Aesthetic Biometrics Engine"
-        FASTAPI[FastAPI Server]
-
-        subgraph "Core Analysis"
-            VALIDATOR[Image Validator]
-            DETECTOR[Landmark Detector<br/>MediaPipe FaceMesh]
-            FRONTAL[Frontal Analyzer<br/>Symmetry · Thirds · Lips]
-            PROFILE[Profile Analyzer<br/>E-Line · NLA · Chin]
-            OBLIQUE[Oblique Analyzer<br/>Ogee Curve]
+    subgraph "Aesthetic Biometrics Engine (FastAPI /api/v2)"
+        FASTAPI[v2_routes<br/>+ API-key auth + rate limit]
+        ORCH[orchestrator]
+        subgraph "Pipeline"
+            PRE[preprocess]
+            DET[face_landmarker<br/>MediaPipe Tasks API]
+            QG[quality_gate]
+            CAL[pixel_calibration]
+            REC[multiview_reconstruction]
         end
+        subgraph "Analysis"
+            ENG[symmetry / proportion / profile / volume / aging]
+            FUSE[multi_view_fusion]
+            ZA[zone_analyzer]
+        end
+        subgraph "Treatment"
+            PLAN[plan_generator]
+            CONTRA[contraindication_check]
+        end
+        OV[overlay]
+        PDF[pdf_report]
     end
 
-    subgraph "External Services"
+    subgraph "External Services (EU)"
         SUPABASE[(Supabase<br/>AestheticBiometricsDB)]
-        N8N_HOOK[n8n Webhook<br/>Downstream Processing]
-        STORAGE[Supabase Storage<br/>Patient Images]
+        STORAGE[Supabase Storage<br/>patient-images]
+        N8N_HOOK[n8n webhook]
     end
 
-    APP -->|POST /analyze| FASTAPI
-    N8N_TRIGGER -->|POST /analyze| FASTAPI
-    API_CLIENT -->|POST /analyze| FASTAPI
-
-    FASTAPI --> VALIDATOR
-    VALIDATOR --> DETECTOR
-    DETECTOR --> FRONTAL
-    DETECTOR --> PROFILE
-    DETECTOR --> OBLIQUE
-
-    FASTAPI -->|Save Result| SUPABASE
-    FASTAPI -->|Notify| N8N_HOOK
-    FASTAPI -.->|Fetch Image| STORAGE
+    APP & N8N_TRIGGER & API_CLIENT -->|POST /assessment| FASTAPI
+    FASTAPI --> ORCH
+    ORCH --> PRE --> DET --> QG --> CAL --> REC --> ENG --> FUSE --> ZA
+    ZA --> PLAN --> CONTRA
+    ZA --> OV
+    FASTAPI -.->|/report| PDF
+    FASTAPI -->|async persist| SUPABASE
+    FASTAPI -->|async| N8N_HOOK
+    FASTAPI -.->|upload| STORAGE
 
     style FASTAPI fill:#009688,color:#fff
-    style DETECTOR fill:#FF5722,color:#fff
+    style DET fill:#FF5722,color:#fff
+    style REC fill:#7E57C2,color:#fff
     style SUPABASE fill:#3ECF8E,color:#fff
     style N8N_HOOK fill:#FF6D5A,color:#fff
 ```
@@ -79,166 +89,162 @@ graph TB
 ```mermaid
 sequenceDiagram
     participant C as Client
-    participant F as FastAPI
-    participant V as Image Validator
-    participant D as Landmark Detector
-    participant A as View Analyzer
-    participant S as Supabase
-    participant N as n8n Webhook
+    participant F as FastAPI (v2_routes)
+    participant O as Orchestrator
+    participant P as Pipeline (preprocess/detect/pose/calibrate)
+    participant R as Reconstruction
+    participant Z as Zone Analyzer (+engines+fusion)
+    participant T as Plan + Overlay
+    participant S as Supabase / n8n
 
-    C->>F: POST /api/v1/analyze<br/>(image + view_angle)
-
-    F->>F: Decode image bytes
-    F->>V: validate_image(image)
-    V-->>F: quality_warnings[]
-
-    F->>D: detect(image)
-
-    alt No face detected
-        D-->>F: None
-        F-->>C: 422 No face detected
+    C->>F: POST /api/v2/assessment<br/>(frontal, profile, 45°L, 45°R)
+    F->>F: auth (X-API-Key), size checks
+    F->>O: run_pipeline(...)
+    loop each provided view
+        O->>P: preprocess → detect → pose gate → calibrate
+        alt no face / hard pose reject
+            P-->>O: view rejected
+        end
     end
-
-    D-->>F: FaceLandmarks (478 points)
-
-    alt view_angle = frontal
-        F->>A: analyze_frontal(landmarks)
-    else view_angle = profile
-        F->>A: analyze_profile(landmarks)
-    else view_angle = oblique
-        F->>A: analyze_oblique(landmarks)
+    alt no usable view
+        O-->>F: error
+        F-->>C: 422 No face / analysis failed
     end
-
-    A-->>F: Analysis result
-
-    par Non-blocking side effects
-        F->>S: save_analysis(patient_id, result)
-        S-->>F: ok / error (warning)
-    and
-        F->>N: POST webhook payload
-        N-->>F: ok / ignored
+    O->>R: reconstruct_from_views(frontal + obliques)<br/>(profile excluded; iris-gated)
+    R-->>O: 3D point cloud (or None → relative-z fallback)
+    O->>Z: analyze(views, reconstruction)
+    Z-->>O: zone report + aesthetic score
+    O->>T: plan_generate + build_overlay
+    T-->>O: plan + overlay
+    O-->>F: PipelineResult
+    F-->>C: 200 AssessmentResponse
+    par Non-blocking (if organization_id + Supabase)
+        F->>S: persist assessment + upload images + n8n envelope
     end
-
-    F-->>C: 200 AnalysisResponse JSON
 ```
 
-## Data Model (ER Diagram)
+## Data Model (ER Diagram, V2)
 
 ```mermaid
 erDiagram
+    ORGANIZATIONS {
+        uuid id PK
+        text name
+        text slug UK
+        jsonb settings
+    }
     PATIENTS {
         uuid id PK
-        text external_id UK
-        text first_name
-        text last_name
+        uuid organization_id FK
+        text external_id
+        text name
         date date_of_birth
-        text notes
-        timestamptz created_at
-        timestamptz updated_at
     }
-
-    BIOMETRIC_ANALYSES {
+    ASSESSMENTS {
         uuid id PK
+        uuid organization_id FK
         uuid patient_id FK
-        text view_angle
-        jsonb result_json
-        real confidence
-        int landmarks_detected
-        text image_url
+        text status
+        jsonb image_quality
+        jsonb global_metrics
+        jsonb zones
+        jsonb treatment_plan
+        real aesthetic_score
+        text calibration_method
+        text engine_version
+        text frontal_image_path
+        text profile_image_path
+        text oblique_image_path
         timestamptz created_at
     }
-
-    TREATMENT_SESSIONS {
+    TREATMENT_COMPARISONS {
         uuid id PK
+        uuid organization_id FK
         uuid patient_id FK
-        text treatment_type
-        date treatment_date
-        text notes
-        uuid_array pre_analysis_ids
-        uuid_array post_analysis_ids
-        timestamptz created_at
+        uuid pre_assessment_id FK
+        uuid post_assessment_id FK
+        jsonb zone_deltas
+        real improvement_score
     }
 
-    PATIENTS ||--o{ BIOMETRIC_ANALYSES : "has many"
-    PATIENTS ||--o{ TREATMENT_SESSIONS : "has many"
+    ORGANIZATIONS ||--o{ PATIENTS : "has many"
+    ORGANIZATIONS ||--o{ ASSESSMENTS : "scopes (RLS)"
+    PATIENTS ||--o{ ASSESSMENTS : "has many"
+    ASSESSMENTS ||--o{ TREATMENT_COMPARISONS : "pre/post"
 ```
+
+> Legacy V1 tables `biometric_analyses` and `treatment_sessions` remain in the DB but are
+> unused by V2.
 
 ## Module Dependency Graph
 
 ```mermaid
 graph LR
-    subgraph "API Layer"
+    subgraph "API"
         MAIN[main.py]
-        ROUTES[api/routes.py]
+        ROUTES[api/v2_routes.py]
+        AUTH[api/auth.py]
+        RL[api/rate_limit.py]
+        VER[version.py]
         CONFIG[config.py]
     end
-
-    subgraph "Core"
-        LD[landmark_detector.py]
-        IV[image_validator.py]
-        FA[frontal_analyzer.py]
-        PA[profile_analyzer.py]
-        OA[oblique_analyzer.py]
+    subgraph "Pipeline"
+        ORCH[orchestrator.py]
+        PRE[image_preprocessor.py]
+        FL[face_landmarker.py]
+        HP[head_pose.py]
+        QG[quality_gate.py]
+        CAL[pixel_calibration.py]
+        REC[multiview_reconstruction.py]
     end
-
-    subgraph "Models"
-        SCHEMAS[schemas.py]
+    subgraph "Analysis"
+        ENG[symmetry / proportion / profile / volume / aging]
+        FUSE[multi_view_fusion.py]
+        ZA[zone_analyzer.py]
+        OV[overlay.py]
+        CMP[comparison_engine.py]
     end
-
-    subgraph "Services"
+    subgraph "Treatment"
+        ZD[zone_definitions.py]
+        PDB[product_database.py]
+        PLAN[plan_generator.py]
+        CONTRA[contraindication_check.py]
+    end
+    subgraph "Models / Services"
+        SCH[schemas_v2.py / zone_models.py]
         SUPA[supabase_service.py]
         N8NS[n8n_service.py]
+        PDFR[pdf_report.py]
     end
 
-    subgraph "Utils"
-        GEO[geometry.py]
-    end
-
-    MAIN --> ROUTES
-    MAIN --> CONFIG
-    ROUTES --> LD
-    ROUTES --> IV
-    ROUTES --> FA
-    ROUTES --> PA
-    ROUTES --> OA
-    ROUTES --> SUPA
-    ROUTES --> N8NS
-    ROUTES --> SCHEMAS
-
-    FA --> LD
-    PA --> LD
-    OA --> LD
-    FA --> GEO
-    PA --> GEO
-    OA --> GEO
-    FA --> SCHEMAS
-    PA --> SCHEMAS
-    OA --> SCHEMAS
-    IV --> SCHEMAS
-
+    MAIN --> ROUTES & AUTH & RL & VER
+    ROUTES --> ORCH & SCH & SUPA & N8NS & PDFR & VER
+    ORCH --> PRE & FL & HP & QG & CAL & REC & ZA & PLAN & OV
+    ZA --> ENG & FUSE & ZD
+    ENG --> REC & FL & CAL
+    PLAN --> PDB & CONTRA & ZD
+    CMP --> ZA
     SUPA --> CONFIG
-    N8NS --> CONFIG
+    N8NS --> CONFIG & VER
+    PDFR --> SCH
 
     style MAIN fill:#009688,color:#fff
-    style LD fill:#FF5722,color:#fff
-    style SCHEMAS fill:#2196F3,color:#fff
-    style GEO fill:#9C27B0,color:#fff
+    style FL fill:#FF5722,color:#fff
+    style REC fill:#7E57C2,color:#fff
+    style SCH fill:#2196F3,color:#fff
 ```
 
 ## n8n Integration Flow
 
 ```mermaid
 graph LR
-    API[Biometrics API] -->|POST webhook| WH[n8n Webhook Trigger]
-    WH --> PARSE[Parse JSON]
-    PARSE --> COND{Check<br/>quality_warnings}
-
-    COND -->|No warnings| REPORT[Generate Report]
-    COND -->|Has warnings| NOTIFY[Alert Practitioner:<br/>Re-capture needed]
-
-    REPORT --> DASH[Update Patient Dashboard]
-    REPORT --> PDF[Generate PDF]
-    DASH --> SCHEDULE[Schedule Follow-up]
+    API[Biometrics API] -->|notify_n8n_v2 envelope| WH[n8n Webhook Trigger]
+    WH --> PARSE[Parse envelope<br/>event, assessment_id, aesthetic_score, zones_count]
+    PARSE --> COND{Route on<br/>score / warnings}
+    COND -->|low score / concerns| REPORT[Pull /api/v2/report PDF]
+    COND -->|quality warnings| NOTIFY[Alert: re-capture]
+    REPORT --> DASH[Update dashboard]
+    REPORT --> SCHEDULE[Schedule follow-up]
 
     style API fill:#009688,color:#fff
     style WH fill:#FF6D5A,color:#fff
