@@ -1,0 +1,50 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Aesthetic Biometrics Engine — Hetzner deploy (Docker + Caddy reverse proxy)
+#
+# Runs ALONGSIDE the existing novasyn.de services without touching them:
+#   • own container + own compose project (name: aesthetic-biometrics)
+#   • binds ONLY to 127.0.0.1:8002  (8000 = browser-use, 8001 = sdk-agent are taken)
+#   • Caddy terminates TLS for biometrics.novasyn.de and reverse-proxies to :8002
+#
+# Deploy (on the server, from the repo root — full runbook in deploy/hetzner/README.md):
+#   cp deploy/hetzner/.env.production.example deploy/hetzner/.env.production   # fill secrets
+#   docker compose -f deploy/hetzner/docker-compose.yml up -d --build
+# ─────────────────────────────────────────────────────────────────────────────
+name: aesthetic-biometrics
+
+services:
+  engine:
+    build:
+      context: ../..            # repo root (relative to this compose file)
+      dockerfile: Dockerfile
+    image: aesthetic-biometrics-engine:latest
+    container_name: aesthetic-biometrics-engine
+    restart: unless-stopped
+
+    # Host-only bind: never publicly exposed except through Caddy. Host 8002 -> container 8000.
+    ports:
+      - "127.0.0.1:8002:8000"
+
+    env_file:
+      - .env.production
+
+    # Single-user MVP. mediapipe + opencv resident ~0.6–1 GB. Verify `free -h` headroom
+    # before deploy (sdk-agent already reserves up to 2g on this box). Raise if needed.
+    mem_limit: 1500m
+    memswap_limit: 1500m        # swap off -> OOM fails loud instead of thrashing the host/Caddy
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v2/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 25s         # model load + first import
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    security_opt:
+      - no-new-privileges:true

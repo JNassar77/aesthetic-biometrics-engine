@@ -1,0 +1,21 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Aesthetic Biometrics Engine — Caddy site block
+#
+# Append to /etc/caddy/Caddyfile (or `import` it). NON-INVASIVE: a brand-new site
+# block; it does NOT alter browser/api/admin/cdn/klarbefund.novasyn.de.
+# Caddy auto-provisions a Let's Encrypt certificate for this hostname on first hit.
+#
+# Prereq: DNS A record  biometrics.novasyn.de -> 188.245.150.15
+# Apply gracefully (zero-downtime for the other sites):
+#   caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy
+# ─────────────────────────────────────────────────────────────────────────────
+biometrics.novasyn.de {
+	# The engine enforces its own X-API-Key (fail-closed in production), so Caddy just
+	# terminates TLS and forwards. Caddy streams the multipart upload (no body-size cap;
+	# the engine enforces MAX_IMAGE_SIZE_MB itself).
+	#
+	# Optional edge defense-in-depth (couples to the shared CADDY_API_KEY — off by default):
+	#   @noauth not header X-API-Key {$CADDY_API_KEY}
+	#   respond @noauth 401
+	reverse_proxy 127.0.0.1:8002
+}
