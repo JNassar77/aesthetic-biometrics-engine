@@ -10,20 +10,19 @@
 //                                   -> engine /api/v2/assessment  (AssessmentResponse JSON)
 //   POST /engine-proxy/report       JSON (AssessmentResponse) -> engine /api/v2/report (PDF)
 //
-// Required env (Supabase function secrets):
-//   ENGINE_URL       e.g. https://biometrics.novasyn.de
-//   ENGINE_API_KEY   one of the engine's API_KEYS
-//   ENGINE_ORG_ID    organizations.id of the practice tenant
-// Optional:
-//   ALLOWED_ORIGIN   CORS origin (default "*" for dev; set to the practice domain in prod)
+// Env (Supabase function secrets):
+//   ENGINE_API_KEY   REQUIRED — one of the engine's API_KEYS (the ONLY secret to set).
+//   ENGINE_URL       optional — defaults to https://biometrics.novasyn.de
+//   ENGINE_ORG_ID    optional — defaults to the Praxis Nassar tenant
+//   ALLOWED_ORIGIN   optional — CORS origin (default "*" for dev; set to the practice domain in prod)
 //
 // Design note: the proxy buffers the (size-capped) multipart request only to inject the
 // tenant server-side, then streams the engine response straight back. Keep client images
 // modest (~1600px) — well within the Edge Function 256MB / 2s-CPU limits.
 
-const ENGINE_URL = (Deno.env.get("ENGINE_URL") ?? "").replace(/\/+$/, "");
+const ENGINE_URL = (Deno.env.get("ENGINE_URL") ?? "https://biometrics.novasyn.de").replace(/\/+$/, "");
 const ENGINE_API_KEY = Deno.env.get("ENGINE_API_KEY") ?? "";
-const ENGINE_ORG_ID = Deno.env.get("ENGINE_ORG_ID") ?? "";
+const ENGINE_ORG_ID = Deno.env.get("ENGINE_ORG_ID") ?? "80c55491-46b6-4b82-98dc-2719758b4372";
 const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
 
 const IMAGE_FIELDS = ["frontal", "oblique_left", "oblique_right", "oblique", "profile"];
@@ -54,9 +53,8 @@ Deno.serve(async (req: Request) => {
 
   const route = routeOf(req);
 
-  // Health only needs ENGINE_URL — handy for a frontend preflight.
+  // Health needs no engine key — handy for a frontend preflight.
   if (route === "health" && req.method === "GET") {
-    if (!ENGINE_URL) return json({ error: "proxy_misconfigured", detail: "ENGINE_URL not set" }, 503);
     try {
       const r = await fetch(`${ENGINE_URL}/api/v2/health`);
       return new Response(r.body, { status: r.status, headers: { ...cors(), "Content-Type": "application/json" } });
@@ -65,8 +63,8 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  if (!ENGINE_URL || !ENGINE_API_KEY || !ENGINE_ORG_ID) {
-    return json({ error: "proxy_misconfigured", detail: "ENGINE_URL / ENGINE_API_KEY / ENGINE_ORG_ID must be set" }, 503);
+  if (!ENGINE_API_KEY) {
+    return json({ error: "proxy_misconfigured", detail: "ENGINE_API_KEY secret must be set" }, 503);
   }
 
   if (req.method !== "POST") return json({ error: "method_not_allowed", detail: `${req.method} ${route}` }, 405);

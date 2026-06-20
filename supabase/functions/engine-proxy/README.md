@@ -16,7 +16,7 @@ is injected here, **not** chosen by the client.
 | POST | `/assessment` | multipart: `frontal`, `oblique_left`, `oblique_right`, `profile` (≥1) | `/api/v2/assessment` | `AssessmentResponse` JSON |
 | POST | `/report` | `AssessmentResponse` JSON | `/api/v2/report` | PDF |
 
-## Secrets (must be set before it works)
+## Secrets — only `ENGINE_API_KEY` is required (the rest default in code)
 | Name | Value |
 |---|---|
 | `ENGINE_URL` | `https://biometrics.novasyn.de` (the deployed engine) |
@@ -26,12 +26,7 @@ is injected here, **not** chosen by the client.
 
 Set via the dashboard (Edge Functions → Manage secrets) or the CLI:
 ```bash
-supabase secrets set \
-  ENGINE_URL=https://biometrics.novasyn.de \
-  ENGINE_API_KEY=<engine key> \
-  ENGINE_ORG_ID=80c55491-46b6-4b82-98dc-2719758b4372 \
-  ALLOWED_ORIGIN='*' \
-  --project-ref mbwteypkehrmeqzdzdph
+supabase secrets set ENGINE_API_KEY=<engine key> --project-ref mbwteypkehrmeqzdzdph
 ```
 
 ## Deploy
@@ -45,8 +40,8 @@ supabase functions deploy engine-proxy --project-ref mbwteypkehrmeqzdzdph
 ANON=<anon key>
 curl -H "Authorization: Bearer $ANON" -H "apikey: $ANON" \
   https://mbwteypkehrmeqzdzdph.supabase.co/functions/v1/engine-proxy/health
-# before secrets   -> 503 {"error":"proxy_misconfigured",...}   (function is live)
-# after engine+secrets -> 200 {"status":"healthy","model_loaded":true,...}
+# engine not yet live -> 502 {"error":"engine_unreachable",...}
+# engine live         -> 200 {"status":"healthy","model_loaded":true,...}
 ```
 
 ## Notes
