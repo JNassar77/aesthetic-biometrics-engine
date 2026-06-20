@@ -3,8 +3,8 @@
 #
 # Runs ALONGSIDE the existing novasyn.de services without touching them:
 #   • own container + own compose project (name: aesthetic-biometrics)
-#   • binds ONLY to 127.0.0.1:8002  (8000 = browser-use, 8001 = sdk-agent are taken)
-#   • Caddy terminates TLS for biometrics.novasyn.de and reverse-proxies to :8002
+#   • binds ONLY to 127.0.0.1:8003  (8000 browser-use, 8001 sdk-agent, 8002 admin, 8004 klarbefund taken)
+#   • Caddy terminates TLS for biometrics.novasyn.de and reverse-proxies to :8003
 #
 # Deploy (on the server, from the repo root — full runbook in deploy/hetzner/README.md):
 #   cp deploy/hetzner/.env.production.example deploy/hetzner/.env.production   # fill secrets
@@ -21,9 +21,9 @@ services:
     container_name: aesthetic-biometrics-engine
     restart: unless-stopped
 
-    # Host-only bind: never publicly exposed except through Caddy. Host 8002 -> container 8000.
+    # Host-only bind: never publicly exposed except through Caddy. Host 8003 -> container 8000.
     ports:
-      - "127.0.0.1:8002:8000"
+      - "127.0.0.1:8003:8000"
 
     env_file:
       - .env.production

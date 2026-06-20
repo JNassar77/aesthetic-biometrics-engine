@@ -2,12 +2,12 @@
 
 Deploys the engine as an **isolated** Docker service behind the existing Caddy on the
 novasyn.de box (`188.245.150.15`, Nuremberg). It runs **alongside** browser-use (`:8000`),
-sdk-agent (`:8001`), and klarbefund — touching none of them.
+sdk-agent (`:8001`), admin (`:8002`), and klarbefund (`:8004`) — touching none of them.
 
 | Item | Value |
 |---|---|
 | Public URL | `https://biometrics.novasyn.de` |
-| Bind | `127.0.0.1:8002` → container `:8000` |
+| Bind | `127.0.0.1:8003` → container `:8000` |
 | Health | `GET /api/v2/health` |
 | Reverse proxy | Caddy (auto Let's Encrypt TLS) |
 | Compose project | `aesthetic-biometrics` |
@@ -22,7 +22,7 @@ sdk-agent (`:8001`), and klarbefund — touching none of them.
 ## Pre-flight (on the server)
 ```bash
 free -h                                   # confirm ≥ ~1.5 GB free (engine mem_limit is 1500m)
-ss -tlnp | grep -E ':8002' || echo "8002 free"   # must be free
+ss -tlnp | grep -E ':8003' || echo "8003 free"   # must be free
 docker --version && caddy version
 ```
 
@@ -48,7 +48,7 @@ nano deploy/hetzner/.env.production       # set API_KEYS and SUPABASE_KEY
 docker compose -f deploy/hetzner/docker-compose.yml up -d --build
 docker compose -f deploy/hetzner/docker-compose.yml ps
 docker compose -f deploy/hetzner/docker-compose.yml logs -f --tail=50   # Ctrl-C when healthy
-curl -fsS http://127.0.0.1:8002/api/v2/health    # expect status healthy, model_loaded true
+curl -fsS http://127.0.0.1:8003/api/v2/health    # expect status healthy, model_loaded true
 ```
 
 ## 5. Caddy (TLS + public routing)
