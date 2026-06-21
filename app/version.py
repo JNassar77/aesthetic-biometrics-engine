@@ -5,4 +5,4 @@ this one constant on a release. Reported in the API (`engine_version`, /health),
 the OpenAPI metadata, the root discovery endpoint, and the n8n webhook envelope.
 """
 
-ENGINE_VERSION = "2.2.0"
+ENGINE_VERSION = "2.3.0"

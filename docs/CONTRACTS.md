@@ -111,7 +111,7 @@ zone status counts, heatmap). `404` if either assessment is missing; `503` witho
 
 **Response — `200 OK`** → `HealthResponse`:
 ```json
-{"status": "healthy", "version": "2.2.0", "model_loaded": true,
+{"status": "healthy", "version": "2.3.0", "model_loaded": true,
  "supabase_connected": false, "uptime_seconds": 12.3}
 ```
 `status` is `degraded` if the model file is missing. No auth.
@@ -207,7 +207,7 @@ zone status counts, heatmap). `404` if either assessment is missing; `503` witho
     ]
   },
 
-  "engine_version": "2.2.0",
+  "engine_version": "2.3.0",
   "processing_time_ms": 842,
   "views_analyzed": ["frontal", "oblique_left", "oblique_right"],
   "warnings": ["CALIBRATION_UNRELIABLE: ..."]            // assessment-level
@@ -269,7 +269,7 @@ Fired after a successful assessment when an `organization_id` is provided.
 ```jsonc
 {
   "event": "assessment_complete",
-  "engine_version": "2.2.0",
+  "engine_version": "2.3.0",
   "assessment_id": "uuid",
   "patient_id": "uuid|null",
   "aesthetic_score": 82.0,

@@ -1,7 +1,7 @@
 # Features — Aesthetic Biometrics Engine
 
 > Complete feature catalog for the V2 engine (`POST /api/v2/assessment`, zone-based,
-> engine v2.2.0). Each feature lists purpose, module, workflow/output and — where
+> engine v2.3.0). Each feature lists purpose, module, workflow/output and — where
 > relevant — clinical relevance. The V1 single-image API (`/api/v1/analyze`) was
 > removed (mediapipe 0.10.35 dropped the `mp.solutions` FaceMesh it ran on); its
 > per-view analyses now live inside the V2 zone flow below.
