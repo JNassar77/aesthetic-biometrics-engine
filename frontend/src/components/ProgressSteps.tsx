@@ -15,6 +15,7 @@ export default function ProgressSteps({ step }: { step: Step }) {
         <div
           key={s.key}
           className={`progress-step ${i === activeIdx ? "active" : ""} ${i < activeIdx ? "done" : ""}`}
+          aria-current={i === activeIdx ? "step" : undefined}
         >
           <span className="dot">{i < activeIdx ? "✓" : i + 1}</span>
           <span className="label">{s.label}</span>

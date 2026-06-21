@@ -3,6 +3,7 @@ import type { AssessmentResponse, ViewKey } from "../types";
 import type { Shots } from "../App";
 import { VIEW_ORDER, VIEW_LABEL } from "../App";
 import { fetchReport } from "../api";
+import { physicalForCanonical } from "../views";
 import HeatmapView from "./HeatmapView";
 
 function humanizeWarning(w: string): string {
@@ -43,26 +44,12 @@ export default function ResultsScreen({
 
   // The overlay speaks in CANONICAL view names ("frontal", "oblique", "profile").
   // Map each to the PHYSICAL photo we uploaded so markers land on the right image.
-  const canonicalOblique = (overlay?.canonical_oblique_view ?? null) as ViewKey | null;
-  function physicalFor(canon: string): ViewKey | undefined {
-    if (canon === "frontal") return shots.frontal ? "frontal" : undefined;
-    if (canon === "profile") return shots.profile ? "profile" : undefined;
-    if (canon === "oblique") {
-      // Prefer the engine's explicit answer; else only resolve when unambiguous
-      // (exactly one oblique analyzed). With both obliques and no hint, skip the
-      // heatmap rather than risk drawing on the wrong cheek.
-      if (canonicalOblique && shots[canonicalOblique]) return canonicalOblique;
-      const obl = (["oblique_left", "oblique_right"] as ViewKey[]).filter(
-        (k) => shots[k] && analyzed.includes(k),
-      );
-      return obl.length === 1 ? obl[0] : undefined;
-    }
-    return shots[canon as ViewKey] ? (canon as ViewKey) : undefined;
-  }
-
   const heatmaps = overlay
     ? Object.keys(overlay.image_dimensions)
-        .map((canon) => ({ canon, phys: physicalFor(canon) }))
+        .map((canon) => ({
+          canon,
+          phys: physicalForCanonical(canon, (k) => Boolean(shots[k]), analyzed, overlay.canonical_oblique_view),
+        }))
         .filter((x): x is { canon: string; phys: ViewKey } => Boolean(x.phys))
     : [];
   const rejected = VIEW_ORDER.filter((k) => shots[k] && !analyzed.includes(k));
