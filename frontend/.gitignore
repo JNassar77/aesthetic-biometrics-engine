@@ -1,0 +1,14 @@
+node_modules
+dist
+dist-ssr
+.env
+.env.local
+.env.*.local
+*.local
+.vite
+*.tsbuildinfo
+
+# Local verification artifacts (may contain biometric-derived data — never commit)
+smoke-report.pdf
+last-assessment.json
+public/selftest/
