@@ -27,7 +27,7 @@ jobs:
         run: pip install -r requirements.txt pytest pytest-cov pytest-asyncio httpx
 
       # No model download needed: the test suite mocks the landmarker and never
-      # loads the real .task file (verified — 499 tests pass without it).
+      # loads the real .task file (verified — 503 tests pass without it).
       - name: Run tests with coverage
         run: pytest tests/ -v --cov=app --cov-report=term-missing --tb=short
 
@@ -52,3 +52,30 @@ jobs:
             echo "::error::Docker image exceeds 2GB limit"
             exit 1
           fi
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        # npm install (not ci): a lockfile generated on Windows can omit Linux-only
+        # optional platform binaries (e.g. @emnapi/* pulled by Vite 8's rolldown),
+        # which makes `npm ci` fail on the Linux runner with EUSAGE.
+        run: npm install --no-audit --no-fund
+
+      - name: Type-check + production build
+        run: npm run build
+
+      - name: Unit tests
+        run: npm test
