@@ -21,6 +21,12 @@
 | Architecture V2 | `docs/ARCHITECTURE_V2.md` | Complete V2 system redesign with zones and treatment plans | Reference for all V2 work |
 | Sprint Plan | `docs/SPRINTS.md` | 12 Sprints, 6 Phasen, Abhaengigkeiten, Meilensteine | Updated per sprint |
 | Lehrbuch | `docs/lehrbuch/generate_book.js` | DOCX-Lehrbuch (16/16 Kapitel komplett) | Updated per sprint |
+| Frontend Build Spec | `docs/FRONTEND_MVP_LOVABLE_SPEC.md` | Capture→heatmap→PDF frontend contract (endpoints, overlay back-transform, errors) | Sprint 14 |
+| Frontend README | `frontend/README.md` | Aesthetic Scan app — flow, config, develop/deploy | Sprint 14 |
+| Hetzner Deploy Runbook | `deploy/hetzner/README.md` | Isolated engine deploy (compose, Caddy, pre-flight, rollback) | Sprint 14 |
+| Engine Proxy README | `supabase/functions/engine-proxy/README.md` | Edge Function routes, secrets, smoke test | Sprint 14 |
+| Clinical Validation SOP | `docs/clinical/Klinische_Validierung_…_Caliper_Foto_SOP.docx` | Caliper + photo data-collection SOP (Sprint 11 prep) | Owner-provided |
+| Session Logs | `docs/SESSION_2026-*.md` | Per-session status + next-session handover | Per session |
 
 ---
 
@@ -54,7 +60,7 @@
 | **Profile Engine** | `app/analysis/profile_engine.py` | **E-line, nasolabial angle, chin projection, nasal dorsum, Steiner, cervicomental** | face_landmarker, pixel_calibration, geometry | **V2** |
 | **Volume Engine** | `app/analysis/volume_engine.py` | **Ogee curve, temporal hollowing, tear trough, jowl, buccal corridor — depth from metric 3D reconstruction (negated; fallback relative-z), `estimated`** | face_landmarker, pixel_calibration, multiview_reconstruction | **V2.2** |
 | **3D Reconstruction** | `app/analysis/multiview_reconstruction.py` | **Metric multi-view landmark triangulation (orthographic, iris scale); reconstruct_from_views policy excludes profile, requires iris calibration** | numpy | **V2.2** |
-| **Overlay** | `app/analysis/overlay.py` | **Frontend data: per-zone injection points + heatmap (centroid, intensity, severity colour), normalized to analyzed frame** | landmark_index | **V2.2** |
+| **Overlay** | `app/analysis/overlay.py` | **Frontend data: per-zone injection points + heatmap (centroid, intensity, severity colour), normalized to analyzed frame; `canonical_oblique_view` names the physical oblique the canonical overlay maps to** | landmark_index | **V2.3** |
 | **Aging Engine** | `app/analysis/aging_engine.py` | **Muscle tonus from blendshapes, gravitational drift, periorbital aging** | face_landmarker, pixel_calibration | **V2** |
 | **Multi-View Fusion** | `app/analysis/multi_view_fusion.py` | **Confidence-weighted landmark fusion across views + contradiction detection** | zone_definitions | **V2** |
 | **Zone Analyzer** | `app/analysis/zone_analyzer.py` | **Orchestrates all engines → Zone Report + Aesthetic Score** | all engines, multi_view_fusion, zone_definitions | **V2** |
@@ -84,7 +90,7 @@
 | `tests/` (root) | Head pose, quality gate, landmark index, preprocessor, geometry, calibration, **performance benchmark** | ~105 |
 | `tests/analysis/` (3D wiring, overlay) | `test_engine_3d_wiring.py`, `test_overlay.py`, reconstruction policy | +34 |
 | `tests/integration/` (PDF report) | `test_pdf_report.py` — renderer, row reconstruction, endpoints | +11 |
-| **TOTAL** | | **496** |
+| **TOTAL** | | **503** |
 
 ---
 
@@ -97,7 +103,11 @@
 | Supabase URL | — | `https://mbwteypkehrmeqzdzdph.supabase.co` |
 | Docker Image | Python 3.11-slim-bookworm (multi-stage; model downloaded + SHA-verified in build) | `Dockerfile` in repo root |
 | CI/CD | GitHub Actions | `.github/workflows/ci.yml` (test + Docker build) |
-| Deployment Target | Railway | `railway.toml` (Dockerfile build, EU region europe-west4, /api/v2/health) |
+| **Deployment (LIVE)** | **Hetzner + Docker + Caddy** | **`deploy/hetzner/` — bind `127.0.0.1:8003` → Caddy auto-TLS → `https://biometrics.novasyn.de` (188.245.150.15, Nuremberg); isolated beside the other novasyn.de services** |
+| Deployment (alt) | Railway | `railway.toml` (Dockerfile build, EU europe-west4) — config retained, **not** the live target |
+| **Engine Proxy** | **Supabase Edge Function** | **`engine-proxy` (Deno, `verify_jwt`) — `…/functions/v1/engine-proxy`; holds `ENGINE_API_KEY`, injects tenant server-side** |
+| **Frontend App** | **Vite + React + TS** | **`frontend/` — Aesthetic Scan; static `dist/` deploy; talks only to engine-proxy** |
+| DNS | IONOS (`novasyn.de`) | `biometrics.novasyn.de` A → `188.245.150.15` |
 | n8n Webhook | n8n | Configured via `N8N_WEBHOOK_URL` env var |
 
 ---
@@ -151,6 +161,18 @@
 | `API_KEYS` | No | `""` | Comma-separated API keys; empty = dev mode (no auth) |
 | `RATE_LIMIT_RPM` | No | `60` | Requests per minute per IP; 0 = disabled |
 | `ENVIRONMENT` | No | `development` | `production` enforces fail-closed auth (503 if no API_KEYS) |
+
+---
+
+### Proxy & Frontend Config (Sprint 14)
+
+**Edge Function `engine-proxy` secrets** (Supabase): `ENGINE_API_KEY` (required — one of the
+engine's `API_KEYS`), `ENGINE_URL` (default `https://biometrics.novasyn.de`), `ENGINE_ORG_ID`
+(default Praxis Nassar tenant), `ALLOWED_ORIGIN` (default `*`; set to the frontend domain in prod).
+
+**Frontend `frontend/.env`** (both public-safe browser values): `VITE_ENGINE_PROXY_URL`
+(the proxy base URL), `VITE_SUPABASE_ANON_KEY` (Supabase anon key — authenticates the caller to
+the proxy; the engine key stays server-side).
 
 ---
 

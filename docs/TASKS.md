@@ -269,6 +269,30 @@
 
 ---
 
+## Sprint 14 — Frontend MVP + Live EU Deployment ✅ (20.–21.06.2026)
+
+> **Ziel:** Dünnes, geführtes Frontend (Capture → Heatmap → PDF) auf sicherer Basis;
+> Engine live in EU-Produktion. (503 Tests grün.)
+
+- [x] **Secure proxy** — Supabase Edge Function `engine-proxy` (Deno, `verify_jwt`):
+      Browser hält NIE den Engine-Key; Tenant serverseitig injiziert; Routes
+      `POST /assessment`, `POST /report`, `GET /health` (streamt Engine-Antwort durch).
+      `supabase/functions/engine-proxy/`.
+- [x] **Engine live auf Hetzner** (NICHT Railway) — Docker `127.0.0.1:8003` + Caddy Auto-TLS
+      unter `https://biometrics.novasyn.de`, nicht-invasiv neben den übrigen novasyn.de-Diensten.
+      Scaffold + Runbook `deploy/hetzner/`; Seed-Migration „Praxis Nassar"-Org.
+- [x] **Frontend-App** `frontend/` (Vite 8 / React 19 / TS): Consent → geführte 4-Winkel-Aufnahme
+      (Kamera + Datei-Upload-Fallback, ≤1600 px) → Review → Ergebnis (Heatmap aufs Foto, Score,
+      Top-Zonen, Kontraindikationen, Quality-Banner, PDF). Spricht nur mit dem Proxy.
+      End-to-end an 4 echten Fotos verifiziert (`frontend/scripts/smoke-proxy.mjs`).
+- [x] **Overlay-Fix `canonical_oblique_view`** — Engine benennt jetzt den kanonischen physischen
+      Oblique → Frontend platziert die Oblique-Heatmap aufs korrekte Foto (additiv, getestet, live).
+- [ ] `ALLOWED_ORIGIN` der Edge Function auf die Frontend-Domain (CORS-Härtung, nach Hosting-Wahl).
+- [ ] Frontend hosten (statisches `dist/` → Caddy/Vercel).
+- [ ] **Gate 0** (MDR-Scope + DSGVO Art. 9 DPIA) bleibt vor echten Patienten.
+
+---
+
 ## Backlog / Future
 
 - [x] PDF/DOCX Report-Generation pro Assessment (PDF, Sprint 13)

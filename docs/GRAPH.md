@@ -28,12 +28,26 @@ graph LR
 Key stages unique to V2: the **3D reconstruction** (before the engines; volume depth reads
 from it, negated), **bilateral obliques**, the **overlay** block, and the **PDF report**.
 
+## Frontend Delivery (Sprint 14)
+
+```mermaid
+graph LR
+    B[Browser / tablet<br/>Aesthetic Scan · Vite/React] -->|anon-key · multipart 4 views| PX[engine-proxy<br/>Supabase Edge Function]
+    PX -->|X-API-Key · +tenant server-side| ENG[Engine on Hetzner<br/>Docker :8003 · Caddy TLS<br/>biometrics.novasyn.de]
+    ENG -->|AssessmentResponse + overlay / PDF| PX
+    PX --> B
+    ENG -.async persist.-> SB[(Supabase<br/>assessments + patient-images)]
+```
+
+The browser never holds the engine key; the proxy injects the tenant. `canonical_oblique_view`
+in the overlay tells the UI which physical oblique photo to paint the oblique heatmap on.
+
 ## System Overview
 
 ```mermaid
 graph TB
     subgraph Clients
-        APP[Praxis web app / tablet — planned]
+        APP[Aesthetic Scan web app<br/>Vite/React · via engine-proxy]
         N8N_TRIGGER[n8n workflow]
         API_CLIENT[Direct API consumer]
     end
