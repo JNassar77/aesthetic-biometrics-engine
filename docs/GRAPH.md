@@ -1,6 +1,6 @@
 # System Graphs — Aesthetic Biometrics Engine (V2)
 
-> Diagrams for the current V2 engine (`/api/v2`, zone-based, engine v2.2.0). The V1
+> Diagrams for the current V2 engine (`/api/v2`, zone-based, engine v2.3.0). The V1
 > single-image API (`/api/v1/analyze`) was removed.
 
 ## V2 Pipeline (`POST /api/v2/assessment`)

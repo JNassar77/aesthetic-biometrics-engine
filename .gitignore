@@ -30,3 +30,5 @@ _*.png
 _*.pdf
 # Local-only deploy secrets — never commit, never copy to a server
 deploy/.sb_access_token
+# Local Claude Code tooling (preview launch config, etc.)
+.claude/

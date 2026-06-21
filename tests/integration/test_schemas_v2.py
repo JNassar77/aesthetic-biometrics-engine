@@ -4,6 +4,8 @@ import pytest
 from uuid import uuid4, UUID
 from datetime import datetime, timezone
 
+from app.version import ENGINE_VERSION
+
 from app.models.schemas_v2 import (
     AssessmentResponse,
     CalibrationResponse,
@@ -183,7 +185,7 @@ class TestAssessmentResponse:
             treatment_plan=TreatmentPlanResponse(),
             calibration=CalibrationResponse(method="iris", px_per_mm=5.2, confidence=0.92),
         )
-        assert r.engine_version == "2.2.0"
+        assert r.engine_version == ENGINE_VERSION
         assert isinstance(r.assessment_id, UUID)
         assert r.aesthetic_score == 85.0
 
@@ -309,7 +311,7 @@ class TestHealthResponse:
     def test_default(self):
         h = HealthResponse()
         assert h.status == "healthy"
-        assert h.version == "2.2.0"
+        assert h.version == ENGINE_VERSION
         assert h.model_loaded is False
 
     def test_with_model(self):

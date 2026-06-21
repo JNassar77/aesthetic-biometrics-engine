@@ -13,6 +13,7 @@ from app.models.zone_models import ZoneResult, ZoneFinding, ZoneMeasurement
 from app.pipeline.orchestrator import PipelineResult, ViewResult
 from app.analysis.zone_analyzer import ZoneReport
 from app.models.zone_models import GlobalMetrics, CalibrationInfo
+from app.version import ENGINE_VERSION
 
 
 # ──────────────────────── Converter Tests ────────────────────────
@@ -205,7 +206,7 @@ class TestBuildAssessmentResponse:
         result = self._make_pipeline_result()
         resp = _build_assessment_response(result, patient_id=None)
 
-        assert resp.engine_version == "2.2.0"
+        assert resp.engine_version == ENGINE_VERSION
         assert resp.aesthetic_score == 78.0
         assert len(resp.zones) == 1
         assert resp.zones[0].zone_id == "Ck2"
