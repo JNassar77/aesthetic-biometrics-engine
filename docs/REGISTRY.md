@@ -106,7 +106,7 @@
 | **Deployment (LIVE)** | **Hetzner + Docker + Caddy** | **`deploy/hetzner/` — bind `127.0.0.1:8003` → Caddy auto-TLS → `https://biometrics.novasyn.de` (188.245.150.15, Nuremberg); isolated beside the other novasyn.de services** |
 | Deployment (alt) | Railway | `railway.toml` (Dockerfile build, EU europe-west4) — config retained, **not** the live target |
 | **Engine Proxy** | **Supabase Edge Function** | **`engine-proxy` (Deno, `verify_jwt`) — `…/functions/v1/engine-proxy`; holds `ENGINE_API_KEY`, injects tenant server-side** |
-| **Frontend App** | **Vite + React + TS** | **`frontend/` — Aesthetic Scan; static `dist/` deploy; talks only to engine-proxy** |
+| **Frontend App (LIVE)** | **Vite + React + TS** | **`frontend/` — Aesthetic Scan; LIVE at `https://scan.novasyn.de` (Caddy static from `/srv/aesthetic-scan`, auto-TLS); talks only to engine-proxy** |
 | DNS | IONOS (`novasyn.de`) | `biometrics.novasyn.de` A → `188.245.150.15` |
 | n8n Webhook | n8n | Configured via `N8N_WEBHOOK_URL` env var |
 

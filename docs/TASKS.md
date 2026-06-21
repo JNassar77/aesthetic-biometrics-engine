@@ -287,8 +287,9 @@
       End-to-end an 4 echten Fotos verifiziert (`frontend/scripts/smoke-proxy.mjs`).
 - [x] **Overlay-Fix `canonical_oblique_view`** — Engine benennt jetzt den kanonischen physischen
       Oblique → Frontend platziert die Oblique-Heatmap aufs korrekte Foto (additiv, getestet, live).
-- [ ] `ALLOWED_ORIGIN` der Edge Function auf die Frontend-Domain (CORS-Härtung, nach Hosting-Wahl).
-- [ ] Frontend hosten (statisches `dist/` → Caddy/Vercel).
+- [x] **Frontend gehostet** — `https://scan.novasyn.de` (statisches `dist/` in `/srv/aesthetic-scan`,
+      Caddy eigener vhost + auto-TLS; DNS via IONOS). Deploy-Rezept in `frontend/README.md`.
+- [x] **`ALLOWED_ORIGIN`** der Edge Function auf `https://scan.novasyn.de` gehärtet (CORS-Preflight + health-through-proxy verifiziert).
 - [ ] **Gate 0** (MDR-Scope + DSGVO Art. 9 DPIA) bleibt vor echten Patienten.
 
 ---
