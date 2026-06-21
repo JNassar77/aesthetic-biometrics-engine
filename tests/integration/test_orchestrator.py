@@ -314,6 +314,12 @@ class TestRunPipeline:
         assert kwargs["reconstruction"] is result.reconstruction
         assert kwargs["oblique_left"] is not None
         assert kwargs["oblique_right"] is not None
+        # The overlay tells the frontend which PHYSICAL oblique the canonical
+        # "oblique" maps to, so it can paint the heatmap on the right photo.
+        # Equal calibration confidence → tie resolves to the left oblique.
+        assert result.overlay is not None
+        assert result.overlay.canonical_oblique_view == "oblique_left"
+        assert "oblique" in result.overlay.image_dimensions
 
     @patch("app.pipeline.orchestrator.plan_generate")
     @patch("app.pipeline.orchestrator.zone_analyze")

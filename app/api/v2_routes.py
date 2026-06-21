@@ -262,6 +262,7 @@ def _build_assessment_response(
     if result.overlay is not None:
         overlay = OverlayResponse(
             image_dimensions=result.overlay.image_dimensions,
+            canonical_oblique_view=result.overlay.canonical_oblique_view,
             zones=[
                 ZoneOverlayResponse(
                     zone_id=z.zone_id,

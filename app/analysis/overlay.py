@@ -55,6 +55,11 @@ class OverlayData:
     zones: list[ZoneOverlay] = field(default_factory=list)
     # per anchor view: {"width": int, "height": int} of the analyzed frame
     image_dimensions: dict[str, dict[str, int]] = field(default_factory=dict)
+    # Which PHYSICAL oblique upload the canonical "oblique" overlay was computed on
+    # ("oblique_left" | "oblique_right" | "oblique"), or None when no oblique view
+    # contributed. Set by the orchestrator; lets a frontend place the oblique
+    # heatmap on the correct uploaded photo (both obliques look alike otherwise).
+    canonical_oblique_view: str | None = None
 
 
 def _severity_color(severity: float) -> str:

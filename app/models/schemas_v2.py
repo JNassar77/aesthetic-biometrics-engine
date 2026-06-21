@@ -120,6 +120,9 @@ class OverlayResponse(BaseModel):
     """Frontend overlay payload — per-zone injection points and heatmap anchors."""
     zones: list[ZoneOverlayResponse] = []
     image_dimensions: dict[str, dict[str, int]] = {}
+    # Physical oblique upload the canonical "oblique" overlay maps to
+    # ("oblique_left" | "oblique_right" | "oblique"); None if no oblique view.
+    canonical_oblique_view: str | None = None
 
 
 # ──────────────────────── Zone Analysis ────────────────────────
