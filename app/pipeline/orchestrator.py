@@ -379,6 +379,9 @@ def run_pipeline(
                 view_transforms[canon] = vr.source_transform
     try:
         pipeline_result.overlay = build_overlay(zone_report, view_detections, view_transforms)
+        # Tell the frontend which physical oblique the canonical "oblique" overlay
+        # maps to, so it can paint the heatmap on the correct uploaded photo.
+        pipeline_result.overlay.canonical_oblique_view = canonical_oblique_name
     except Exception as e:
         pipeline_result.errors.append(f"Overlay generation failed: {e}")
         # Non-blocking: overlay is optional frontend data.

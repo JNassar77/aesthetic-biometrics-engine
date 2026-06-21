@@ -52,6 +52,43 @@ Per-zone injection-point coordinates + heatmap anchor (intensity = severity/10, 
 colour) in `AssessmentResponse.overlay`, normalized to the analyzed frame **with a
 back-transform to the original upload** (`image_dimensions`: source size + crop rect).
 Enables a UI to drop markers / render a treatment-need heatmap on the uploaded photo.
+`canonical_oblique_view` names which physical oblique upload the canonical `oblique`
+overlay maps to (`oblique_left` / `oblique_right` / `oblique`), so the UI paints the oblique
+heatmap on the correct photo instead of guessing.
+
+---
+
+## Delivery & Frontend
+
+### F-130: Secure engine proxy (Supabase Edge Function)
+**Module:** `supabase/functions/engine-proxy/` (Deno) · **URL:** `…/functions/v1/engine-proxy`
+
+Thin auth proxy so the browser never holds the engine `X-API-Key`. `verify_jwt` (callers send the
+Supabase anon key); the tenant (`organization_id`) is injected **server-side** — the browser does
+not choose it. Routes `POST /assessment` (multipart → engine), `POST /report`
+(AssessmentResponse → PDF), `GET /health`; streams the engine response straight back. Secret
+`ENGINE_API_KEY`; `ENGINE_URL` / `ENGINE_ORG_ID` / `ALLOWED_ORIGIN` optional (defaults in code).
+
+### F-131: Aesthetic Scan frontend (guided capture → heatmap → PDF)
+**Module:** `frontend/` (Vite + React + TS) · talks only to the engine-proxy
+
+In-practice, tablet-first web app: Consent → guided 4-angle capture (live camera + per-shot
+upload fallback; ≤1600 px, JPEG, un-mirrored) → review → results. Results render a per-zone
+heatmap mapped back onto the **original** photo, aesthetic score, top zones, contraindications,
+quality/calibration banners, and a one-click PDF. Maps the engine's canonical overlay views to
+the physical uploads via `canonical_oblique_view` (safe fallback omits the oblique heatmap when
+ambiguous rather than risk the wrong cheek). Verified end-to-end against the live proxy
+(`frontend/scripts/smoke-proxy.mjs`). **Posture:** DEV/TEST — consenting subjects only; the
+consent screen is the MVP minimum, not the full DSGVO Art. 9 flow (Gate 0).
+
+### F-132: Live EU deployment (Hetzner + Caddy)
+**Module:** `deploy/hetzner/` · **URL:** `https://biometrics.novasyn.de`
+
+Engine runs as an isolated Docker service (`127.0.0.1:8003`) behind Caddy auto-TLS on the
+novasyn.de box, alongside (not touching) the other services. The image downloads + SHA-verifies
+the MediaPipe model at build time (build **fails on model drift** — provenance for a
+medical-device artifact). Own EU infra for biometric data sovereignty (chosen over Railway;
+`railway.toml` retained as an alternative). Persistence ON. Runbook + rollback in the module.
 
 ---
 
