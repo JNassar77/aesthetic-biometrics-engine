@@ -40,9 +40,21 @@ npm run preview    # serve the production build
 
 ## Deploy
 
-`npm run build` emits a static `dist/`. Serve it from any static host (Caddy on the
-Hetzner box, Vercel, etc.). After the production domain is known, set the Edge Function
-secret `ALLOWED_ORIGIN` to that origin (CORS hardening — `*` is dev-only).
+`npm run build` emits a static `dist/`. **Live at https://scan.novasyn.de** — served by
+Caddy on the Hetzner box from `/srv/aesthetic-scan` (own vhost, auto-TLS).
+
+Update (after a code or `.env` change — config is baked into the bundle at build time):
+
+```bash
+npm run build
+tar czf - -C dist . | ssh hetzner 'tar xzf - -C /srv/aesthetic-scan && chmod -R a+rX /srv/aesthetic-scan'
+```
+
+First-time setup also needed: DNS A record (`scan.novasyn.de → 188.245.150.15`, IONOS); the
+Caddy vhost (`root * /srv/aesthetic-scan; encode gzip; try_files {path} /index.html; file_server`
+— `caddy validate` **with the systemd env loaded** for the existing `{$CADDY_API_KEY}` matchers,
+then `systemctl reload caddy`); and the Edge Function secret `ALLOWED_ORIGIN=https://scan.novasyn.de`
+(CORS hardening — `*` is dev-only; note this then blocks localhost browser dev against the live proxy).
 
 ## Notes
 
