@@ -189,7 +189,8 @@ zone status counts, heatmap). `404` if either assessment is missing; `503` witho
   },
 
   "overlay": {                             // frontend data, null if not computed
-    "image_dimensions": {                  // per view: analyzed-frame size + back-transform to the upload
+    "canonical_oblique_view": "oblique_left",  // PHYSICAL oblique the canonical "oblique" overlay maps to (or null)
+    "image_dimensions": {                  // per CANONICAL view (frontal/oblique/profile): analyzed-frame size + back-transform
       "frontal": {"width": 1024, "height": 1024,
                   "source_width": 1158, "source_height": 1544,
                   "crop_x": 8, "crop_y": 499, "crop_width": 1072, "crop_height": 1045}
@@ -221,6 +222,11 @@ must not drive injection volumes. A value is flagged when:
   projections) — thresholds are not yet calibrated against real 3D mm (Sprint 11); **or**
 - the iris calibration was not reliable (`calibration.reliable == false`) — then **every**
   mm value is flagged and an assessment-level `CALIBRATION_UNRELIABLE` warning is added.
+
+The `overlay` speaks in **canonical** view names (`frontal` / `oblique` / `profile`).
+`canonical_oblique_view` names which PHYSICAL oblique upload (`oblique_left` /
+`oblique_right` / `oblique`, or `null`) the canonical `oblique` overlay was computed on,
+so a client paints the oblique heatmap on the correct uploaded photo.
 
 Coordinates in `overlay` are normalized [0,1] to the analyzed (preprocessed /
 face-centred) frame. To place markers on the **original upload**, map with the

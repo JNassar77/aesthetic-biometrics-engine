@@ -69,7 +69,7 @@ app/
     └── logging.py           # Structured JSON logging + log_step (Sprint 9)
 models/                  # ML model files (not in git, download manually)
   └── face_landmarker.task  # MediaPipe model (3.6MB, see Common Commands)
-tests/                   # Test suite (499 tests passing)
+tests/                   # Test suite (503 tests passing)
   ├── analysis/              # Symmetry, proportion, engines, fusion, comparison, blendshapes
   ├── treatment/             # Zone definitions, product DB, contraindications, plan generator
   ├── integration/           # Orchestrator, V2 routes, schemas
@@ -85,6 +85,10 @@ docs/                    # Project documentation
   REGISTRY.md            # Master artifact index
   DOD.md                 # Definition of Done
   CONTRIBUTING.md        # Dev guide
+  clinical/              # Clinical-validation SOPs (Sprint 11 prep)
+frontend/                # "Aesthetic Scan" web app (Vite/React/TS); talks only to engine-proxy. LIVE: scan.novasyn.de
+supabase/                # Edge Function engine-proxy (secure proxy) + DB migrations
+deploy/hetzner/          # Engine deploy scaffold (Docker + Caddy). LIVE: biometrics.novasyn.de
 ```
 
 ## Documentation
