@@ -19,3 +19,15 @@ Makefile
 docker-compose.yml
 .dockerignore
 .claude
+# Frontend is a separate static build, not part of the engine image
+frontend/
+# Deploy scaffolding + Supabase migrations not needed in the image
+deploy/
+supabase/
+railway.toml
+# Python caches
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov
